@@ -11,5 +11,3 @@ OpenCV 1.0 libraries are used to support some routines, such as region geometric
 (1) clone this package onto your computer
 (2) Open the image.dsw file in the root directory in Visual C++6.0 compiler
 (3) Compile and Debug. If there are linking problems, you may have to change the project settings to link libraries for GDAL and OpenCV.
-
-More information about this package can be found at http://blog.csdn.net/pobudeyi/article/details/6074118
