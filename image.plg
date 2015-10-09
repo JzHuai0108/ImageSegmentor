@@ -1,0 +1,120 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: image - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBB.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../HCE/gdaldll/include/" /I "../HCE/OpenCV/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Debug/" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"E:\landcruiser\HCE\DIB.cpp"
+"E:\landcruiser\HCE\imageDoc.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBB.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBC.tmp" with contents
+[
+gdal_i.lib cxcore.lib cv.lib highgui.lib /nologo /subsystem:windows /incremental:yes /pdb:"Debug/image.pdb" /debug /machine:I386 /out:"Debug/image.exe" /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"../HCE/OpenCV/lib" 
+.\Debug\BandSelDlg.obj
+.\Debug\CannyPara.obj
+.\Debug\ChangeDetector.obj
+.\Debug\ChildFrm.obj
+.\Debug\CIE.obj
+.\Debug\CKProcessTimeCounter.obj
+.\Debug\colormrf.obj
+.\Debug\DIB.obj
+.\Debug\fuzzylogic.obj
+.\Debug\HC.obj
+.\Debug\image.obj
+.\Debug\imageDoc.obj
+.\Debug\imageView.obj
+.\Debug\InitiateDlg.obj
+.\Debug\MainFrm.obj
+.\Debug\mersenne.obj
+.\Debug\MFeatDlg.obj
+.\Debug\MMOFUNC.obj
+.\Debug\MorphDlg.obj
+.\Debug\mrf_1.obj
+.\Debug\MRFOptimDlg.obj
+.\Debug\MultiDiff.obj
+.\Debug\MyColorSpace.obj
+.\Debug\MyGabor.obj
+.\Debug\MyMath.obj
+.\Debug\MyTexture.obj
+.\Debug\PreviewDlg.obj
+.\Debug\QT.obj
+.\Debug\Region.obj
+.\Debug\ResultDlg.obj
+.\Debug\ResultImageDlg.obj
+.\Debug\SegApi.obj
+.\Debug\SegmenterMS.obj
+.\Debug\SelPropDlg.obj
+.\Debug\SetPropDlg.obj
+.\Debug\StdAfx.obj
+.\Debug\SUSANDlg.obj
+.\Debug\Thinner.obj
+.\Debug\THRESHDlg.obj
+.\Debug\image.res
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBC.tmp"
+<h3>Output Window</h3>
+Compiling...
+DIB.cpp
+imageDoc.cpp
+e:\landcruiser\hce\imagedoc.cpp(3279) : warning C4305: 'argument' : truncation from 'const double' to 'float'
+Generating Code...
+Linking...
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBD.tmp" with contents
+[
+/nologo /o"Debug/image.bsc" 
+.\Debug\StdAfx.sbr
+.\Debug\BandSelDlg.sbr
+.\Debug\CannyPara.sbr
+.\Debug\ChangeDetector.sbr
+.\Debug\ChildFrm.sbr
+.\Debug\CIE.sbr
+.\Debug\CKProcessTimeCounter.sbr
+.\Debug\colormrf.sbr
+.\Debug\DIB.sbr
+.\Debug\fuzzylogic.sbr
+.\Debug\HC.sbr
+.\Debug\image.sbr
+.\Debug\imageDoc.sbr
+.\Debug\imageView.sbr
+.\Debug\InitiateDlg.sbr
+.\Debug\MainFrm.sbr
+.\Debug\mersenne.sbr
+.\Debug\MFeatDlg.sbr
+.\Debug\MMOFUNC.sbr
+.\Debug\MorphDlg.sbr
+.\Debug\mrf_1.sbr
+.\Debug\MRFOptimDlg.sbr
+.\Debug\MultiDiff.sbr
+.\Debug\MyColorSpace.sbr
+.\Debug\MyGabor.sbr
+.\Debug\MyMath.sbr
+.\Debug\MyTexture.sbr
+.\Debug\PreviewDlg.sbr
+.\Debug\QT.sbr
+.\Debug\Region.sbr
+.\Debug\ResultDlg.sbr
+.\Debug\ResultImageDlg.sbr
+.\Debug\SegApi.sbr
+.\Debug\SegmenterMS.sbr
+.\Debug\SelPropDlg.sbr
+.\Debug\SetPropDlg.sbr
+.\Debug\SUSANDlg.sbr
+.\Debug\Thinner.sbr
+.\Debug\THRESHDlg.sbr]
+Creating command line "bscmake.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBD.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+image.exe - 0 error(s), 1 warning(s)
+</pre>
+</body>
+</html>

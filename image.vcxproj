@@ -1,0 +1,255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <Keyword>MFCProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\Debug\</OutDir>
+    <IntDir>.\Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../HCE/gdaldll/include/;C:/Program Files/OpenCV/cxcore/include;C:/Program Files/OpenCV/cv/include;C:/Program Files/OpenCV/cvaux/include;C:/Program Files/OpenCV/ml/include;C:/Program Files/OpenCV/otherlibs/highgui;C:/Program Files/OpenCV/otherlibs/cvcam/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\Debug\image.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <ObjectFileName>.\Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Debug\image.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0804</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Debug\image.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>.\Debug\image.exe</OutputFile>
+      <AdditionalLibraryDirectories>../HCE/gdaldll/lib;C:/Program Files/OpenCV/lib;E:\landcruiser\stickseg\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;ogr.lib;ogrsf_frmts.lib;cpl.lib;ogrsf_frmts_sup.lib;cxcore.lib;cv.lib;ml.lib;cvaux.lib;highgui.lib;cvcam.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <AdditionalIncludeDirectories>../HCE/gdaldll/include/;C:/Program Files/OpenCV/cxcore/include;C:/Program Files/OpenCV/cv/include;C:/Program Files/OpenCV/otherlibs/highgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\Release\image.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ObjectFileName>.\Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
+    </ClCompile>
+    <Midl>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TypeLibraryName>.\Release\image.tlb</TypeLibraryName>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0804</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\Release\image.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OutputFile>.\Release\image.exe</OutputFile>
+      <AdditionalLibraryDirectories>../HCE/gdaldll/lib;C:/Program Files/OpenCV/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;cxcore.lib;cv.lib;highgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="_MC.cpp" />
+    <ClCompile Include="BandSelDlg.cpp" />
+    <ClCompile Include="CannyPara.cpp" />
+    <ClCompile Include="ChangeDetector.cpp" />
+    <ClCompile Include="ChildFrm.cpp" />
+    <ClCompile Include="CIE.cpp" />
+    <ClCompile Include="CKProcessTimeCounter.cpp" />
+    <ClCompile Include="colormrf.cpp" />
+    <ClCompile Include="DIB.cpp" />
+    <ClCompile Include="fuzzylogic.cpp" />
+    <ClCompile Include="HC.cpp" />
+    <ClCompile Include="image.cpp" />
+    <ClCompile Include="imageDoc.cpp" />
+    <ClCompile Include="imageView.cpp" />
+    <ClCompile Include="InitiateDlg.cpp" />
+    <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="mersenne.cpp" />
+    <ClCompile Include="MFeatDlg.cpp" />
+    <ClCompile Include="MMOFUNC.cpp" />
+    <ClCompile Include="MorphDlg.cpp" />
+    <ClCompile Include="mrf_1.cpp" />
+    <ClCompile Include="MRFOptimDlg.cpp" />
+    <ClCompile Include="MyColorSpace.cpp" />
+    <ClCompile Include="MyGabor.cpp" />
+    <ClCompile Include="MyMath.cpp" />
+    <ClCompile Include="MyTexture.cpp" />
+    <ClCompile Include="NP.cpp" />
+    <ClCompile Include="PreviewDlg.cpp" />
+    <ClCompile Include="QT.cpp" />
+    <ClCompile Include="Region.cpp" />
+    <ClCompile Include="ResultDlg.cpp" />
+    <ClCompile Include="ResultImageDlg.cpp" />
+    <ClCompile Include="SegApi.cpp" />
+    <ClCompile Include="SegmenterMS.cpp" />
+    <ClCompile Include="SelPropDlg.cpp" />
+    <ClCompile Include="SetPropDlg.cpp" />
+    <ClCompile Include="StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="SUSANDlg.cpp" />
+    <ClCompile Include="Thinner.cpp" />
+    <ClCompile Include="THRESHDlg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="image.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="_MC.h" />
+    <ClInclude Include="BandSelDlg.h" />
+    <ClInclude Include="CannyPara.h" />
+    <ClInclude Include="ChangeDetector.h" />
+    <ClInclude Include="ChildFrm.h" />
+    <ClInclude Include="CIE.h" />
+    <ClInclude Include="CKProcessTimeCounter.h" />
+    <ClInclude Include="colormrf.h" />
+    <ClInclude Include="DIB.h" />
+    <ClInclude Include="filter.h" />
+    <ClInclude Include="fuzzylogic.h" />
+    <ClInclude Include="GlobalApi.h" />
+    <ClInclude Include="HC.h" />
+    <ClInclude Include="image.h" />
+    <ClInclude Include="imageDoc.h" />
+    <ClInclude Include="imageinclude\ImageErrors.h" />
+    <ClInclude Include="imageinclude\Imageload.h" />
+    <ClInclude Include="imageView.h" />
+    <ClInclude Include="InitiateDlg.h" />
+    <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="MFeatDlg.h" />
+    <ClInclude Include="misc.h" />
+    <ClInclude Include="MMOFUNC.h" />
+    <ClInclude Include="MorphDlg.h" />
+    <ClInclude Include="mrf_1.h" />
+    <ClInclude Include="MRFOptimDlg.h" />
+    <ClInclude Include="MyColorSpace.h" />
+    <ClInclude Include="MyGabor.h" />
+    <ClInclude Include="MyMath.h" />
+    <ClInclude Include="MyTexture.h" />
+    <ClInclude Include="NP.h" />
+    <ClInclude Include="PreviewDlg.h" />
+    <ClInclude Include="QT.h" />
+    <ClInclude Include="randomc.h" />
+    <ClInclude Include="Region.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="ResultDlg.h" />
+    <ClInclude Include="ResultImageDlg.h" />
+    <ClInclude Include="segment-graph.h" />
+    <ClInclude Include="segment-image.h" />
+    <ClInclude Include="SegmenterMS.h" />
+    <ClInclude Include="SelPropDlg.h" />
+    <ClInclude Include="SetPropDlg.h" />
+    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="SUSANDlg.h" />
+    <ClInclude Include="Thinner.h" />
+    <ClInclude Include="ThreshDlg.h" />
+    <ClInclude Include="timeshow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="res\image.ico" />
+    <CustomBuild Include="res\image.rc2">
+      <FileType>RC</FileType>
+    </CustomBuild>
+    <CustomBuild Include="res\imageDoc.ico" />
+    <CustomBuild Include="res\LENA.BMP" />
+    <CustomBuild Include="res\OriginIcon.ico" />
+    <CustomBuild Include="res\Toolbar.bmp" />
+    <CustomBuild Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
