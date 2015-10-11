@@ -1,6 +1,14 @@
 // MyGabor.cpp: implementation of the CMyGabor class.
-//
-//////////////////////////////////////////////////////////////////////
+/*
+
+修改自姚子Gabor纹理代码，
+参考文献：
+    Texture Features for Browsing and Retrieval of Image Data, by B.S.Manjunath and W.Y.Ma
+以及，姚子论文-基于纹理特征的遥感图像检索技术
+
+               04.06.03
+*/
+/////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "myimagedb.h"

@@ -1,5 +1,9 @@
 // MyMath.cpp: implementation of the MyMath class.
-//
+/*
+   一些数学处理函数，始于WS3D的空间计算。
+
+   by dzj;
+*/
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"

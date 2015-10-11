@@ -1,4 +1,35 @@
-
+/******************************************************************
+ * Modul name : colormrf.cpp
+ * Author     : Mihaly Gara (gara@inf.u-szeged.hu) based on the code
+ *              written by  Csaba Gradwohl (Gradwohl.Csaba@stud.u-szeged.hu) 
+ *              with some  minor contributions from Zoltan Kato 
+ *              (kato@inf.u-szeged.hu).
+ *
+ * Copyright  : GNU General Public License www.gnu.org/copyleft/gpl.html
+ *
+ * Description:
+ * Color-based image segmentation using a Markov random field
+ * segmentation model and four different optimization algorithms:
+ * Metropolis - Simulated Annealing using Metropolis dynamics
+ * Gibbs      - Simulated Annealing using a Gibbs sampler
+ * ICM        - Iterated Conditional Modes, a deterministic suboptimal
+ *              method (depends on a good initialization).
+ * MMD        - Modified Metropolis Dynamics, a pseudo-stochastic
+ *              suboptimal method which is less sensitive to
+ *              initialization than ICM.
+ *
+ * The program GUI is written in wxWidgets hence the code can be
+ * compiled and ran under Windows as well as under Linux/Unix.
+ *
+ * $Id: colormrf.cpp,v 1.1 2009/01/09 20:48:09 kato Exp $
+ * $Revision: 1.1 $
+ * $State: Exp $
+ * $Log: colormrf.cpp,v $
+ * Revision 1.1  2009/01/09 20:48:09  kato
+ * Initial revision
+ *
+ * 
+ *****************************************************************/
 #define WINDOW_TITLE "MRF Color Image Segmentation Demo $Revision: 1.1 $"
 #define VERSION      "MRF Color Image Segmentation Demo $Revision: 1.1 $" \
   " (Last built " __DATE__" "__TIME__") "

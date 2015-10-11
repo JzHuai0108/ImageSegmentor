@@ -1,3 +1,22 @@
+/**
+* This file is part of ImageSegmentor.
+*
+* Copyright (C) 2012 Jianzhu Huai <huai dot 3 at osu dot edu> (The Ohio State University)
+*
+* ImageSegmentor is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* ImageSegmentor is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with ImageSegmentor. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "stdafx.h"
 #include "GlobalApi.h"
 
@@ -562,7 +581,7 @@ void EdgeMag(BYTE*EM,int w,int h)
 	float max=0.f,min=256.f;
 	float *ptr=exEM;
 	int i=0,j=0;
-	// µ÷ÓÃSOBEL FILTER compute gradient absolute value
+	// \B5\F7\D3\C3SOBEL FILTER compute gradient absolute value
 	Gradient(EM,w,h,exEM);
 	for(j=0;j<h;++j)
 		for(i=0;i<w;++i)
@@ -592,7 +611,7 @@ void EdgePoints(BYTE* EM,int w,int h,float sig, float low, float high)
 {
 	BYTE* input = new BYTE[w*h];
 	memcpy(input,EM,sizeof(BYTE)*w*h);
-	// µ÷ÓÃcannyº¯Êı½øĞĞ±ß½çÌáÈ¡
+	// \B5\F7\D3\C3canny\BA\AF\CA\FD\BD\F8\D0Ğ±ß½\E7\CC\E1È¡
 	Canny(input,w,h, sig,low,high, EM);
 	
 	delete[] input;
@@ -601,12 +620,12 @@ void EdgePoints(BYTE* EM,int w,int h,float sig, float low, float high)
 MyLUV*  GetNearPixelsLUV(int xPos, int yPos
 	  , MyLUV* inLUVs, int picWidth, int picHeight
 	  , int inScale, int& outWidth, int& outHeight)
-//µÃµ½LUVÁÚÓò£»
+//\B5Ãµ\BDLUV\C1\DA\D3\F2\A3\BB
 {
-	//Ê×ÏÈ¼ÆËã¿ÉÄÜµÄÁÚÓòµãÊı£»
+	//\CA\D7\CFÈ¼\C6\CB\E3\BF\C9\C4Üµ\C4\C1\DA\D3\F2\B5\E3\CA\FD\A3\BB
 	int templeft = xPos - inScale;
 	int tempright = xPos + inScale;
-	int left, right, up, down;//ÁÚÓòµÄ×óÓÒÉÏÏÂ±ß½ç£»
+	int left, right, up, down;//\C1\DA\D3\F2\B5\C4\D7\F3\D3\D2\C9\CF\CFÂ±ß½ç£»
 	if (templeft>0 && tempright<picWidth)
 	{
 		left = inScale;
@@ -665,10 +684,10 @@ MyLUV*  GetNearPixelsLUV(int xPos, int yPos
 		for (int y=0; y<outHeight; y++)
 		{
 			pos = ( y*outWidth + x );
-			//ÒÔÏÂÇóÊä³öµÄµÚx,y¸öÔªËØÔÚÔ­Êı×éÖĞµÄXºÍYÎ»ÖÃ£»
+			//\D2\D4\CF\C2\C7\F3\CA\E4\B3\F6\B5Äµ\DAx,y\B8\F6Ôª\CB\D8\D4\DAÔ­\CA\FD\D7\E9\D6Ğµ\C4X\BA\CDYÎ»\D6Ã£\BB
 			int originx = xPos - left + x;
 			int originy = yPos - up + y;
-			//ÔÚÊäÈëµÄÍ¼ÏñÊı¾İÖĞµÄÎ»ÖÃ£»
+			//\D4\DA\CA\E4\C8\EB\B5\C4Í¼\CF\F1\CA\FD\BE\DD\D6Ğµ\C4Î»\D6Ã£\BB
 			LONG inpos = (originy * picWidth + originx); 
 			outarr[pos].l = inLUVs[inpos].l;
 			outarr[pos].u = inLUVs[inpos].u;
@@ -682,14 +701,14 @@ MyLUV*  GetNearPixelsLUV(int xPos, int yPos
 void  GetNearPixelsGreenExt(int xPos, int yPos
 	    , BYTE* inPixels, int picWidth, int picHeight
 	    , int radius, BYTE** outArr)
-//µÃµ½ÁÚÓòÏñËØÖµ(Õı·½ĞÎ,GÍ¨µÀ),ÊäÈëÎ»ÖÃ´Ó0¿ªÊ¼¼ÆÊı, ±ßÔµ´¦¶Ô³ÆÑÓÍØ£»
+//\B5Ãµ\BD\C1\DA\D3\F2\CF\F1\CB\D8Öµ(\D5\FD\B7\BD\D0\CE,GÍ¨\B5\C0),\CA\E4\C8\EBÎ»\D6Ã´\D30\BF\AAÊ¼\BC\C6\CA\FD, \B1\DFÔµ\B4\A6\B6Ô³\C6\D1\D3\CDØ£\BB
 {
 	int matrixwidth = (radius*2+1);
-	BYTE* temparr = new BYTE[matrixwidth*matrixwidth];//°üÀ¨Ö¸¶¨µã×ÔÉí£»
+	BYTE* temparr = new BYTE[matrixwidth*matrixwidth];//\B0\FC\C0\A8Ö¸\B6\A8\B5\E3\D7\D4\C9\ED\A3\BB
 
 	LONG pos = 0;
 	int rposx, rposy;
-	rposx = rposy = 0;//ÔÚÍ¼ÏñÖĞµÄÎ»ÖÃ£»
+	rposx = rposy = 0;//\D4\DAÍ¼\CF\F1\D6Ğµ\C4Î»\D6Ã£\BB
 
 	for (int y=-radius; y<=radius; y++)
 	{
@@ -713,9 +732,9 @@ void  GetNearPixelsGreenExt(int xPos, int yPos
 				rposx = picWidth - (rposx-picWidth);
 			}
 
-			//ÔÚÊäÈëµÄÍ¼ÏñÊı¾İÖĞµÄÎ»ÖÃ£»
-			LONG inpos = ( rposy*picWidth + rposx ) * 3 + 1;//RGBÈıÉ«Öµ£»
-			//ÔÚÊä³öÊı×éÖĞµÄÎ»ÖÃ£»
+			//\D4\DA\CA\E4\C8\EB\B5\C4Í¼\CF\F1\CA\FD\BE\DD\D6Ğµ\C4Î»\D6Ã£\BB
+			LONG inpos = ( rposy*picWidth + rposx ) * 3 + 1;//RGB\C8\FDÉ«Öµ\A3\BB
+			//\D4\DA\CA\E4\B3\F6\CA\FD\D7\E9\D6Ğµ\C4Î»\D6Ã£\BB
 			LONG pos = ( (y+radius)*matrixwidth + (x+radius) );
 			temparr[pos] = ( inPixels[inpos] );
 		}
@@ -728,14 +747,14 @@ void  GetNearPixelsGreenExt(int xPos, int yPos
 void  GetNearPixelsExt(int xPos, int yPos
 	, BYTE* inPixels, int picWidth, int picHeight
 	, int radius, BYTE** outArr)
-//µÃµ½ÁÚÓòÏñËØÖµ(Õı·½ĞÎ),ÊäÈëÎ»ÖÃ´Ó0¿ªÊ¼¼ÆÊı, ±ßÔµ´¦ÑÓÍØ£»
+//\B5Ãµ\BD\C1\DA\D3\F2\CF\F1\CB\D8Öµ(\D5\FD\B7\BD\D0\CE),\CA\E4\C8\EBÎ»\D6Ã´\D30\BF\AAÊ¼\BC\C6\CA\FD, \B1\DFÔµ\B4\A6\D1\D3\CDØ£\BB
 {
 	int matrixwidth = (radius*2+1);
-	BYTE* temparr = new BYTE[matrixwidth*matrixwidth*3];//°üÀ¨Ö¸¶¨µã×ÔÉí£»
+	BYTE* temparr = new BYTE[matrixwidth*matrixwidth*3];//\B0\FC\C0\A8Ö¸\B6\A8\B5\E3\D7\D4\C9\ED\A3\BB
 
 	LONG pos = 0;
 	int rposx, rposy;
-	rposx = rposy = 0;//ÔÚÍ¼ÏñÖĞµÄÎ»ÖÃ£»
+	rposx = rposy = 0;//\D4\DAÍ¼\CF\F1\D6Ğµ\C4Î»\D6Ã£\BB
 
 	for (int y=-radius; y<=radius; y++)
 	{
@@ -759,9 +778,9 @@ void  GetNearPixelsExt(int xPos, int yPos
 				rposx = picWidth - (rposx-picWidth);
 			}
 
-			//ÔÚÊäÈëµÄÍ¼ÏñÊı¾İÖĞµÄÎ»ÖÃ£»
-			LONG inpos = ( rposy*picWidth + rposx ) * 3;//RGBÈıÉ«Öµ£»
-			//ÔÚÊä³öÊı×éÖĞµÄÎ»ÖÃ£»
+			//\D4\DA\CA\E4\C8\EB\B5\C4Í¼\CF\F1\CA\FD\BE\DD\D6Ğµ\C4Î»\D6Ã£\BB
+			LONG inpos = ( rposy*picWidth + rposx ) * 3;//RGB\C8\FDÉ«Öµ\A3\BB
+			//\D4\DA\CA\E4\B3\F6\CA\FD\D7\E9\D6Ğµ\C4Î»\D6Ã£\BB
 			LONG pos = ( (y+radius)*matrixwidth + (x+radius) ) * 3;
 			temparr[pos] = inPixels[inpos];
 			temparr[pos+1] = inPixels[inpos+1];
@@ -776,22 +795,22 @@ void  GetNearPixelsExt(int xPos, int yPos
 BYTE*  GetNearPixels(int xPos, int yPos, 
       BYTE* inPixels, int picWidth, int picHeight, int inScale, 
 	  int& outWidth, int& outHeight)
-//µÃµ½ÁÚÓòÏñËØÖµ, ÊäÈëÎ»ÖÃ´Ó0¿ªÊ¼¼ÆÊı£»
+//\B5Ãµ\BD\C1\DA\D3\F2\CF\F1\CB\D8Öµ, \CA\E4\C8\EBÎ»\D6Ã´\D30\BF\AAÊ¼\BC\C6\CA\FD\A3\BB
 {
-	//Ê×ÏÈ¼ÆËã¿ÉÄÜµÄÁÚÓòµãÊı£»
+	//\CA\D7\CFÈ¼\C6\CB\E3\BF\C9\C4Üµ\C4\C1\DA\D3\F2\B5\E3\CA\FD\A3\BB
 	int templeft = xPos - inScale;
 	int tempright = xPos + inScale;
-	int left, right, up, down;//ÁÚÓòµÄ×óÓÒÉÏÏÂ±ß½ç£»
+	int left, right, up, down;//\C1\DA\D3\F2\B5\C4\D7\F3\D3\D2\C9\CF\CFÂ±ß½ç£»
 	if (templeft>0 && tempright<picWidth)
 	{
-		//outWidth = inScale * 2 + 1;//¼Ó1Ôò°üº¬ÁËÏñËØ±¾Éí£»
+		//outWidth = inScale * 2 + 1;//\BC\D31\D4\F2\B0\FC\BA\AC\C1\CB\CF\F1\CBØ±\BE\C9\ED\A3\BB
 		left = inScale;
 		right = inScale;
 	}else
 	{
 		if (templeft<=0)
 		{
-			//outWidth += xPos;//ÒÔ×óÈ«ÔÚÁÚÓòÄÚ£»
+			//outWidth += xPos;//\D2\D4\D7\F3È«\D4\DA\C1\DA\D3\F2\C4Ú£\BB
 			left = xPos;
 		}else
 		{
@@ -799,7 +818,7 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 		}
 		if (tempright>=picWidth)
 		{
-			//outWidth += picWidth - xPos - 1;//ÒÔÓÒÈ«ÔÚÁÚÓòÄÚ£»
+			//outWidth += picWidth - xPos - 1;//\D2\D4\D3\D2È«\D4\DA\C1\DA\D3\F2\C4Ú£\BB
 			right = picWidth - xPos - 1;
 		}else
 		{
@@ -809,7 +828,7 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 /*
 		if (outWidth>picWidth)
 		{
-			outWidth = picWidth;//ÁÚÓò¿í¶ÈÓëÍ¼Ïñ¿íÏàµÈ£»
+			outWidth = picWidth;//\C1\DA\D3\F2\BF\ED\B6\C8\D3\EBÍ¼\CF\F1\BF\ED\CF\E0\B5È£\BB
 		}
 */
 	}
@@ -818,7 +837,7 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 	int tempbottom = yPos + inScale;
 	if ( temptop>0 && tempbottom<picHeight )
 	{
-		//outWidth = inScale * 2 + 1;//¼Ó1Ôò°üº¬ÁËÏñËØ±¾Éí£»
+		//outWidth = inScale * 2 + 1;//\BC\D31\D4\F2\B0\FC\BA\AC\C1\CB\CF\F1\CBØ±\BE\C9\ED\A3\BB
 		up = inScale;
 		down = inScale;
 	}else
@@ -840,7 +859,7 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 /*
 		if (outWidth>picWidth)
 		{
-			outWidth = picWidth;//ÁÚÓò¿í¶ÈÓëÍ¼Ïñ¿íÏàµÈ£»
+			outWidth = picWidth;//\C1\DA\D3\F2\BF\ED\B6\C8\D3\EBÍ¼\CF\F1\BF\ED\CF\E0\B5È£\BB
 		}
 */
 	}
@@ -856,11 +875,11 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 	{
 		for (int y=0; y<outHeight; y++)
 		{
-			pos = ( y*outWidth + x ) * 3;//RGBÈıÉ«Öµ£»
-			//ÒÔÏÂÇóÊä³öµÄµÚx,y¸öÔªËØÔÚÔ­Êı×éÖĞµÄXºÍYÎ»ÖÃ£»
+			pos = ( y*outWidth + x ) * 3;//RGB\C8\FDÉ«Öµ\A3\BB
+			//\D2\D4\CF\C2\C7\F3\CA\E4\B3\F6\B5Äµ\DAx,y\B8\F6Ôª\CB\D8\D4\DAÔ­\CA\FD\D7\E9\D6Ğµ\C4X\BA\CDYÎ»\D6Ã£\BB
 			int originx = xPos - left + x;
 			int originy = yPos - up + y;
-			//ÔÚÊäÈëµÄÍ¼ÏñÊı¾İÖĞµÄÎ»ÖÃ£»
+			//\D4\DA\CA\E4\C8\EB\B5\C4Í¼\CF\F1\CA\FD\BE\DD\D6Ğµ\C4Î»\D6Ã£\BB
 			LONG inpos = (originy * picWidth + originx) * 3; 
 			outarr[pos] = inPixels[inpos];
 			outarr[pos+1] = inPixels[inpos+1];
@@ -872,9 +891,9 @@ BYTE*  GetNearPixels(int xPos, int yPos,
 }
 void GetGradient(BYTE* image, int width, int height
 		, FLOAT* deltar, FLOAT* deltasita)
-//µÃµ½ÊäÈëÍ¼ÏñµÄÌİ¶È£»
+//\B5Ãµ\BD\CA\E4\C8\EBÍ¼\CF\F1\B5\C4\CCİ¶È£\BB
 {
-	//ÏÂÃæ¼ÆËã¸÷ÏñËØÔÚË®Æ½ºÍ´¹Ö±·½ÏòÉÏµÄÌİ¶È,±ßÔµµãÌİ¶È¼ÆÎª0£»
+	//\CF\C2\C3\E6\BC\C6\CB\E3\B8\F7\CF\F1\CB\D8\D4\DAË®Æ½\BAÍ´\B9Ö±\B7\BD\CF\F2\C9Ïµ\C4\CCİ¶\C8,\B1\DFÔµ\B5\E3\CCİ¶È¼\C6Îª0\A3\BB
 	int* deltaxarr;
 	int* deltayarr;
 	int grawidth = width;
@@ -883,32 +902,32 @@ void GetGradient(BYTE* image, int width, int height
 	deltaxarr = new int[deltacount];
 	deltayarr = new int[deltacount];
 
-    //Ôİ²»¼ÆËã±ßÔµµã£»
+    //\D4İ²\BB\BC\C6\CB\E3\B1\DFÔµ\B5ã£»
 	for (int y=1; y<graheight-1; y++)
 	{
 		for (int x=1; x<grawidth-1; x++)
 		{
-			int inarrpos = ((y)*width + (x))*3 + 1;//ÔÚÊäÈë¿éÖĞµÄÎ»ÖÃ£»
-			int deltaarrpos = y*grawidth + x;//ÔÚÌİ¶ÈÊı×éÖĞµÄÎ»ÖÃ£»
-			//¾í»ı¼ÆËã£»
+			int inarrpos = ((y)*width + (x))*3 + 1;//\D4\DA\CA\E4\C8\EB\BF\E9\D6Ğµ\C4Î»\D6Ã£\BB
+			int deltaarrpos = y*grawidth + x;//\D4\DA\CCİ¶\C8\CA\FD\D7\E9\D6Ğµ\C4Î»\D6Ã£\BB
+			//\BE\ED\BB\FD\BC\C6\CBã£»
 			deltaxarr[deltaarrpos] = (int) ( (
-				image[((y-1)*width + (x+1))*3 + 1] //ÓÒÉÏ
-				+ image[((y)*width + (x+1))*3 + 1] //ÓÒ
-				+ image[((y+1)*width + (x+1))*3 + 1] //ÓÒÏÂ
-				- image[((y-1)*width + (x-1))*3 + 1] //×óÉÏ
-				- image[((y)*width + (x-1))*3 + 1] //×ó
-				- image[((y+1)*width + (x-1))*3 + 1] ) / 3 );//×óÏÂ
+				image[((y-1)*width + (x+1))*3 + 1] //\D3\D2\C9\CF
+				+ image[((y)*width + (x+1))*3 + 1] //\D3\D2
+				+ image[((y+1)*width + (x+1))*3 + 1] //\D3\D2\CF\C2
+				- image[((y-1)*width + (x-1))*3 + 1] //\D7\F3\C9\CF
+				- image[((y)*width + (x-1))*3 + 1] //\D7\F3
+				- image[((y+1)*width + (x-1))*3 + 1] ) / 3 );//\D7\F3\CF\C2
 			deltayarr[deltaarrpos] = (int) ( ( 
-				image[((y-1)*width + (x+1))*3 + 1] //ÓÒÉÏ
-				+ image[((y-1)*width + (x))*3 + 1] //ÉÏ
-				+ image[((y-1)*width + (x-1))*3 + 1] //×óÉÏ
-				- image[((y+1)*width + (x-1))*3 + 1] //×óÏÂ
-				- image[((y+1)*width + (x))*3 + 1] //ÏÂ
-				- image[((y+1)*width + (x+1))*3 + 1]) / 3 );//ÓÒÏÂ
+				image[((y-1)*width + (x+1))*3 + 1] //\D3\D2\C9\CF
+				+ image[((y-1)*width + (x))*3 + 1] //\C9\CF
+				+ image[((y-1)*width + (x-1))*3 + 1] //\D7\F3\C9\CF
+				- image[((y+1)*width + (x-1))*3 + 1] //\D7\F3\CF\C2
+				- image[((y+1)*width + (x))*3 + 1] //\CF\C2
+				- image[((y+1)*width + (x+1))*3 + 1]) / 3 );//\D3\D2\CF\C2
 		}
 	}
 
-	//±ßÔµ¸³ÎªÆäÄÚ²àµãµÄÖµ£»
+	//\B1\DFÔµ\B8\B3Îª\C6\E4\C4Ú²\E0\B5\E3\B5\C4Öµ\A3\BB
 	for (y=0; y<graheight; y++)
 	{
 		int x1 = 0;
@@ -924,12 +943,12 @@ void GetGradient(BYTE* image, int width, int height
 	{
 		int y1 = 0;
 		int pos1 = x;
-		int inner = x + grawidth;//ÏÂÒ»ĞĞ£»
+		int inner = x + grawidth;//\CF\C2Ò»\D0Ğ£\BB
 		deltaxarr[pos1] = deltaxarr[inner];
 		deltayarr[pos1] = deltayarr[inner];
 		int y2 = graheight-1;
 		int pos2 = y2*grawidth + x;
-		inner = pos2 - grawidth;//ÉÏÒ»ĞĞ£»
+		inner = pos2 - grawidth;//\C9\CFÒ»\D0Ğ£\BB
 		deltaxarr[pos2] = deltaxarr[inner];
 		deltayarr[pos2] = deltayarr[inner];
 	}
@@ -944,11 +963,11 @@ void GetGradient(BYTE* image, int width, int height
 			{
 				if (deltayarr[temppos]!=0)
 				{
-					deltasita[temppos] = 0;//Ë®Æ½·½Ïò;
+					deltasita[temppos] = 0;//Ë®Æ½\B7\BD\CF\F2;
 					deltar[temppos] = (FLOAT) abs(deltayarr[temppos]);
 				}else
 				{
-					deltasita[temppos] = -1;//ÎŞÈ·¶¨·½Ïò;
+					deltasita[temppos] = -1;//\CE\DEÈ·\B6\A8\B7\BD\CF\F2;
 					deltar[temppos] = (FLOAT) abs(deltayarr[temppos]);
 				}
 				continue;
@@ -962,22 +981,22 @@ void GetGradient(BYTE* image, int width, int height
 		}
 	}
 
-	delete [] deltaxarr; deltaxarr = NULL; //É¾³ıË®Æ½ºÍ´¹Ö±Ìİ¶ÈÊı×é£»
+	delete [] deltaxarr; deltaxarr = NULL; //É¾\B3\FDË®Æ½\BAÍ´\B9Ö±\CCİ¶\C8\CA\FD\D7é£»
 	delete [] deltayarr; deltayarr = NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Luc Vincent and Pierre SoilleµÄ·ÖË®Áë·Ö¸îflood²½ÖèµÄÊµÏÖ´úÂë£¬ 
-// ĞŞ¸Ä×ÔÏàÓ¦Î±´úÂë, Î±´úÂëÀ´×Ô×÷ÕßÂÛÎÄ¡¶Watersheds in Digital Spaces:
-// An Efficient Algorithm Based on Immersion Simulations¡·
+// Luc Vincent and Pierre Soille\B5Ä·\D6Ë®\C1\EB\B7Ö¸\EEflood\B2\BD\D6\E8\B5\C4Êµ\CFÖ´\FA\C2ë£¬ 
+// \D0Ş¸\C4\D7\D4\CF\E0Ó¦Î±\B4\FA\C2\EB, Î±\B4\FA\C2\EB\C0\B4\D7\D4\D7\F7\D5\DF\C2\DB\CEÄ¡\B6Watersheds in Digital Spaces:
+// An Efficient Algorithm Based on Immersion Simulations\A1\B7
 // IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE.
 // VOL.13, NO.6, JUNE 1991;
 // by dzj, 2004.06.28 
-// MyImageGraPt* imiarr - ÊäÈëµÄÅÅĞòºóÊı×é
-// int* graddarr -------- ÊäÈëµÄ¸÷Ìİ¶ÈÊı×é£¬ÓÉ´ËÖ±½Ó´æÈ¡¸÷HÏñËØµã
-// int minh£¬int maxh == ×îĞ¡×î´óÌİ¶È
-// int* flagarr --------- Êä³ö±ê¼ÇÊı×é
-// ×¢Òâ£ºÄ¿Ç°²»Éè·ÖË®Áë±ê¼Ç£¬Ö»ÉèÃ¿¸öÏñËØËùÊôÇøÓò£»
+// MyImageGraPt* imiarr - \CA\E4\C8\EB\B5\C4\C5\C5\D0\F2\BA\F3\CA\FD\D7\E9
+// int* graddarr -------- \CA\E4\C8\EB\B5Ä¸\F7\CCİ¶\C8\CA\FD\D7é£¬\D3É´\CBÖ±\BDÓ´\E6È¡\B8\F7H\CF\F1\CBØµ\E3
+// int minh\A3\ACint maxh == \D7\EEĞ¡\D7\EE\B4\F3\CCİ¶\C8
+// int* flagarr --------- \CA\E4\B3\F6\B1\EA\BC\C7\CA\FD\D7\E9
+// ×¢\D2â£ºÄ¿Ç°\B2\BB\C9\E8\B7\D6Ë®\C1\EB\B1\EA\BCÇ£\ACÖ»\C9\E8Ã¿\B8\F6\CF\F1\CB\D8\CB\F9\CA\F4\C7\F8\D3\F2\A3\BB
 //////////////////////////////////////////////////////////////////////////
 void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* graddarr, int minh, int maxh, int* flagarr, int& outrgnumber)
 {
@@ -991,14 +1010,14 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 		flagarr[i] = INIT;
 	}
 	//memset(flagarr, INIT, sizeof(int)*imagelen);
-	int* imd = new int[imagelen];//¾àÀëÊı×é£¬Ö±½Ó´æÈ¡£»
+	int* imd = new int[imagelen];//\BE\E0\C0\EB\CA\FD\D7é£¬Ö±\BDÓ´\E6È¡\A3\BB
 	for (i=0; i<imagelen; i++)
 	{
 		imd[i] = 0;
 	}
 	//memset(imd, 0, sizeof(int)*imagelen);
 	std::queue <int> myqueue;
-	int curlabel = 0;//¸÷ÅèµØ±ê¼Ç£»
+	int curlabel = 0;//\B8\F7\C5\E8\B5Ø±\EA\BCÇ£\BB
 	int ini;
 	for (h=minh; h<=maxh; h++)
 	{
@@ -1010,14 +1029,14 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 			int y = imiarr[ini].y;
 			int ipos = y*imageWidth + x;
 			flagarr[ipos] = MASK;
-			//ÒÔÏÂ¼ì²é¸ÃµãÁÚÓòÊÇ·ñÒÑ±ê¼ÇÊôÓÚÄ³Çø»ò·ÖË®Áë£¬ÈôÊÇ£¬Ôò½«¸Ãµã¼ÓÈëfifo;
+			//\D2\D4\CFÂ¼\EC\B2\E9\B8Ãµ\E3\C1\DA\D3\F2\CAÇ·\F1\D2Ñ±\EA\BC\C7\CA\F4\D3\DAÄ³\C7\F8\BB\F2\B7\D6Ë®\C1ë£¬\C8\F4\CAÇ£\AC\D4ò½«¸Ãµ\E3\BC\D3\C8\EBfifo;
 			int left = ipos - 1;
 			if (x-1>=0) 
 			{
 				if (flagarr[left]>=0)
 				{
 					imd[ipos] = 1;
-					myqueue.push(ipos);//µãÎ»ÖÃÑ¹Èëfifo;
+					myqueue.push(ipos);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 					continue;
 				}				
 			}
@@ -1027,7 +1046,7 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				if (flagarr[right]>=0) 
 				{
 					imd[ipos] = 1;
-					myqueue.push(ipos);//µãÎ»ÖÃÑ¹Èëfifo;
+					myqueue.push(ipos);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 					continue;
 				}
 			}
@@ -1037,7 +1056,7 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				if (flagarr[up]>=0)
 				{
 					imd[ipos] = 1;
-					myqueue.push(ipos);//µãÎ»ÖÃÑ¹Èëfifo;
+					myqueue.push(ipos);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 					continue;
 				}				
 			}
@@ -1047,14 +1066,14 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				if (flagarr[down]>=0) 
 				{
 					imd[ipos] = 1;
-					myqueue.push(ipos);//µãÎ»ÖÃÑ¹Èëfifo;
+					myqueue.push(ipos);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 					continue;
 				}			
 			}
 		}
 
-    	//ÒÔÏÂ¸ù¾İÏÈ½øÏÈ³ö¶ÓÁĞÀ©Õ¹ÏÖÓĞÅèµØ£»
-		int curdist = 1; myqueue.push(-99);//ÌØÊâ±ê¼Ç£»
+    	//\D2\D4\CFÂ¸\F9\BE\DD\CFÈ½\F8\CFÈ³\F6\B6\D3\C1\D0\C0\A9Õ¹\CF\D6\D3\D0\C5\E8\B5Ø£\BB
+		int curdist = 1; myqueue.push(-99);//\CC\D8\CA\E2\B1\EA\BCÇ£\BB
 		while (TRUE)
 		{
 			int p = myqueue.front();
@@ -1073,7 +1092,7 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				}
 			}
 
-			//ÒÔÏÂÕÒpµÄÁÚÓò£»
+			//\D2\D4\CF\C2\D5\D2p\B5\C4\C1\DA\D3\F2\A3\BB
 			int y = (int) (p/imageWidth);
 			int x = p - y*imageWidth;
 			int left = p - 1;
@@ -1084,23 +1103,23 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				{
 					if ( flagarr[left]>0 )
 					{
-						//ppeiÊôÓÚÄ³ÇøÓò£¨²»ÊÇ·ÖË®Áë£©£»
+						//ppei\CA\F4\D3\DAÄ³\C7\F8\D3ò£¨²\BB\CAÇ·\D6Ë®\C1ë£©\A3\BB
 						if ( (flagarr[p]==MASK) 
 							|| (flagarr[p]==WATERSHED) )
 						{
-							//½«ÆäÉèÎªÁÚµãËùÊôÇøÓò£»
+							//\BD\AB\C6\E4\C9\E8Îª\C1Úµ\E3\CB\F9\CA\F4\C7\F8\D3\F2\A3\BB
 							flagarr[p] = flagarr[left];
 						}else if (flagarr[p]!=flagarr[left])
 						{
-							//Ô­À´¸³µÄÇøÓëÏÖÔÚ¸³µÄÇø²»Í¬£¬ÉèÎª·ÖË®Áë£»
+							//Ô­\C0\B4\B8\B3\B5\C4\C7\F8\D3\EB\CF\D6\D4Ú¸\B3\B5\C4\C7\F8\B2\BBÍ¬\A3\AC\C9\E8Îª\B7\D6Ë®\C1ë£»
 							//flagarr[p] = WATERSHED;
 						}
-					}else if (flagarr[p]==MASK)//ppeiÎª·ÖÁë£»
+					}else if (flagarr[p]==MASK)//ppeiÎª\B7\D6\C1ë£»
 					{
 						flagarr[p] = WATERSHED;
 					}
 				}else if ( (flagarr[left]==MASK) && (imd[left]==0) )
-				//ppeiÖĞÒÑMASKµÄµã£¬µ«ÉĞÎ´±ê¼Ç£¨¼´²»ÊôÄ³ÇøÒ²²»ÊÇ·ÖË®Áë£©;
+				//ppei\D6\D0\D2\D1MASK\B5Äµã£¬\B5\AB\C9\D0Î´\B1\EA\BCÇ£\A8\BC\B4\B2\BB\CA\F4Ä³\C7\F8Ò²\B2\BB\CAÇ·\D6Ë®\C1ë£©;
 				{
 					imd[left] = curdist + 1; myqueue.push(left);
 				}
@@ -1114,23 +1133,23 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				{
 					if ( flagarr[right]>0 )
 					{
-						//ppeiÊôÓÚÄ³ÇøÓò£¨²»ÊÇ·ÖË®Áë£©£»
+						//ppei\CA\F4\D3\DAÄ³\C7\F8\D3ò£¨²\BB\CAÇ·\D6Ë®\C1ë£©\A3\BB
 						if ( (flagarr[p]==MASK) 
 							|| (flagarr[p]==WATERSHED) )
 						{
-							//½«ÆäÉèÎªÁÚµãËùÊôÇøÓò£»
+							//\BD\AB\C6\E4\C9\E8Îª\C1Úµ\E3\CB\F9\CA\F4\C7\F8\D3\F2\A3\BB
 							flagarr[p] = flagarr[right];
 						}else if (flagarr[p]!=flagarr[right])
 						{
-							//Ô­À´¸³µÄÇøÓëÏÖÔÚ¸³µÄÇø²»Í¬£¬ÉèÎª·ÖË®Áë£»
+							//Ô­\C0\B4\B8\B3\B5\C4\C7\F8\D3\EB\CF\D6\D4Ú¸\B3\B5\C4\C7\F8\B2\BBÍ¬\A3\AC\C9\E8Îª\B7\D6Ë®\C1ë£»
 							//flagarr[p] = WATERSHED;
 						}
-					}else if (flagarr[p]==MASK)//ppeiÎª·ÖÁë£»
+					}else if (flagarr[p]==MASK)//ppeiÎª\B7\D6\C1ë£»
 					{
 						flagarr[p] = WATERSHED;
 					}
 				}else if ( (flagarr[right]==MASK) && (imd[right]==0) )
-					//ppeiÖĞÒÑMASKµÄµã£¬µ«ÉĞÎ´±ê¼Ç£¨¼´²»ÊôÄ³ÇøÒ²²»ÊÇ·ÖË®Áë£©;
+					//ppei\D6\D0\D2\D1MASK\B5Äµã£¬\B5\AB\C9\D0Î´\B1\EA\BCÇ£\A8\BC\B4\B2\BB\CA\F4Ä³\C7\F8Ò²\B2\BB\CAÇ·\D6Ë®\C1ë£©;
 				{
 					imd[right] = curdist + 1; myqueue.push(right);
 				}
@@ -1144,23 +1163,23 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				{
 					if ( flagarr[up]>0 )
 					{
-						//ppeiÊôÓÚÄ³ÇøÓò£¨²»ÊÇ·ÖË®Áë£©£»
+						//ppei\CA\F4\D3\DAÄ³\C7\F8\D3ò£¨²\BB\CAÇ·\D6Ë®\C1ë£©\A3\BB
 						if ( (flagarr[p]==MASK) 
 							|| (flagarr[p]==WATERSHED) )
 						{
-							//½«ÆäÉèÎªÁÚµãËùÊôÇøÓò£»
+							//\BD\AB\C6\E4\C9\E8Îª\C1Úµ\E3\CB\F9\CA\F4\C7\F8\D3\F2\A3\BB
 							flagarr[p] = flagarr[up];
 						}else if (flagarr[p]!=flagarr[up])
 						{
-							//Ô­À´¸³µÄÇøÓëÏÖÔÚ¸³µÄÇø²»Í¬£¬ÉèÎª·ÖË®Áë£»
+							//Ô­\C0\B4\B8\B3\B5\C4\C7\F8\D3\EB\CF\D6\D4Ú¸\B3\B5\C4\C7\F8\B2\BBÍ¬\A3\AC\C9\E8Îª\B7\D6Ë®\C1ë£»
 							//flagarr[p] = WATERSHED;
 						}
-					}else if (flagarr[p]==MASK)//ppeiÎª·ÖÁë£»
+					}else if (flagarr[p]==MASK)//ppeiÎª\B7\D6\C1ë£»
 					{
 						flagarr[p] = WATERSHED;
 					}
 				}else if ( (flagarr[up]==MASK) && (imd[up]==0) )
-					//ppeiÖĞÒÑMASKµÄµã£¬µ«ÉĞÎ´±ê¼Ç£¨¼´²»ÊôÄ³ÇøÒ²²»ÊÇ·ÖË®Áë£©;
+					//ppei\D6\D0\D2\D1MASK\B5Äµã£¬\B5\AB\C9\D0Î´\B1\EA\BCÇ£\A8\BC\B4\B2\BB\CA\F4Ä³\C7\F8Ò²\B2\BB\CAÇ·\D6Ë®\C1ë£©;
 				{
 					imd[up] = curdist + 1; myqueue.push(up);
 				}
@@ -1174,40 +1193,40 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 				{
 					if ( flagarr[down]>0 )
 					{
-						//ppeiÊôÓÚÄ³ÇøÓò£¨²»ÊÇ·ÖË®Áë£©£»
+						//ppei\CA\F4\D3\DAÄ³\C7\F8\D3ò£¨²\BB\CAÇ·\D6Ë®\C1ë£©\A3\BB
 						if ( (flagarr[p]==MASK) 
 							|| (flagarr[p]==WATERSHED) )
 						{
-							//½«ÆäÉèÎªÁÚµãËùÊôÇøÓò£»
+							//\BD\AB\C6\E4\C9\E8Îª\C1Úµ\E3\CB\F9\CA\F4\C7\F8\D3\F2\A3\BB
 							flagarr[p] = flagarr[down];
 						}else if (flagarr[p]!=flagarr[down])
 						{
-							//Ô­À´¸³µÄÇøÓëÏÖÔÚ¸³µÄÇø²»Í¬£¬ÉèÎª·ÖË®Áë£»
+							//Ô­\C0\B4\B8\B3\B5\C4\C7\F8\D3\EB\CF\D6\D4Ú¸\B3\B5\C4\C7\F8\B2\BBÍ¬\A3\AC\C9\E8Îª\B7\D6Ë®\C1ë£»
 							//flagarr[p] = WATERSHED;
 						}
-					}else if (flagarr[p]==MASK)//ppeiÎª·ÖÁë£»
+					}else if (flagarr[p]==MASK)//ppeiÎª\B7\D6\C1ë£»
 					{
 						flagarr[p] = WATERSHED;
 					}
 				}else if ( (flagarr[down]==MASK) && (imd[down]==0) )
-					//ppeiÖĞÒÑMASKµÄµã£¬µ«ÉĞÎ´±ê¼Ç£¨¼È²»ÊôÄ³ÇøÒ²²»ÊÇ·ÖË®Áë£©;
+					//ppei\D6\D0\D2\D1MASK\B5Äµã£¬\B5\AB\C9\D0Î´\B1\EA\BCÇ£\A8\BCÈ²\BB\CA\F4Ä³\C7\F8Ò²\B2\BB\CAÇ·\D6Ë®\C1ë£©;
 				{
 					imd[down] = curdist + 1; myqueue.push(down);
 				}	
 			}
 
-		}//ÒÔÉÏÏÖÓĞÅèµØµÄÀ©Õ¹£»
+		}//\D2\D4\C9\CF\CF\D6\D3\D0\C5\E8\B5Øµ\C4\C0\A9Õ¹\A3\BB
 
-		//ÒÔÏÂ´¦ÀíĞÂ·¢ÏÖµÄÅèµØ£»
+		//\D2\D4\CFÂ´\A6\C0\ED\D0Â·\A2\CFÖµ\C4\C5\E8\B5Ø£\BB
 		for ( ini=stpos; ini<edpos; ini++)
 		{
 			int x = imiarr[ini].x;
 			int y = imiarr[ini].y;
 			int ipos = y*imageWidth + x;
-			imd[ipos] = 0;//ÖØÖÃËùÓĞ¾àÀë
+			imd[ipos] = 0;//\D6\D8\D6\C3\CB\F9\D3Ğ¾\E0\C0\EB
 			if (flagarr[ipos]==MASK)
 			{
-				//¾­¹ıÇ°ÊöÀ©Õ¹ºó¸ÃµãÈÔÎªMASK£¬Ôò¸Ãµã±ØÎªĞÂÅèµØµÄÒ»¸öÆğÊ¼µã;
+				//\BE\AD\B9\FDÇ°\CA\F6\C0\A9Õ¹\BA\F3\B8Ãµ\E3\C8\D4ÎªMASK\A3\AC\D4\F2\B8Ãµ\E3\B1\D8Îª\D0\C2\C5\E8\B5Øµ\C4Ò»\B8\F6\C6\F0Ê¼\B5\E3;
 				curlabel = curlabel + 1;
 				myqueue.push(ipos); 
 				flagarr[ipos] = curlabel;
@@ -1222,30 +1241,30 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 					int ppeileft = ppei - 1;
 					if ( (ppeix-1>=0) && (flagarr[ppeileft]==MASK) )
 					{
-						myqueue.push(ppeileft);//µãÎ»ÖÃÑ¹Èëfifo;
+						myqueue.push(ppeileft);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 						flagarr[ppeileft] = curlabel;
 					}
 					int ppeiright = ppei + 1;
 					if ( (ppeix+1<imageWidth) && (flagarr[ppeiright]==MASK) )
 					{
-						myqueue.push(ppeiright);//µãÎ»ÖÃÑ¹Èëfifo;
+						myqueue.push(ppeiright);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 						flagarr[ppeiright] = curlabel;
 					}
 					int ppeiup = ppei - imageWidth;
 					if ( (ppeiy-1>=0) && (flagarr[ppeiup]==MASK) )
 					{
-						myqueue.push(ppeiup);//µãÎ»ÖÃÑ¹Èëfifo;
+						myqueue.push(ppeiup);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 						flagarr[ppeiup] = curlabel;
 					}
 					int ppeidown = ppei + imageWidth;
 					if ( (ppeiy+1<imageHeight) && (flagarr[ppeidown]==MASK) )
 					{
-						myqueue.push(ppeidown);//µãÎ»ÖÃÑ¹Èëfifo;
+						myqueue.push(ppeidown);//\B5\E3Î»\D6\C3Ñ¹\C8\EBfifo;
 						flagarr[ppeidown] = curlabel;
 					}					
 				}				
 			}
-		}//ÒÔÉÏ´¦ÀíĞÂ·¢ÏÖµÄÅèµØ£»
+		}//\D2\D4\C9Ï´\A6\C0\ED\D0Â·\A2\CFÖµ\C4\C5\E8\B5Ø£\BB
 
 	}
 
@@ -1253,27 +1272,27 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 	delete [] imd; imd = NULL;
 }
 
-#define NearMeasureBias 200.0//ÅĞ¶¨ÇøÓòÑÕÉ«ÏàËÆµÄãĞÖµ£»
+#define NearMeasureBias 200.0//\C5Ğ¶\A8\C7\F8\D3\F2\D1\D5É«\CF\E0\CBÆµ\C4\E3\D0Öµ\A3\BB
 void  MergeRgs(MyRgnInfo* rginfoarr, int rgnumber, int* flag, int width, int height, int* outmerge, int& rgnum)
-//ºÏ²¢ÏàËÆÇøÓò£»
+//\BAÏ²\A2\CF\E0\CB\C6\C7\F8\D3\F2\A3\BB
 {
 	//////////////////////////////////////////////////////////////////////////
-	//1¡¢½¨Á¢¸÷ÇøµÄÁÚÓòÊı×é£»
-	//2¡¢ÒÀ´ÎÉ¨Ãè¸÷ÇøÓò£¬Ñ°ÕÒ¼«Ğ¡ÇøÓò£»
-	//3¡¢¶ÔÃ¿¸ö¼«Ğ¡Çø£¨A£©£¬ÔÚÏàÁÚÇøÖĞÕÒµ½×îÏàËÆÕß£»
-	//4¡¢ÓëÏàËÆÇø£¨B£©ºÏ²¢£¨¸÷ÖÖĞÅÏ¢Ë¢ĞÂ£©£¬ÔÚ¼«Ğ¡Çø£¨A£©µÄÁÚÓòÖĞ
-	//   É¾³ıÏàËÆÇø£¨B£©£¬ÔÚÁÚÓòÊı×éÖĞÉ¾³ıÏàËÆÇø£¨B£©¶ÔÓ¦µÄÏî£¬½«
-	//   ÏàËÆÇø£¨B£©µÄÏàÁÚÇøs¼Óµ½¼«Ğ¡Çø£¨A£©µÄÁÚÓòÖĞÈ¥£»
-	//5¡¢¼ÇÂ¼ºÏ²¢ĞÅÏ¢£¬ÉèÒ»Êı×é×¨ÃÅ´æ·Å¸ÃĞÅÏ¢£¬¸ÃÊı×éµÄµÚA¸öÔªËØÖµÉèÎªB£»
-	//6¡¢ÅĞ¶ÏÊÇ·ñÈÔÎª¼«Ğ¡Çø£¬ÈôÊÇÔò·µ»Ø3£»
-	//7¡¢ÊÇ·ñËùÓĞÇøÓò¶¼ÒÑ´¦ÀíÍê±Ï£¬Èô·ÇÔò·µ»Ø2£»
+	//1\A1\A2\BD\A8\C1\A2\B8\F7\C7\F8\B5\C4\C1\DA\D3\F2\CA\FD\D7é£»
+	//2\A1\A2\D2\C0\B4\CEÉ¨\C3\E8\B8\F7\C7\F8\D3\F2\A3\ACÑ°\D5Ò¼\ABĞ¡\C7\F8\D3\F2\A3\BB
+	//3\A1\A2\B6\D4Ã¿\B8\F6\BC\ABĞ¡\C7\F8\A3\A8A\A3\A9\A3\AC\D4\DA\CF\E0\C1\DA\C7\F8\D6\D0\D5Òµ\BD\D7\EE\CF\E0\CB\C6\D5ß£\BB
+	//4\A1\A2\D3\EB\CF\E0\CB\C6\C7\F8\A3\A8B\A3\A9\BAÏ²\A2\A3\A8\B8\F7\D6\D6\D0\C5Ï¢Ë¢\D0Â£\A9\A3\AC\D4Ú¼\ABĞ¡\C7\F8\A3\A8A\A3\A9\B5\C4\C1\DA\D3\F2\D6\D0
+	//   É¾\B3\FD\CF\E0\CB\C6\C7\F8\A3\A8B\A3\A9\A3\AC\D4\DA\C1\DA\D3\F2\CA\FD\D7\E9\D6\D0É¾\B3\FD\CF\E0\CB\C6\C7\F8\A3\A8B\A3\A9\B6\D4Ó¦\B5\C4\CFî£¬\BD\AB
+	//   \CF\E0\CB\C6\C7\F8\A3\A8B\A3\A9\B5\C4\CF\E0\C1\DA\C7\F8s\BCÓµ\BD\BC\ABĞ¡\C7\F8\A3\A8A\A3\A9\B5\C4\C1\DA\D3\F2\D6\D0È¥\A3\BB
+	//5\A1\A2\BC\C7Â¼\BAÏ²\A2\D0\C5Ï¢\A3\AC\C9\E8Ò»\CA\FD\D7\E9×¨\C3Å´\E6\B7Å¸\C3\D0\C5Ï¢\A3\AC\B8\C3\CA\FD\D7\E9\B5Äµ\DAA\B8\F6Ôª\CB\D8Öµ\C9\E8ÎªB\A3\BB
+	//6\A1\A2\C5Ğ¶\CF\CAÇ·\F1\C8\D4Îª\BC\ABĞ¡\C7\F8\A3\AC\C8\F4\CA\C7\D4ò·µ»\D83\A3\BB
+	//7\A1\A2\CAÇ·\F1\CB\F9\D3\D0\C7\F8\D3\F2\B6\BC\D2Ñ´\A6\C0\ED\CD\EA\B1Ï£\AC\C8\F4\B7\C7\D4ò·µ»\D82\A3\BB
 	//
-	//   ÓÉÓÚ¸÷ÇøµÄÏàÁÚÇø²»»áÌ«¶à£¬Òò´Ë²ÉÓÃÁÚ½ÓÊı×é×÷Îª´æ´¢½á¹¹£»
+	//   \D3\C9\D3Ú¸\F7\C7\F8\B5\C4\CF\E0\C1\DA\C7\F8\B2\BB\BB\E1Ì«\B6à£¬\D2\F2\B4Ë²\C9\D3\C3\C1Ú½\D3\CA\FD\D7\E9\D7\F7Îª\B4æ´¢\BDá¹¹\A3\BB
 	//////////////////////////////////////////////////////////////////////////
-	CString* neiarr = new CString[rgnumber+1];//µÚÒ»¸ö²»ÓÃ£»
-	int* mergearr = outmerge;//¼ÇÂ¼ºÏ²¢Çé¿öÊı×é£»
+	CString* neiarr = new CString[rgnumber+1];//\B5\DAÒ»\B8\F6\B2\BB\D3Ã£\BB
+	int* mergearr = outmerge;//\BC\C7Â¼\BAÏ²\A2\C7\E9\BF\F6\CA\FD\D7é£»
 	MyMath myMath;
-	//½¨Á¢ÁÚÓòÊı×é£»
+	//\BD\A8\C1\A2\C1\DA\D3\F2\CA\FD\D7é£»
 	for (int y=0; y<height; y++)
 	{
 		int lstart = y * width;
@@ -1282,38 +1301,38 @@ void  MergeRgs(MyRgnInfo* rginfoarr, int rgnumber, int* flag, int width, int hei
 			int pos = lstart + x;
 			int left=-1, right=-1, up=-1, down=-1;
 			myMath.GetNeiInt(x, y, pos, width, height
-		, left, right, up, down);//ÕÒposµÄËÄ¸öÁÚÓò£»
-			//È·¶¨²¢Ë¢ĞÂÁÚÓòÇøĞÅÏ¢£»
+		, left, right, up, down);//\D5\D2pos\B5\C4\CBÄ¸\F6\C1\DA\D3\F2\A3\BB
+			//È·\B6\A8\B2\A2Ë¢\D0\C2\C1\DA\D3\F2\C7\F8\D0\C5Ï¢\A3\BB
 			int curid = flag[pos];
 			AddNeiOfCur(curid, left, right
 				, up, down, flag, neiarr);
 		}
-	}//½¨Á¢ÁÚÓòÊı×é£»
+	}//\BD\A8\C1\A2\C1\DA\D3\F2\CA\FD\D7é£»
 	
-	//ÇøÓòĞÅÏ¢Êı×éÖĞµÄÓĞĞ§ĞÅÏ¢´Ó1¿ªÊ¼£¬µÚi¸öÎ»ÖÃ´æ·ÅµÚi¸öÇøÓòµÄĞÅÏ¢£»
+	//\C7\F8\D3\F2\D0\C5Ï¢\CA\FD\D7\E9\D6Ğµ\C4\D3\D0Ğ§\D0\C5Ï¢\B4\D31\BF\AAÊ¼\A3\AC\B5\DAi\B8\F6Î»\D6Ã´\E6\B7Åµ\DAi\B8\F6\C7\F8\D3\F2\B5\C4\D0\C5Ï¢\A3\BB
 	for (int rgi=1; rgi<=rgnumber; rgi++)
 	{
-		//É¨ÃèËùÓĞÇøÓò£¬ÕÒ¼«Ğ¡Çø£»
+		//É¨\C3\E8\CB\F9\D3\D0\C7\F8\D3\F2\A3\AC\D5Ò¼\ABĞ¡\C7\F8\A3\BB
 		LONG allpoints = width * height;
 		LONG nmin = (LONG) (allpoints / 400);
 		int curid = rgi;
 
-		//rginfoarr[rgi].isflag³õÊ¼ÎªFALSE£¬ÔÚ±»ºÏ²¢µ½ÆäËüÇøºó¸ÄÎªTRUE£»
+		//rginfoarr[rgi].isflag\B3\F5Ê¼ÎªFALSE\A3\AC\D4Ú±\BB\BAÏ²\A2\B5\BD\C6\E4\CB\FC\C7\F8\BA\F3\B8\C4ÎªTRUE\A3\BB
 		while ( ( (rginfoarr[rgi].ptcount)<nmin ) 
 			&& !rginfoarr[rgi].isflag )
 		{
-			//¸ÃÇøÎª¼«Ğ¡Çø£¬±éÀúËùÓĞÏàÁÚÇø£¬ÕÒ×î½Ó½üÕß£»
+			//\B8\C3\C7\F8Îª\BC\ABĞ¡\C7\F8\A3\AC\B1\E9\C0\FA\CB\F9\D3\D0\CF\E0\C1\DA\C7\F8\A3\AC\D5\D2\D7\EE\BDÓ½\FC\D5ß£\BB
 			CString neistr = neiarr[curid];
 			int nearid = FindNearestNei(curid, neistr, rginfoarr, mergearr);
-			//ºÏ²¢curidÓënearid£»
+			//\BAÏ²\A2curid\D3\EBnearid\A3\BB
 			MergeTwoRgn(curid, nearid, neiarr
 				, rginfoarr, mergearr);			
 		} 
 	}
 
-	//ÒÔÏÂÔÙºÏ²¢ÏàËÆÇøÓò£¬£¨ÎŞÂÛ´óĞ¡£©,Èç¹û²»ĞèÒª£¬Ö±½Ó½«Õû¸öÑ­»·×¢ÊÍµô¾ÍĞĞÁË£»
+	//\D2\D4\CF\C2\D4ÙºÏ²\A2\CF\E0\CB\C6\C7\F8\D3ò£¬£\A8\CE\DE\C2Û´\F3Ğ¡\A3\A9,\C8\E7\B9\FB\B2\BB\D0\E8Òª\A3\ACÖ±\BDÓ½\AB\D5\FB\B8\F6Ñ­\BB\B7×¢\CAÍµ\F4\BE\CD\D0\D0\C1Ë£\BB
 	int countjjj = 0;
-	//ÇøÓòĞÅÏ¢Êı×éÖĞµÄÓĞĞ§ĞÅÏ¢´Ó1¿ªÊ¼£¬µÚi¸öÎ»ÖÃ´æ·ÅµÚi¸öÇøÓòµÄĞÅÏ¢£»
+	//\C7\F8\D3\F2\D0\C5Ï¢\CA\FD\D7\E9\D6Ğµ\C4\D3\D0Ğ§\D0\C5Ï¢\B4\D31\BF\AAÊ¼\A3\AC\B5\DAi\B8\F6Î»\D6Ã´\E6\B7Åµ\DAi\B8\F6\C7\F8\D3\F2\B5\C4\D0\C5Ï¢\A3\BB
 	for (int ii=1; ii<=rgnumber; ii++)
 	{
 		if (!rginfoarr[ii].isflag)
@@ -1339,7 +1358,7 @@ void  MergeRgs(MyRgnInfo* rginfoarr, int rgnumber, int* flag, int width, int hei
 	delete [] neiarr; neiarr = NULL;
 }
 int FindMergedRgn(int idint, int* mergearr)
-//ÕÒµ½idint×îÖÕËùºÏ²¢µ½µÄÇøºÅ£»
+//\D5Òµ\BDidint\D7\EE\D6\D5\CB\F9\BAÏ²\A2\B5\BD\B5\C4\C7\F8\BAÅ£\BB
 {
 	int outid = idint;
 	while ( mergearr[outid] > 0 )
@@ -1349,20 +1368,20 @@ int FindMergedRgn(int idint, int* mergearr)
 	return outid;
 }
 void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergearr)
-//ºÏ²¢ÏàËÆÇøÓò£»
+//\BAÏ²\A2\CF\E0\CB\C6\C7\F8\D3\F2\A3\BB
 {
-	//ÒÀ´Î´¦Àí¸÷¸öÁÚÓò£¬ÈôÏàËÆ£¬ÔòºÏ²¢£»
+	//\D2\C0\B4Î´\A6\C0\ED\B8\F7\B8\F6\C1\DA\D3\F2\A3\AC\C8\F4\CF\E0\CBÆ£\AC\D4\F2\BAÏ²\A2\A3\BB
 	//CString neistr = neiarr[curid];
 	FLOAT cl, cu, cv;
-	cl = rginfoarr[curid].l;//µ±Ç°ÇøµÄLUVÖµ£»
+	cl = rginfoarr[curid].l;//\B5\B1Ç°\C7\F8\B5\C4LUVÖµ\A3\BB
 	cu = rginfoarr[curid].u;
 	cv = rginfoarr[curid].v;
-	BOOL loopmerged = TRUE;//Ò»´ÎÑ­»·ÖĞÊÇ·ñÓĞºÏ²¢²Ù×÷·¢Éú£¬ÈôÎŞ£¬ÔòÍË³öÑ­»·£»
+	BOOL loopmerged = TRUE;//Ò»\B4\CEÑ­\BB\B7\D6\D0\CAÇ·\F1\D3ĞºÏ²\A2\B2\D9\D7\F7\B7\A2\C9\FA\A3\AC\C8\F4\CEŞ£\AC\D4\F2\CDË³\F6Ñ­\BB\B7\A3\BB
 
 	while (loopmerged)
 	{
 		loopmerged = FALSE;
-		CString tempstr = neiarr[curid];//ÓÃÓÚ±¾º¯ÊıÄÚ²¿´¦Àí£»
+		CString tempstr = neiarr[curid];//\D3\C3\D3Ú±\BE\BA\AF\CA\FD\C4Ú²\BF\B4\A6\C0\ED\A3\BB
 		while (tempstr.GetLength()>0)
 		{
 			int pos = tempstr.Find(" ");
@@ -1371,14 +1390,14 @@ void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergea
 			tempstr.Delete(0, pos+1);
 			
 			int idint = (int) strtol(idstr, NULL, 10);
-			//ÅĞ¶Ï¸ÃÇøÊÇ·ñÒÑ±»ºÏ²¢£¬ÈôÊÇ£¬ÔòÒ»Ö±ÕÒµ½¸ÃÇøµ±Ç°µÄÇøºÅ£»
+			//\C5Ğ¶Ï¸\C3\C7\F8\CAÇ·\F1\D2Ñ±\BB\BAÏ²\A2\A3\AC\C8\F4\CAÇ£\AC\D4\F2Ò»Ö±\D5Òµ\BD\B8\C3\C7\F8\B5\B1Ç°\B5\C4\C7\F8\BAÅ£\BB
 			idint = FindMergedRgn(idint, mergearr);
 			if (idint==curid)
 			{
-				continue;//Õâ¸öÁÚÇøÒÑ±»ºÏ²¢µ½µ±Ç°Çø£¬Ìø¹ı£»
+				continue;//\D5\E2\B8\F6\C1\DA\C7\F8\D2Ñ±\BB\BAÏ²\A2\B5\BD\B5\B1Ç°\C7\F8\A3\AC\CC\F8\B9\FD\A3\BB
 			}
 			FLOAT tl, tu, tv;
-			tl = rginfoarr[idint].l;//µ±Ç°´¦ÀíµÄÁÚÇøµÄLUVÖµ;
+			tl = rginfoarr[idint].l;//\B5\B1Ç°\B4\A6\C0\ED\B5\C4\C1\DA\C7\F8\B5\C4LUVÖµ;
 			tu = rginfoarr[idint].u;
 			tv = rginfoarr[idint].v;
 			DOUBLE tempdis = pow(tl-cl, 2) 
@@ -1386,7 +1405,7 @@ void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergea
 			if (tempdis<NearMeasureBias)
 			{
 				MergeTwoRgn(curid, idint, neiarr, rginfoarr, mergearr);
-				cl = rginfoarr[curid].l;//µ±Ç°ÇøµÄLUVÖµË¢ĞÂ£»
+				cl = rginfoarr[curid].l;//\B5\B1Ç°\C7\F8\B5\C4LUVÖµË¢\D0Â£\BB
 				cu = rginfoarr[curid].u;
 				cv = rginfoarr[curid].v;
 				loopmerged = TRUE;
@@ -1397,11 +1416,11 @@ void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergea
 
 void  MergeTwoRgn(int curid, int nearid
 	, CString* neiarr, MyRgnInfo* rginfoarr, int* mergearr)
-//½«nearidºÏ²¢µ½curidÖĞÈ¥£¬¸üĞÂºÏ²¢ºóµÄÇøĞÅÏ¢£¬²¢¼ÇÂ¼¸ÃºÏ²¢£»
+//\BD\ABnearid\BAÏ²\A2\B5\BDcurid\D6\D0È¥\A3\AC\B8\FC\D0ÂºÏ²\A2\BA\F3\B5\C4\C7\F8\D0\C5Ï¢\A3\AC\B2\A2\BC\C7Â¼\B8ÃºÏ²\A2\A3\BB
 {
-	//½«ÇøĞÅÏ¢ÖĞnearid¶ÔÓ¦ÏîµÄ±ê¼ÇÉèÎªÒÑ±»ºÏ²¢£»
+	//\BD\AB\C7\F8\D0\C5Ï¢\D6\D0nearid\B6\D4Ó¦\CF\EE\B5Ä±\EA\BC\C7\C9\E8Îª\D2Ñ±\BB\BAÏ²\A2\A3\BB
 	rginfoarr[nearid].isflag = TRUE;
-	//¸üĞÂºÏ²¢ºóµÄLUVĞÅÏ¢£»
+	//\B8\FC\D0ÂºÏ²\A2\BA\F3\B5\C4LUV\D0\C5Ï¢\A3\BB
 	LONG ptincur = rginfoarr[curid].ptcount;
 	LONG ptinnear = rginfoarr[nearid].ptcount;
 	DOUBLE curpercent = (FLOAT)ptincur / (FLOAT)(ptincur+ptinnear);
@@ -1412,16 +1431,16 @@ void  MergeTwoRgn(int curid, int nearid
 		+ (1-curpercent) * rginfoarr[nearid].u );
 	rginfoarr[curid].v = (FLOAT) ( curpercent * rginfoarr[curid].v
 		+ (1-curpercent) * rginfoarr[nearid].v );
-	//½«nearidµÄÁÚÓò¼Óµ½curidµÄÁÚÓòÖĞÈ¥£»
+	//\BD\ABnearid\B5\C4\C1\DA\D3\F2\BCÓµ\BDcurid\B5\C4\C1\DA\D3\F2\D6\D0È¥\A3\BB
 	AddBNeiToANei(curid, nearid, neiarr, mergearr);
-	//¼ÇÂ¼¸ÃºÏ²¢£»
+	//\BC\C7Â¼\B8ÃºÏ²\A2\A3\BB
 	mergearr[nearid] = curid;
 }
 
 void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
-//½«nearidµÄÁÚÓò¼Óµ½curidµÄÁÚÓòÖĞÈ¥£»
+//\BD\ABnearid\B5\C4\C1\DA\D3\F2\BCÓµ\BDcurid\B5\C4\C1\DA\D3\F2\D6\D0È¥\A3\BB
 {
-	//ÏÈ´ÓcuridµÄÁÚÇøÖĞ°ÑnearidÉ¾È¥£»
+	//\CFÈ´\D3curid\B5\C4\C1\DA\C7\F8\D6Ğ°\D1nearidÉ¾È¥\A3\BB
 /*
 	CString tempstr;
 	tempstr.Format("%d ", nearid);
@@ -1432,15 +1451,15 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 	}
 	if (temppos>=0)
 	{
-		//·ñÔòÁÚ½üÇøÎªºÏ²¢¹ıÀ´µÄÇø£¬ºöÂÔ£»
+		//\B7\F1\D4\F2\C1Ú½\FC\C7\F8Îª\BAÏ²\A2\B9\FD\C0\B4\B5\C4\C7\F8\A3\AC\BA\F6\C2Ô£\BB
 		neiarr[curid].Delete(temppos, tempstr.GetLength());
 	}
 */
-    //½«nearidµÄÁÚÇøÒÀ´Î¼Óµ½curidµÄÁÚÇøÖĞÈ¥£»
+    //\BD\ABnearid\B5\C4\C1\DA\C7\F8\D2\C0\B4Î¼Óµ\BDcurid\B5\C4\C1\DA\C7\F8\D6\D0È¥\A3\BB
 	CString neistr = neiarr[nearid];
 	CString curstr = neiarr[curid];
-	//Ò»°ãËµÀ´£¬¼«Ğ¡ÇøµÄÁÚÓòÓ¦¸Ã½ÏÉÙ£¬Òò´Ë£¬Îª×ÅÌá¸ßºÏ²¢ËÙ¶È£¬½«
-	//curstr¼Óµ½neistrÖĞÈ¥£¬È»ºó½«½á¹û¸³¸øneiarr[curid];
+	//Ò»\B0\E3Ëµ\C0\B4\A3\AC\BC\ABĞ¡\C7\F8\B5\C4\C1\DA\D3\F2Ó¦\B8Ã½\CF\C9Ù£\AC\D2\F2\B4Ë£\ACÎª\D7\C5\CC\E1\B8ßºÏ²\A2\CBÙ¶È£\AC\BD\AB
+	//curstr\BCÓµ\BDneistr\D6\D0È¥\A3\ACÈ»\BAó½«½\E1\B9\FB\B8\B3\B8\F8neiarr[curid];
 	while ( curstr.GetLength()>0 )
 	{
 		int pos = curstr.Find(" ");		
@@ -1452,7 +1471,7 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 		idstr += " ";
 		if ( (idint == curid) || (idint == nearid) )
 		{
-			continue;//±¾Çø²»Óë±¾ÇøÏàÁÚ£»
+			continue;//\B1\BE\C7\F8\B2\BB\D3ë±¾\C7\F8\CF\E0\C1Ú£\BB
 		}else
 		{
 			if ( neistr.Find(idstr, 0) >= 0 )
@@ -1460,7 +1479,7 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 				continue;
 			}else
 			{
-				neistr += idstr;//¼Óµ½ÁÚÇøÖĞÈ¥;
+				neistr += idstr;//\BCÓµ\BD\C1\DA\C7\F8\D6\D0È¥;
 			}
 		}		
 	}
@@ -1478,7 +1497,7 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 		idstr += " ";
 		if ( (idint == curid) || (idint == nearid) )
 		{
-			continue;//±¾Çø²»Óë±¾ÇøÏàÁÚ£»
+			continue;//\B1\BE\C7\F8\B2\BB\D3ë±¾\C7\F8\CF\E0\C1Ú£\BB
 		}else
 		{
 			if ( neiarr[curid].Find(idstr, 0) >= 0 )
@@ -1486,7 +1505,7 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 				continue;
 			}else
 			{
-				neiarr[curid] += idstr;//¼Óµ½ÁÚÇøÖĞÈ¥;
+				neiarr[curid] += idstr;//\BCÓµ\BD\C1\DA\C7\F8\D6\D0È¥;
 			}
 		}		
 	}
@@ -1495,16 +1514,16 @@ void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
 
 
 int  FindNearestNei(int curid, CString neistr, MyRgnInfo* rginfoarr, int* mergearr)
-//Ñ°ÕÒneistrÖĞÓëcurid×î½Ó½üµÄÇø£¬·µ»Ø¸ÃÇøidºÅ£»
+//Ñ°\D5\D2neistr\D6\D0\D3\EBcurid\D7\EE\BDÓ½\FC\B5\C4\C7\F8\A3\AC\B7\B5\BBØ¸\C3\C7\F8id\BAÅ£\BB
 {
 	int outid = -1;
 	DOUBLE mindis = 999999;
 	FLOAT cl, cu, cv;
-	cl = rginfoarr[curid].l;//µ±Ç°ÇøµÄLUVÖµ£»
+	cl = rginfoarr[curid].l;//\B5\B1Ç°\C7\F8\B5\C4LUVÖµ\A3\BB
 	cu = rginfoarr[curid].u;
 	cv = rginfoarr[curid].v;
 
-	CString tempstr = neistr;//ÓÃÓÚ±¾º¯ÊıÄÚ²¿´¦Àí£»
+	CString tempstr = neistr;//\D3\C3\D3Ú±\BE\BA\AF\CA\FD\C4Ú²\BF\B4\A6\C0\ED\A3\BB
 	while (tempstr.GetLength()>0)
 	{
 		int pos = tempstr.Find(" ");
@@ -1513,21 +1532,21 @@ int  FindNearestNei(int curid, CString neistr, MyRgnInfo* rginfoarr, int* mergea
 		tempstr.Delete(0, pos+1);
 
 		int idint = (int) strtol(idstr, NULL, 10);
-		//ÅĞ¶Ï¸ÃÇøÊÇ·ñÒÑ±»ºÏ²¢£¬ÈôÊÇ£¬ÔòÒ»Ö±ÕÒµ½¸ÃÇøµ±Ç°µÄÇøºÅ£»
+		//\C5Ğ¶Ï¸\C3\C7\F8\CAÇ·\F1\D2Ñ±\BB\BAÏ²\A2\A3\AC\C8\F4\CAÇ£\AC\D4\F2Ò»Ö±\D5Òµ\BD\B8\C3\C7\F8\B5\B1Ç°\B5\C4\C7\F8\BAÅ£\BB
 		idint = FindMergedRgn(idint, mergearr);
 		if (idint==curid)
 		{
-			continue;//Õâ¸öÁÚÇøÒÑ±»ºÏ²¢µ½µ±Ç°Çø£¬Ìø¹ı£»
+			continue;//\D5\E2\B8\F6\C1\DA\C7\F8\D2Ñ±\BB\BAÏ²\A2\B5\BD\B5\B1Ç°\C7\F8\A3\AC\CC\F8\B9\FD\A3\BB
 		}
 		FLOAT tl, tu, tv;
-		tl = rginfoarr[idint].l;//µ±Ç°´¦ÀíµÄÁÚÇøµÄLUVÖµ;
+		tl = rginfoarr[idint].l;//\B5\B1Ç°\B4\A6\C0\ED\B5\C4\C1\DA\C7\F8\B5\C4LUVÖµ;
 		tu = rginfoarr[idint].u;
 		tv = rginfoarr[idint].v;
 		DOUBLE tempdis = pow(tl-cl, 2) 
 			+ pow(tu-cu, 2) + pow(tv-cv, 2);
 		if (tempdis<mindis)
 		{
-			mindis = tempdis;//×î´ó¾àÀëºÍ¶ÔÓ¦µÄÏàÁÚÇøID£»
+			mindis = tempdis;//\D7\EE\B4\F3\BE\E0\C0\EB\BAÍ¶\D4Ó¦\B5\C4\CF\E0\C1\DA\C7\F8ID\A3\BB
 			outid = idint;
 		}		
 	}
@@ -1536,9 +1555,9 @@ int  FindNearestNei(int curid, CString neistr, MyRgnInfo* rginfoarr, int* mergea
 }
 
 int  FindMergedRgnMaxbias(int idint, int* mergearr, int bias)
-//´óãĞÖµÖÕÖ¹²éÕÒºÏ²¢Çø£¬ÓÃÓÚcoarse watershed, 
-//µ÷ÓÃÕß±ØĞë±£Ö¤idintÓĞĞ§£¬¼´£ºmergearr[idint]>0£»
-//ÒÔ¼°mergearrÓĞĞ§£¬¼´£ºmergearr[idint]<idint;
+//\B4\F3\E3\D0Öµ\D6\D5Ö¹\B2\E9\D5ÒºÏ²\A2\C7\F8\A3\AC\D3\C3\D3\DAcoarse watershed, 
+//\B5\F7\D3\C3\D5ß±\D8\D0ë±£Ö¤idint\D3\D0Ğ§\A3\AC\BC\B4\A3\BAmergearr[idint]>0\A3\BB
+//\D2Ô¼\B0mergearr\D3\D0Ğ§\A3\AC\BC\B4\A3\BAmergearr[idint]<idint;
 {
 	int outid = idint;
 	while ( mergearr[outid]<bias )
@@ -1550,9 +1569,9 @@ int  FindMergedRgnMaxbias(int idint, int* mergearr, int bias)
 
 
 void  AddNeiRgn(int curid, int neiid, CString* neiarr)
-//Ôö¼ÓneiidÎªcuridµÄÏàÁÚÇø
+//\D4\F6\BC\D3neiidÎªcurid\B5\C4\CF\E0\C1\DA\C7\F8
 {
-	CString tempneis = neiarr[curid];//µ±Ç°µÄÏàÁÚÇø£»
+	CString tempneis = neiarr[curid];//\B5\B1Ç°\B5\C4\CF\E0\C1\DA\C7\F8\A3\BB
 	CString toaddstr;
 	toaddstr.Format("%d ", neiid);
 
@@ -1564,13 +1583,13 @@ void  AddNeiRgn(int curid, int neiid, CString* neiarr)
 	
 	if ( temppos<0 )
 	{
-		//µ±Ç°ÏàÁÚÇøÖĞÃ»ÓĞtempneis,Ôò¼ÓÈë
+		//\B5\B1Ç°\CF\E0\C1\DA\C7\F8\D6\D0Ã»\D3\D0tempneis,\D4\F2\BC\D3\C8\EB
 		neiarr[curid] += toaddstr;
 	}
 }
 
 void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, CString* neiarr)
-//Ë¢ĞÂµ±Ç°µãµÄËùÓĞÏàÁÚÇø£»
+//Ë¢\D0Âµ\B1Ç°\B5\E3\B5\C4\CB\F9\D3\D0\CF\E0\C1\DA\C7\F8\A3\BB
 {
 	int leftid, rightid, upid, downid;
 	leftid = rightid = upid = downid = curid;
@@ -1579,7 +1598,7 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		leftid = flag[left];
 		if (leftid!=curid)
 		{
-			//ÁÚµãÊôÓÚÁíÒ»Çø, ¼ÓÁÚÓòµãĞÅÏ¢£»
+			//\C1Úµ\E3\CA\F4\D3\DA\C1\EDÒ»\C7\F8, \BC\D3\C1\DA\D3\F2\B5\E3\D0\C5Ï¢\A3\BB
 			AddNeiRgn(curid, leftid, neiarr);
 		}
 	}
@@ -1588,7 +1607,7 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		rightid = flag[right];
 		if (rightid!=curid)
 		{
-			//ÁÚµãÊôÓÚÁíÒ»Çø, ¼ÓÁÚÓòµãĞÅÏ¢£»
+			//\C1Úµ\E3\CA\F4\D3\DA\C1\EDÒ»\C7\F8, \BC\D3\C1\DA\D3\F2\B5\E3\D0\C5Ï¢\A3\BB
 			AddNeiRgn(curid, rightid, neiarr);
 		}
 	}
@@ -1597,7 +1616,7 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		upid = flag[up];
 		if (upid!=curid)
 		{
-			//ÁÚµãÊôÓÚÁíÒ»Çø, ¼ÓÁÚÓòµãĞÅÏ¢£»
+			//\C1Úµ\E3\CA\F4\D3\DA\C1\EDÒ»\C7\F8, \BC\D3\C1\DA\D3\F2\B5\E3\D0\C5Ï¢\A3\BB
 			AddNeiRgn(curid, upid, neiarr);
 		}
 	}
@@ -1606,51 +1625,51 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		downid = flag[down];
 		if (downid!=curid)
 		{
-			//ÁÚµãÊôÓÚÁíÒ»Çø, ¼ÓÁÚÓòµãĞÅÏ¢£»
+			//\C1Úµ\E3\CA\F4\D3\DA\C1\EDÒ»\C7\F8, \BC\D3\C1\DA\D3\F2\B5\E3\D0\C5Ï¢\A3\BB
 			AddNeiRgn(curid, downid, neiarr);
 		}
 	}
 }
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   RegionSegFixThreshold()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib					- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   int nThreshold					- ÇøÓò·Ö¸îµÄãĞÖµ
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib					- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   int nThreshold					- \C7\F8\D3\F2\B7Ö¸\EE\B5\C4\E3\D0Öµ
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   1£¨Âß¼­£©±íÊ¾¶ÔÓ¦ÏóËØÎªÇ°¾°ÇøÓò£¬0±íÊ¾±³¾°
- *   ãĞÖµ·Ö¸îµÄ¹Ø¼üÎÊÌâÔÚÓÚãĞÖµµÄÑ¡È¡¡£ãĞÖµµÄÑ¡È¡Ò»°ãÓ¦¸ÃÊÓÊµ¼ÊµÄÓ¦ÓÃ¶ø
- *   Áé»îÉè¶¨¡£
+ * \Ëµ\C3\F7:
+ *   1\A3\A8\C2ß¼\AD\A3\A9\B1\EDÊ¾\B6\D4Ó¦\CF\F3\CB\D8ÎªÇ°\BE\B0\C7\F8\D3\F2\A3\AC0\B1\EDÊ¾\B1\B3\BE\B0
+ *   \E3\D0Öµ\B7Ö¸\EE\B5Ä¹Ø¼\FC\CE\CA\CC\E2\D4\DA\D3\DA\E3\D0Öµ\B5\C4Ñ¡È¡\A1\A3\E3\D0Öµ\B5\C4Ñ¡È¡Ò»\B0\E3Ó¦\B8\C3\CA\D3Êµ\BCÊµ\C4Ó¦\D3Ã¶\F8
+ *   \C1\E9\BB\EE\C9è¶¨\A1\A3
  *
  *************************************************************************
  */
 /*void RegionSegFixThreshold(CDIB * pDib, int nThreshold)
 {
-	//±éÀúÍ¼ÏóµÄ×İ×ø±ê
+	//\B1\E9\C0\FAÍ¼\CF\F3\B5\C4\D7\DD\D7\F8\B1\EA
 	int y;
 
-	//±éÀúÍ¼ÏóµÄºá×ø±ê
+	//\B1\E9\C0\FAÍ¼\CF\F3\B5Äº\E1\D7\F8\B1\EA
 	int x;
 
-	//Í¼ÏóµÄ³¤¿í´óĞ¡
+	//Í¼\CF\F3\B5Ä³\A4\BF\ED\B4\F3Ğ¡
 	CSize sizeImage		= pDib->GetDimensions();
 	int nWidth			= sizeImage.cx		;
 	int nHeight			= sizeImage.cy		;
 
-	//Í¼ÏñÔÚ¼ÆËã»úÔÚ´æ´¢ÖĞµÄÊµ¼Ê´óĞ¡
+	//Í¼\CF\F1\D4Ú¼\C6\CB\E3\BB\FA\D4Ú´æ´¢\D6Ğµ\C4Êµ\BCÊ´\F3Ğ¡
 	CSize sizeImageSave	= pDib->GetDibSaveDim();
 
-	//Í¼ÏñÔÚÄÚ´æÖĞÃ¿Ò»ĞĞÏóËØÕ¼ÓÃµÄÊµ¼Ê¿Õ¼ä
+	//Í¼\CF\F1\D4\DA\C4Ú´\E6\D6\D0Ã¿Ò»\D0\D0\CF\F3\CB\D8Õ¼\D3Ãµ\C4Êµ\BCÊ¿Õ¼\E4
 	int nSaveWidth = sizeImageSave.cx;
 
 	
-	//Í¼ÏñÊı¾İµÄÖ¸Õë
+	//Í¼\CF\F1\CA\FD\BEİµ\C4Ö¸\D5\EB
 	LPBYTE  pImageData = pDib->m_lpImage;
 
 	for(y=0; y<nHeight ; y++ )
@@ -1663,74 +1682,74 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   RegionSegAdaptive()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib					- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib					- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   1£¨Âß¼­£©±íÊ¾¶ÔÓ¦ÏóËØÎªÇ°¾°ÇøÓò£¬0±íÊ¾±³¾°
- *   ãĞÖµ·Ö¸îµÄ¹Ø¼üÎÊÌâÔÚÓÚãĞÖµµÄÑ¡È¡¡£ãĞÖµµÄÑ¡È¡Ò»°ãÓ¦¸ÃÊÓÊµ¼ÊµÄÓ¦ÓÃ¶ø
- *   Áé»îÉè¶¨¡£±¾º¯ÊıÖĞ£¬ãĞÖµ²»ÊÇ¹Ì¶¨µÄ£¬¶øÊÇ¸ù¾İÍ¼ÏóÏóËØµÄÊµ¼ÊĞÔÖÊ¶øÉè¶¨µÄ¡£
- *   Õâ¸öº¯Êı°ÑÍ¼Ïñ·Ö³ÉËÄ¸ö×ÓÍ¼Ïó£¬È»ºó¼ÆËãÃ¿¸ö×ÓÍ¼ÏóµÄ¾ùÖµ£¬¸ù¾İ¾ùÖµÉèÖÃãĞÖµ
- *   ãĞÖµÖ»ÊÇÓ¦ÓÃÔÚ¶ÔÓ¦µÄ×ÓÍ¼Ïó
+ * \Ëµ\C3\F7:
+ *   1\A3\A8\C2ß¼\AD\A3\A9\B1\EDÊ¾\B6\D4Ó¦\CF\F3\CB\D8ÎªÇ°\BE\B0\C7\F8\D3\F2\A3\AC0\B1\EDÊ¾\B1\B3\BE\B0
+ *   \E3\D0Öµ\B7Ö¸\EE\B5Ä¹Ø¼\FC\CE\CA\CC\E2\D4\DA\D3\DA\E3\D0Öµ\B5\C4Ñ¡È¡\A1\A3\E3\D0Öµ\B5\C4Ñ¡È¡Ò»\B0\E3Ó¦\B8\C3\CA\D3Êµ\BCÊµ\C4Ó¦\D3Ã¶\F8
+ *   \C1\E9\BB\EE\C9è¶¨\A1\A3\B1\BE\BA\AF\CA\FD\D6Ğ£\AC\E3\D0Öµ\B2\BB\CAÇ¹Ì¶\A8\B5Ä£\AC\B6\F8\CAÇ¸\F9\BE\DDÍ¼\CF\F3\CF\F3\CBØµ\C4Êµ\BC\CA\D0\D4\D6Ê¶\F8\C9è¶¨\B5Ä¡\A3
+ *   \D5\E2\B8\F6\BA\AF\CA\FD\B0\D1Í¼\CF\F1\B7Ö³\C9\CBÄ¸\F6\D7\D3Í¼\CF\F3\A3\ACÈ»\BA\F3\BC\C6\CB\E3Ã¿\B8\F6\D7\D3Í¼\CF\F3\B5Ä¾\F9Öµ\A3\AC\B8\F9\BEİ¾\F9Öµ\C9\E8\D6\C3\E3\D0Öµ
+ *   \E3\D0ÖµÖ»\CA\C7Ó¦\D3\C3\D4Ú¶\D4Ó¦\B5\C4\D7\D3Í¼\CF\F3
  *
  *************************************************************************
  */
 /*void RegionSegAdaptive(CDIB * pDib)
 {
-	//±éÀúÍ¼ÏóµÄ×İ×ø±ê
+	//\B1\E9\C0\FAÍ¼\CF\F3\B5\C4\D7\DD\D7\F8\B1\EA
 	int y;
 
-	//±éÀúÍ¼ÏóµÄºá×ø±ê
+	//\B1\E9\C0\FAÍ¼\CF\F3\B5Äº\E1\D7\F8\B1\EA
 	int x;
 
-	//Í¼ÏóµÄ³¤¿í´óĞ¡
+	//Í¼\CF\F3\B5Ä³\A4\BF\ED\B4\F3Ğ¡
 	CSize sizeImage		= pDib->GetDimensions();
 	int nWidth			= sizeImage.cx		;
 	int nHeight			= sizeImage.cy		;
 
-	//Í¼ÏñÔÚ¼ÆËã»úÔÚ´æ´¢ÖĞµÄÊµ¼Ê´óĞ¡
+	//Í¼\CF\F1\D4Ú¼\C6\CB\E3\BB\FA\D4Ú´æ´¢\D6Ğµ\C4Êµ\BCÊ´\F3Ğ¡
 	CSize sizeImageSave	= pDib->GetDibSaveDim();
 
-	//Í¼ÏñÔÚÄÚ´æÖĞÃ¿Ò»ĞĞÏóËØÕ¼ÓÃµÄÊµ¼Ê¿Õ¼ä
+	//Í¼\CF\F1\D4\DA\C4Ú´\E6\D6\D0Ã¿Ò»\D0\D0\CF\F3\CB\D8Õ¼\D3Ãµ\C4Êµ\BCÊ¿Õ¼\E4
 	int nSaveWidth = sizeImageSave.cx;
 
-	//Í¼ÏñÊı¾İµÄÖ¸Õë
+	//Í¼\CF\F1\CA\FD\BEİµ\C4Ö¸\D5\EB
 	LPBYTE  lpImage = pDib->m_lpImage;
 
-	// ¾Ö²¿ãĞÖµ
+	// \BEÖ²\BF\E3\D0Öµ
 	int nThd[2][2] ;
 
-	// ×ÓÍ¼ÏóµÄÆ½¾ùÖµ
+	// \D7\D3Í¼\CF\F3\B5\C4Æ½\BE\F9Öµ
 	int nLocAvg ;
 	
-	// ¶Ô×óÉÏÍ¼ÏñÖğµãÉ¨Ãè£º
+	// \B6\D4\D7\F3\C9\CFÍ¼\CF\F1\D6\F0\B5\E3É¨\C3è£º
 	nLocAvg = 0 ;
-	// y·½Ïò
+	// y\B7\BD\CF\F2
 	for(y=0; y<nHeight/2 ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=0; x<nWidth/2 ; x++ )
 		{
 			nLocAvg += lpImage[y*nSaveWidth + x];
 		}
 	}
-	// ¼ÆËã¾ùÖµ
+	// \BC\C6\CB\E3\BE\F9Öµ
 	nLocAvg /= ( (nHeight/2) * (nWidth/2) ) ;
 
-	// ÉèÖÃãĞÖµÎª×ÓÍ¼ÏóµÄÆ½¾ùÖµ
+	// \C9\E8\D6\C3\E3\D0ÖµÎª\D7\D3Í¼\CF\F3\B5\C4Æ½\BE\F9Öµ
 	nThd[0][0] = nLocAvg ;
 
-	// ¶Ô×óÉÏÍ¼ÏñÖğµãÉ¨Ãè½øĞĞ·Ö¸î£º
-	// y·½Ïò
+	// \B6\D4\D7\F3\C9\CFÍ¼\CF\F1\D6\F0\B5\E3É¨\C3\E8\BD\F8\D0Ğ·Ö¸î£º
+	// y\B7\BD\CF\F2
 	for(y=0; y<nHeight/2 ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=0; x<nWidth/2 ; x++ )
 		{
 			if(lpImage[y*nSaveWidth + x]<nThd[0][0])
@@ -1744,28 +1763,28 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 	}
 
 	// =============================================
-	// ¶Ô×óÏÂÍ¼ÏñÖğµãÉ¨Ãè£º
+	// \B6\D4\D7\F3\CF\C2Í¼\CF\F1\D6\F0\B5\E3É¨\C3è£º
 	nLocAvg = 0 ;
-	// y·½Ïò
+	// y\B7\BD\CF\F2
 	for(y=nHeight/2; y<nHeight ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=0; x<nWidth/2 ; x++ )
 		{
 			nLocAvg += lpImage[y*nSaveWidth + x];
 		}
 	}
-	// ¼ÆËã¾ùÖµ
+	// \BC\C6\CB\E3\BE\F9Öµ
 	nLocAvg /= ( (nHeight - nHeight/2) * (nWidth/2) ) ;
 
-	// ÉèÖÃãĞÖµÎª×ÓÍ¼ÏóµÄÆ½¾ùÖµ
+	// \C9\E8\D6\C3\E3\D0ÖµÎª\D7\D3Í¼\CF\F3\B5\C4Æ½\BE\F9Öµ
 	nThd[1][0] = nLocAvg ;
 
-	// ¶Ô×óÏÂÍ¼ÏñÖğµãÉ¨Ãè½øĞĞ·Ö¸î£º
-	// y·½Ïò
+	// \B6\D4\D7\F3\CF\C2Í¼\CF\F1\D6\F0\B5\E3É¨\C3\E8\BD\F8\D0Ğ·Ö¸î£º
+	// y\B7\BD\CF\F2
 	for(y=nHeight/2; y<nHeight ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=0; x<nWidth/2 ; x++ )
 		{
 			if(lpImage[y*nSaveWidth + x]<nThd[1][0])
@@ -1779,28 +1798,28 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 	}
 
 	// =============================================
-	// ¶ÔÓÒÉÏÍ¼ÏñÖğµãÉ¨Ãè£º
+	// \B6\D4\D3\D2\C9\CFÍ¼\CF\F1\D6\F0\B5\E3É¨\C3è£º
 	nLocAvg = 0 ;
-	// y·½Ïò
+	// y\B7\BD\CF\F2
 	for(y=0; y<nHeight/2 ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=nWidth/2; x<nWidth ; x++ )
 		{
 			nLocAvg += lpImage[y*nSaveWidth + x];
 		}
 	}
-	// ¼ÆËã¾ùÖµ
+	// \BC\C6\CB\E3\BE\F9Öµ
 	nLocAvg /= ( (nHeight/2) * (nWidth - nWidth/2) ) ;
 	
-	// ÉèÖÃãĞÖµÎª×ÓÍ¼ÏóµÄÆ½¾ùÖµ
+	// \C9\E8\D6\C3\E3\D0ÖµÎª\D7\D3Í¼\CF\F3\B5\C4Æ½\BE\F9Öµ
 	nThd[0][1] = nLocAvg ;
 
-	// ¶ÔÓÒÉÏÍ¼ÏñÖğµãÉ¨Ãè½øĞĞ·Ö¸î£º
-	// y·½Ïò
+	// \B6\D4\D3\D2\C9\CFÍ¼\CF\F1\D6\F0\B5\E3É¨\C3\E8\BD\F8\D0Ğ·Ö¸î£º
+	// y\B7\BD\CF\F2
 	for(y=0; y<nHeight/2 ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=nWidth/2; x<nWidth ; x++ )
 		{
 			if(lpImage[y*nSaveWidth + x]<nThd[0][1])
@@ -1814,28 +1833,28 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 	}
 
 	// =============================================
-	// ¶ÔÓÒÏÂÍ¼ÏñÖğµãÉ¨Ãè£º
+	// \B6\D4\D3\D2\CF\C2Í¼\CF\F1\D6\F0\B5\E3É¨\C3è£º
 	nLocAvg = 0 ;
-	// y·½Ïò
+	// y\B7\BD\CF\F2
 	for(y=nHeight/2; y<nHeight ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=nWidth/2; x<nWidth ; x++ )
 		{
 			nLocAvg += lpImage[y*nSaveWidth + x];
 		}
 	}
-	// ¼ÆËã¾ùÖµ
+	// \BC\C6\CB\E3\BE\F9Öµ
 	nLocAvg /= ( (nHeight - nHeight/2) * (nWidth - nWidth/2) ) ;
 
-	// ÉèÖÃãĞÖµÎª×ÓÍ¼ÏóµÄÆ½¾ùÖµ
+	// \C9\E8\D6\C3\E3\D0ÖµÎª\D7\D3Í¼\CF\F3\B5\C4Æ½\BE\F9Öµ
 	nThd[1][1] = nLocAvg ;
 
-	// ¶ÔÓÒÏÂÍ¼ÏñÖğµãÉ¨Ãè½øĞĞ·Ö¸î£º
-	// y·½Ïò
+	// \B6\D4\D3\D2\CF\C2Í¼\CF\F1\D6\F0\B5\E3É¨\C3\E8\BD\F8\D0Ğ·Ö¸î£º
+	// y\B7\BD\CF\F2
 	for(y=nHeight/2; y<nHeight ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=nWidth/2; x<nWidth ; x++ )
 		{
 			if(lpImage[y*nSaveWidth + x]<nThd[1][1])
@@ -1847,10 +1866,10 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		}
 	}
 	
-	// ÎªÁËÏÔÊ¾·½±ãÏÔÊ¾£¬Âß¼­1ÓÃºÚÉ«ÏÔÊ¾£¬Âß¼­0ÓÃ°×É«ÏÔÊ¾
+	// Îª\C1\CB\CF\D4Ê¾\B7\BD\B1\E3\CF\D4Ê¾\A3\AC\C2ß¼\AD1\D3Ãº\DAÉ«\CF\D4Ê¾\A3\AC\C2ß¼\AD0\D3Ã°\D7É«\CF\D4Ê¾
 	for(y=0; y<nHeight ; y++ )
 	{
-		// x·½Ïò
+		// x\B7\BD\CF\F2
 		for(x=0; x<nWidth ; x++ )
 		{
 			lpImage[y*nSaveWidth + x] = 255 - lpImage[y*nSaveWidth + x] ;
@@ -1860,44 +1879,44 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   RobertsOperator()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib		- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   double * pdGrad	- Ö¸ÏòÌİ¶ÈÊı¾İµÄÖ¸Õë£¬º¬ÓĞÍ¼ÏñµÄÌİ¶ÈĞÅÏ¢
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib		- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   double * pdGrad	- Ö¸\CF\F2\CCİ¶\C8\CA\FD\BEİµ\C4Ö¸\D5ë£¬\BA\AC\D3\D0Í¼\CF\F1\B5\C4\CCİ¶\C8\D0\C5Ï¢
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   RobertsËã×Ó
+ * \Ëµ\C3\F7:
+ *   Roberts\CB\E3\D7\D3
  *
  *************************************************************************
  */
 /*void RobertsOperator(CDIB * pDib, double * pdGrad)
 {
-	// ±éÀúÍ¼ÏóµÄ×İ×ø±ê
+	// \B1\E9\C0\FAÍ¼\CF\F3\B5\C4\D7\DD\D7\F8\B1\EA
 	int y;
 
-	// ±éÀúÍ¼ÏóµÄºá×ø±ê
+	// \B1\E9\C0\FAÍ¼\CF\F3\B5Äº\E1\D7\F8\B1\EA
 	int x;
 
-	// Í¼ÏóµÄ³¤¿í´óĞ¡
+	// Í¼\CF\F3\B5Ä³\A4\BF\ED\B4\F3Ğ¡
 	CSize sizeImage		= pDib->GetDimensions();
 	int nWidth			= sizeImage.cx		;
 	int nHeight			= sizeImage.cy		;
 
-	// Í¼ÏñÔÚ¼ÆËã»úÔÚ´æ´¢ÖĞµÄÊµ¼Ê´óĞ¡
+	// Í¼\CF\F1\D4Ú¼\C6\CB\E3\BB\FA\D4Ú´æ´¢\D6Ğµ\C4Êµ\BCÊ´\F3Ğ¡
 	CSize sizeImageSave	= pDib->GetDibSaveDim();
 
-	// Í¼ÏñÔÚÄÚ´æÖĞÃ¿Ò»ĞĞÏóËØÕ¼ÓÃµÄÊµ¼Ê¿Õ¼ä
+	// Í¼\CF\F1\D4\DA\C4Ú´\E6\D6\D0Ã¿Ò»\D0\D0\CF\F3\CB\D8Õ¼\D3Ãµ\C4Êµ\BCÊ¿Õ¼\E4
 	int nSaveWidth = sizeImageSave.cx;
 
-	// Í¼ÏñÊı¾İµÄÖ¸Õë
+	// Í¼\CF\F1\CA\FD\BEİµ\C4Ö¸\D5\EB
 	LPBYTE  pImageData = pDib->m_lpImage;
 
-	// ³õÊ¼»¯
+	// \B3\F5Ê¼\BB\AF
 	for(y=0; y<nHeight ; y++ )
 		for(x=0 ; x<nWidth ; x++ )
 		{
@@ -1905,104 +1924,104 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 		}
 
 
-	// ÏÂÃæ¿ªÊ¼ÀûÓÃRobertsËã×Ó½øĞĞ¼ÆËã£¬ÎªÁË±£Ö¤¼ÆËãËùĞèÒªµÄ
-	// µÄÊı¾İÎ»ÓÚÍ¼ÏñÊı¾İµÄÄÚ²¿£¬ÏÂÃæµÄÁ½ÖØÑ­»·µÄÌõ¼şÊÇ
-	// y<nHeight-1 ¶ø²»ÊÇy<nHeight£¬ÏàÓ¦µÄx·½ÏòÒ²ÊÇx<nWidth-1
-	// ¶ø²»ÊÇx<nWidth
+	// \CF\C2\C3æ¿ªÊ¼\C0\FB\D3\C3Roberts\CB\E3\D7Ó½\F8\D0Ğ¼\C6\CBã£¬Îª\C1Ë±\A3Ö¤\BC\C6\CB\E3\CB\F9\D0\E8Òª\B5\C4
+	// \B5\C4\CA\FD\BE\DDÎ»\D3\DAÍ¼\CF\F1\CA\FD\BEİµ\C4\C4Ú²\BF\A3\AC\CF\C2\C3\E6\B5\C4\C1\BD\D6\D8Ñ­\BB\B7\B5\C4\CC\F5\BC\FE\CA\C7
+	// y<nHeight-1 \B6\F8\B2\BB\CA\C7y<nHeight\A3\AC\CF\E0Ó¦\B5\C4x\B7\BD\CF\F2Ò²\CA\C7x<nWidth-1
+	// \B6\F8\B2\BB\CA\C7x<nWidth
 
-	//ÕâÁ½¸ö±äÁ¿ÓÃÀ´±íÊ¾RobertsËã×ÓµÚÒ»¸öÄ£°åµÄÁ½¸öÏóËØÖµ
+	//\D5\E2\C1\BD\B8\F6\B1\E4\C1\BF\D3\C3\C0\B4\B1\EDÊ¾Roberts\CB\E3\D7Óµ\DAÒ»\B8\F6Ä£\B0\E5\B5\C4\C1\BD\B8\F6\CF\F3\CB\D8Öµ
 	int nUpLeft;
 	int nDownRight;
 
-	// ÕâÁ½¸ö±äÁ¿ÓÃÀ´±íÊ¾RobertsËã×ÓµÚ¶ş¸öÄ£°åµÄÁ½¸öÏóËØÖµ
+	// \D5\E2\C1\BD\B8\F6\B1\E4\C1\BF\D3\C3\C0\B4\B1\EDÊ¾Roberts\CB\E3\D7ÓµÚ¶\FE\B8\F6Ä£\B0\E5\B5\C4\C1\BD\B8\F6\CF\F3\CB\D8Öµ
 	int nUpRight;
 	int nDownLeft;
 
-	// ÕâÁ½¸ö±äÁ¿ÓÃÀ´±íÊ¾RobertsËã×Ó¼ÆËãµÄ½á¹û
+	// \D5\E2\C1\BD\B8\F6\B1\E4\C1\BF\D3\C3\C0\B4\B1\EDÊ¾Roberts\CB\E3\D7Ó¼\C6\CB\E3\B5Ä½\E1\B9\FB
 	int nValueOne;
 	int nValueTwo;
 
-	// ÁÙÊ±±äÁ¿
+	// \C1\D9Ê±\B1\E4\C1\BF
 	double dGrad;
 
 	for(y=0; y<nHeight-1 ; y++ )
 		for(x=0 ; x<nWidth-1 ; x++ )
 		{
-			// RobertsËã×ÓµÚÒ»¸öÄ£°åĞèÒªµÄÏóËØÖµ
+			// Roberts\CB\E3\D7Óµ\DAÒ»\B8\F6Ä£\B0\E5\D0\E8Òª\B5\C4\CF\F3\CB\D8Öµ
 			nUpLeft		=*(pImageData+y*nSaveWidth+x) ; 
 			nDownRight	=*(	pImageData+(y+1)*nSaveWidth+x+1	);
 			nDownRight	*=-1;
 
-			//RobertsËã×ÓµÄµÚÒ»¸öÄ£°å¼ÆËã½á¹û
+			//Roberts\CB\E3\D7ÓµÄµ\DAÒ»\B8\F6Ä£\B0\E5\BC\C6\CB\E3\BD\E1\B9\FB
 			nValueOne	=nUpLeft+nDownRight	;
 
-			// RobertsËã×ÓµÚ¶ş¸öÄ£°åĞèÒªµÄÏóËØÖµ
+			// Roberts\CB\E3\D7ÓµÚ¶\FE\B8\F6Ä£\B0\E5\D0\E8Òª\B5\C4\CF\F3\CB\D8Öµ
 			nUpRight	=*(	pImageData+y*nSaveWidth+x+1	)		;
 			nDownLeft	=*(	pImageData+(y+1)*nSaveWidth+x	);
 			nDownLeft	*=-1;
 
-			// RobertsËã×ÓµÄµÚ¶ş¸öÄ£°å¼ÆËã½á¹û
+			// Roberts\CB\E3\D7ÓµÄµÚ¶\FE\B8\F6Ä£\B0\E5\BC\C6\CB\E3\BD\E1\B9\FB
 			nValueTwo	=nUpRight+nDownLeft;
 
-			// ¼ÆËãÁ½¸öÆ«µ¼ÊıµÄÆ½·½ºÍ
+			// \BC\C6\CB\E3\C1\BD\B8\F6Æ«\B5\BC\CA\FD\B5\C4Æ½\B7\BD\BA\CD
 			dGrad=nValueOne*nValueOne + nValueTwo*nValueTwo;
 
-			// ¿ª·½
+			// \BF\AA\B7\BD
 			dGrad=pow(dGrad,0.5);
 
-			// ·¶Êı²ÉÓÃÅ·Ê½¾àÀë
+			// \B7\B6\CA\FD\B2\C9\D3\C3Å·Ê½\BE\E0\C0\EB
 			*(pdGrad+y*nWidth+x)=dGrad;
 		}
 }*/
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   LaplacianOperator()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib		- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   double * pdGrad	- Ö¸ÏòÌİ¶ÈÊı¾İµÄÖ¸Õë£¬º¬ÓĞÍ¼ÏñµÄÌİ¶ÈĞÅÏ¢
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib		- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   double * pdGrad	- Ö¸\CF\F2\CCİ¶\C8\CA\FD\BEİµ\C4Ö¸\D5ë£¬\BA\AC\D3\D0Í¼\CF\F1\B5\C4\CCİ¶\C8\D0\C5Ï¢
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   LaplacianOperatorËã×Ó,ÊÇ¶ş½×Ëã×Ó£¬²»ÏëRobertsËã×ÓÄÇÑùĞèÒªÁ½¸öÄ£°å¼ÆËã
- *   Ìİ¶È£¬LaplacianOperatorËã×ÓÖ»ÒªÒ»¸öËã×Ó¾Í¿ÉÒÔ¼ÆËãÌİ¶È¡£µ«ÊÇÒòÎªÀûÓÃÁË
- *   ¶ş½×ĞÅÏ¢£¬¶ÔÔëÉù±È½ÏÃô¸Ğ
+ * \Ëµ\C3\F7:
+ *   LaplacianOperator\CB\E3\D7\D3,\CAÇ¶\FE\BD\D7\CB\E3\D7Ó£\AC\B2\BB\CF\EBRoberts\CB\E3\D7\D3\C4\C7\D1\F9\D0\E8Òª\C1\BD\B8\F6Ä£\B0\E5\BC\C6\CB\E3
+ *   \CCİ¶È£\ACLaplacianOperator\CB\E3\D7\D3Ö»ÒªÒ»\B8\F6\CB\E3\D7Ó¾Í¿\C9\D2Ô¼\C6\CB\E3\CCİ¶È¡\A3\B5\AB\CA\C7\D2\F2Îª\C0\FB\D3\C3\C1\CB
+ *   \B6\FE\BD\D7\D0\C5Ï¢\A3\AC\B6\D4\D4\EB\C9\F9\B1È½\CF\C3\F4\B8\D0
  *
  *************************************************************************
  */
 /*void LaplacianOperator(CDIB * pDib, double * pdGrad)
 {
-		// ±éÀúÍ¼ÏóµÄ×İ×ø±ê
+		// \B1\E9\C0\FAÍ¼\CF\F3\B5\C4\D7\DD\D7\F8\B1\EA
 	int y;
 
-	// ±éÀúÍ¼ÏóµÄºá×ø±ê
+	// \B1\E9\C0\FAÍ¼\CF\F3\B5Äº\E1\D7\F8\B1\EA
 	int x;
 
-	// Í¼ÏóµÄ³¤¿í´óĞ¡
+	// Í¼\CF\F3\B5Ä³\A4\BF\ED\B4\F3Ğ¡
 	CSize sizeImage		= pDib->GetDimensions();
 	int nWidth			= sizeImage.cx		;
 	int nHeight			= sizeImage.cy		;
 
-	// Í¼ÏñÔÚ¼ÆËã»úÔÚ´æ´¢ÖĞµÄÊµ¼Ê´óĞ¡
+	// Í¼\CF\F1\D4Ú¼\C6\CB\E3\BB\FA\D4Ú´æ´¢\D6Ğµ\C4Êµ\BCÊ´\F3Ğ¡
 	CSize sizeImageSave	= pDib->GetDibSaveDim();
 
-	// Í¼ÏñÔÚÄÚ´æÖĞÃ¿Ò»ĞĞÏóËØÕ¼ÓÃµÄÊµ¼Ê¿Õ¼ä
+	// Í¼\CF\F1\D4\DA\C4Ú´\E6\D6\D0Ã¿Ò»\D0\D0\CF\F3\CB\D8Õ¼\D3Ãµ\C4Êµ\BCÊ¿Õ¼\E4
 	int nSaveWidth = sizeImageSave.cx;
 
-	// Í¼ÏñÊı¾İµÄÖ¸Õë
+	// Í¼\CF\F1\CA\FD\BEİµ\C4Ö¸\D5\EB
 	LPBYTE  lpImage = pDib->m_lpImage;
 
-	// ³õÊ¼»¯
+	// \B3\F5Ê¼\BB\AF
 	for(y=0; y<nHeight ; y++ )
 		for(x=0 ; x<nWidth ; x++ )
 		{
 			*(pdGrad+y*nWidth+x)=0;
 		}
 
-	// ÉèÖÃÄ£°åÏµÊı
+	// \C9\E8\D6\C3Ä£\B0\E5Ïµ\CA\FD
 	static int nWeight[3][3] ;
 	nWeight[0][0] = -1 ;   
 	nWeight[0][1] = -1 ;   
@@ -2016,50 +2035,50 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 
 
-	//Õâ¸ö±äÁ¿ÓÃÀ´±íÊ¾LaplacianËã×ÓÏóËØÖµ
+	//\D5\E2\B8\F6\B1\E4\C1\BF\D3\C3\C0\B4\B1\EDÊ¾Laplacian\CB\E3\D7\D3\CF\F3\CB\D8Öµ
 	int nTmp[3][3];
 	
-	// ÁÙÊ±±äÁ¿
+	// \C1\D9Ê±\B1\E4\C1\BF
 	double dGrad;
 
-	// Ä£°åÑ­»·¿ØÖÆ±äÁ¿
+	// Ä£\B0\E5Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int yy ;
 	int xx ;
 
 	
-	// ÏÂÃæ¿ªÊ¼ÀûÓÃLaplacianËã×Ó½øĞĞ¼ÆËã£¬ÎªÁË±£Ö¤¼ÆËãËùĞèÒªµÄ
-	// µÄÊı¾İÎ»ÓÚÍ¼ÏñÊı¾İµÄÄÚ²¿£¬ÏÂÃæµÄÁ½ÖØÑ­»·µÄÌõ¼şÊÇ
-	// y<nHeight-2 ¶ø²»ÊÇy<nHeight£¬ÏàÓ¦µÄx·½ÏòÒ²ÊÇx<nWidth-2
-	// ¶ø²»ÊÇx<nWidth
+	// \CF\C2\C3æ¿ªÊ¼\C0\FB\D3\C3Laplacian\CB\E3\D7Ó½\F8\D0Ğ¼\C6\CBã£¬Îª\C1Ë±\A3Ö¤\BC\C6\CB\E3\CB\F9\D0\E8Òª\B5\C4
+	// \B5\C4\CA\FD\BE\DDÎ»\D3\DAÍ¼\CF\F1\CA\FD\BEİµ\C4\C4Ú²\BF\A3\AC\CF\C2\C3\E6\B5\C4\C1\BD\D6\D8Ñ­\BB\B7\B5\C4\CC\F5\BC\FE\CA\C7
+	// y<nHeight-2 \B6\F8\B2\BB\CA\C7y<nHeight\A3\AC\CF\E0Ó¦\B5\C4x\B7\BD\CF\F2Ò²\CA\C7x<nWidth-2
+	// \B6\F8\B2\BB\CA\C7x<nWidth
 	for(y=1; y<nHeight-2 ; y++ )
 		for(x=1 ; x<nWidth-2 ; x++ )
 		{
 			dGrad = 0 ; 
-			// LaplacianËã×ÓĞèÒªµÄ¸÷µãÏóËØÖµ
+			// Laplacian\CB\E3\D7\D3\D0\E8Òª\B5Ä¸\F7\B5\E3\CF\F3\CB\D8Öµ
 
-			// Ä£°åµÚÒ»ĞĞ
+			// Ä£\B0\E5\B5\DAÒ»\D0\D0
 			nTmp[0][0] = lpImage[(y-1)*nSaveWidth + x - 1 ] ; 
 			nTmp[0][1] = lpImage[(y-1)*nSaveWidth + x     ] ; 
 			nTmp[0][2] = lpImage[(y-1)*nSaveWidth + x + 1 ] ; 
 
-			// Ä£°åµÚ¶şĞĞ
+			// Ä£\B0\E5\B5Ú¶\FE\D0\D0
 			nTmp[1][0] = lpImage[y*nSaveWidth + x - 1 ] ; 
 			nTmp[1][1] = lpImage[y*nSaveWidth + x     ] ; 
 			nTmp[1][2] = lpImage[y*nSaveWidth + x + 1 ] ; 
 
-			// Ä£°åµÚÈıĞĞ
+			// Ä£\B0\E5\B5\DA\C8\FD\D0\D0
 			nTmp[2][0] = lpImage[(y+1)*nSaveWidth + x - 1 ] ; 
 			nTmp[2][1] = lpImage[(y+1)*nSaveWidth + x     ] ; 
 			nTmp[2][2] = lpImage[(y+1)*nSaveWidth + x + 1 ] ; 
 			
-			// ¼ÆËãÌİ¶È
+			// \BC\C6\CB\E3\CCİ¶\C8
 			for(yy=0; yy<3; yy++)
 				for(xx=0; xx<3; xx++)
 				{
 					dGrad += nTmp[yy][xx] * nWeight[yy][xx] ;
 				}
 			
-			// Ìİ¶ÈÖµĞ´ÈëÄÚ´æ
+			// \CCİ¶\C8ÖµĞ´\C8\EB\C4Ú´\E6
 			*(pdGrad+y*nWidth+x)=dGrad;
 		}
 
@@ -2067,27 +2086,27 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   RegionGrow()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib					- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   unsigned char * pUnRegion		- Ö¸ÏòÇøÓòÉú³¤½á¹ûµÄÖ¸Õë
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib					- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   unsigned char * pUnRegion		- Ö¸\CF\F2\C7\F8\D3\F2\C9\FA\B3\A4\BD\E1\B9\FB\B5\C4Ö¸\D5\EB
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   pUnRegionÖ¸ÕëÖ¸ÏòµÄÊı¾İÇø´æ´¢ÁËÇøÓòÉú³¤µÄ½á¹û£¬ÆäÖĞ1£¨Âß¼­£©±íÊ¾
- *	 ¶ÔÓ¦ÏóËØÎªÉú³¤ÇøÓò£¬0±íÊ¾Îª·ÇÉú³¤ÇøÓò
- *   ÇøÓòÉú³¤Ò»°ã°üº¬Èı¸ö±È½ÏÖØÒªµÄÎÊÌâ£º
- *		1. ÖÖ×ÓµãµÄÑ¡È¡
- *		2. Éú³¤×¼Ôò
- *		3. ÖÕÖ¹Ìõ¼ş
- *	 ¿ÉÒÔÈÏÎª£¬ÕâÈı¸öÎÊÌâĞèÒª¾ßÌå·ÖÎö£¬¶øÇÒÃ¿¸öÎÊÌâ½â¾öµÄºÃ»µÖ±½Ó¹ØÏµµ½
- *	 ÇøÓòÉú³¤µÄ½á¹û¡£
- *	 ±¾º¯ÊıµÄÖÖ×ÓµãÑ¡È¡ÎªÍ¼ÏñµÄÖĞĞÄ£¬Éú³¤×¼ÔòÊÇÏàÁÚÏóËØµÄÏóËØÖµĞ¡ÓÚ
- *	 nThreshold, ÖÕÖ¹Ìõ¼şÊÇÒ»Ö±½øĞĞµ½ÔÙÃ»ÓĞÂú×ãÉú³¤×¼ÔòĞèÒªµÄÏóËØÊ±ÎªÖ¹
+ * \Ëµ\C3\F7:
+ *   pUnRegionÖ¸\D5\EBÖ¸\CF\F2\B5\C4\CA\FD\BE\DD\C7\F8\B4æ´¢\C1\CB\C7\F8\D3\F2\C9\FA\B3\A4\B5Ä½\E1\B9\FB\A3\AC\C6\E4\D6\D01\A3\A8\C2ß¼\AD\A3\A9\B1\EDÊ¾
+ *	 \B6\D4Ó¦\CF\F3\CB\D8Îª\C9\FA\B3\A4\C7\F8\D3\F2\A3\AC0\B1\EDÊ¾Îª\B7\C7\C9\FA\B3\A4\C7\F8\D3\F2
+ *   \C7\F8\D3\F2\C9\FA\B3\A4Ò»\B0\E3\B0\FC\BA\AC\C8\FD\B8\F6\B1È½\CF\D6\D8Òª\B5\C4\CE\CA\CCâ£º
+ *		1. \D6\D6\D7Óµ\E3\B5\C4Ñ¡È¡
+ *		2. \C9\FA\B3\A4×¼\D4\F2
+ *		3. \D6\D5Ö¹\CC\F5\BC\FE
+ *	 \BF\C9\D2\D4\C8\CFÎª\A3\AC\D5\E2\C8\FD\B8\F6\CE\CA\CC\E2\D0\E8Òª\BE\DF\CC\E5\B7\D6\CE\F6\A3\AC\B6\F8\C7\D2Ã¿\B8\F6\CE\CA\CC\E2\BD\E2\BE\F6\B5ÄºÃ»\B5Ö±\BDÓ¹\D8Ïµ\B5\BD
+ *	 \C7\F8\D3\F2\C9\FA\B3\A4\B5Ä½\E1\B9\FB\A1\A3
+ *	 \B1\BE\BA\AF\CA\FD\B5\C4\D6\D6\D7Óµ\E3Ñ¡È¡ÎªÍ¼\CF\F1\B5\C4\D6\D0\D0Ä£\AC\C9\FA\B3\A4×¼\D4\F2\CA\C7\CF\E0\C1\DA\CF\F3\CBØµ\C4\CF\F3\CB\D8ÖµĞ¡\D3\DA
+ *	 nThreshold, \D6\D5Ö¹\CC\F5\BC\FE\CA\C7Ò»Ö±\BD\F8\D0Ğµ\BD\D4\D9Ã»\D3\D0\C2\FA\D7\E3\C9\FA\B3\A4×¼\D4\F2\D0\E8Òª\B5\C4\CF\F3\CB\D8Ê±ÎªÖ¹
  *
  *************************************************************************
  */
@@ -2096,106 +2115,106 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 	static int nDx[]={-1,0,1,0};
 	static int nDy[]={0,1,0,-1};
 
-	// ±éÀúÍ¼ÏóµÄ×İ×ø±ê
+	// \B1\E9\C0\FAÍ¼\CF\F3\B5\C4\D7\DD\D7\F8\B1\EA
 //	int y;
 
-	// ±éÀúÍ¼ÏóµÄºá×ø±ê
+	// \B1\E9\C0\FAÍ¼\CF\F3\B5Äº\E1\D7\F8\B1\EA
 //	int x;
 
-	// Í¼ÏóµÄ³¤¿í´óĞ¡
+	// Í¼\CF\F3\B5Ä³\A4\BF\ED\B4\F3Ğ¡
 	CSize sizeImage		= pDib->GetDimensions();
 	int nWidth			= sizeImage.cx		;
 	int nHeight			= sizeImage.cy		;
 
-	// Í¼ÏñÔÚ¼ÆËã»úÔÚ´æ´¢ÖĞµÄÊµ¼Ê´óĞ¡
+	// Í¼\CF\F1\D4Ú¼\C6\CB\E3\BB\FA\D4Ú´æ´¢\D6Ğµ\C4Êµ\BCÊ´\F3Ğ¡
 	CSize sizeImageSave	= pDib->GetDibSaveDim();
 
-	// Í¼ÏñÔÚÄÚ´æÖĞÃ¿Ò»ĞĞÏóËØÕ¼ÓÃµÄÊµ¼Ê¿Õ¼ä
+	// Í¼\CF\F1\D4\DA\C4Ú´\E6\D6\D0Ã¿Ò»\D0\D0\CF\F3\CB\D8Õ¼\D3Ãµ\C4Êµ\BCÊ¿Õ¼\E4
 	int nSaveWidth = sizeImageSave.cx;
 
-	// ³õÊ¼»¯
+	// \B3\F5Ê¼\BB\AF
 	memset(pUnRegion,0,sizeof(unsigned char)*nWidth*nHeight);
 
-	// ÖÖ×Óµã
+	// \D6\D6\D7Óµ\E3
 	int nSeedX, nSeedY;
 
-	// ÉèÖÃÖÖ×ÓµãÎªÍ¼ÏñµÄÖĞĞÄ
+	// \C9\E8\D6\C3\D6\D6\D7Óµ\E3ÎªÍ¼\CF\F1\B5\C4\D6\D0\D0\C4
 	nSeedX = nWidth /2 ;
 	nSeedY = nHeight/2 ;
 
-	// ¶¨Òå¶ÑÕ»£¬´æ´¢×ø±ê
+	// \B6\A8\D2\E5\B6\D1Õ»\A3\AC\B4æ´¢\D7\F8\B1\EA
 	int * pnGrowQueX ;
 	int * pnGrowQueY ;
 	
-	// ·ÖÅä¿Õ¼ä
+	// \B7\D6\C5\E4\BFÕ¼\E4
 	pnGrowQueX = new int [nWidth*nHeight];
 	pnGrowQueY = new int [nWidth*nHeight];
 
-	// Í¼ÏñÊı¾İµÄÖ¸Õë
+	// Í¼\CF\F1\CA\FD\BEİµ\C4Ö¸\D5\EB
 	unsigned char *  pUnchInput =(unsigned char * )pDib->m_lpImage;
 	
-	// ¶¨Òå¶ÑÕ»µÄÆğµãºÍÖÕµã
-	// µ±nStart=nEnd, ±íÊ¾¶ÑÕ»ÖĞÖ»ÓĞÒ»¸öµã
+	// \B6\A8\D2\E5\B6\D1Õ»\B5\C4\C6\F0\B5\E3\BA\CD\D6Õµ\E3
+	// \B5\B1nStart=nEnd, \B1\EDÊ¾\B6\D1Õ»\D6\D0Ö»\D3\D0Ò»\B8\F6\B5\E3
 	int nStart ;
 	int nEnd   ;
 
-	//³õÊ¼»¯
+	//\B3\F5Ê¼\BB\AF
 	nStart = 0 ;
 	nEnd   = 0 ;
 
-	// °ÑÖÖ×ÓµãµÄ×ø±êÑ¹ÈëÕ»
+	// \B0\D1\D6\D6\D7Óµ\E3\B5\C4\D7\F8\B1\EAÑ¹\C8\EBÕ»
 	pnGrowQueX[nEnd] = nSeedX;
 	pnGrowQueY[nEnd] = nSeedY;
 
-	// µ±Ç°ÕıÔÚ´¦ÀíµÄÏóËØ
+	// \B5\B1Ç°\D5\FD\D4Ú´\A6\C0\ED\B5\C4\CF\F3\CB\D8
 	int nCurrX ;
 	int nCurrY ;
 
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int k ;
 
-	// Í¼ÏóµÄºá×İ×ø±ê,ÓÃÀ´¶Ôµ±Ç°ÏóËØµÄ4ÁÚÓò½øĞĞ±éÀú
+	// Í¼\CF\F3\B5Äº\E1\D7\DD\D7\F8\B1\EA,\D3\C3\C0\B4\B6Ôµ\B1Ç°\CF\F3\CBØµ\C44\C1\DA\D3\F2\BD\F8\D0Ğ±\E9\C0\FA
 	int xx;
 	int yy;
 
 	while (nStart<=nEnd)
 	{
-		// µ±Ç°ÖÖ×ÓµãµÄ×ø±ê
+		// \B5\B1Ç°\D6\D6\D7Óµ\E3\B5\C4\D7\F8\B1\EA
 		nCurrX = pnGrowQueX[nStart];
 		nCurrY = pnGrowQueY[nStart];					
 
-		// ¶Ôµ±Ç°µãµÄ4ÁÚÓò½øĞĞ±éÀú
+		// \B6Ôµ\B1Ç°\B5\E3\B5\C44\C1\DA\D3\F2\BD\F8\D0Ğ±\E9\C0\FA
 		for (k=0; k<4; k++)	
 		{	
-			// 4ÁÚÓòÏóËØµÄ×ø±ê
+			// 4\C1\DA\D3\F2\CF\F3\CBØµ\C4\D7\F8\B1\EA
 			xx = nCurrX+nDx[k];
 			yy = nCurrY+nDy[k];
 			
-			// ÅĞ¶ÏÏóËØ(xx£¬yy) ÊÇ·ñÔÚÍ¼ÏñÄÚ²¿
-			// ÅĞ¶ÏÏóËØ(xx£¬yy) ÊÇ·ñÒÑ¾­´¦Àí¹ı
-			// pUnRegion[yy*nWidth+xx]==0 ±íÊ¾»¹Ã»ÓĞ´¦Àí
+			// \C5Ğ¶\CF\CF\F3\CB\D8(xx\A3\ACyy) \CAÇ·\F1\D4\DAÍ¼\CF\F1\C4Ú²\BF
+			// \C5Ğ¶\CF\CF\F3\CB\D8(xx\A3\ACyy) \CAÇ·\F1\D2Ñ¾\AD\B4\A6\C0\ED\B9\FD
+			// pUnRegion[yy*nWidth+xx]==0 \B1\EDÊ¾\BB\B9Ã»\D3Ğ´\A6\C0\ED
 
-			// Éú³¤Ìõ¼ş£ºÅĞ¶ÏÏóËØ(xx£¬yy)ºÍµ±Ç°ÏóËØ(nCurrX,nCurrY) ÏóËØÖµ²îµÄ¾ø¶ÔÖµ
+			// \C9\FA\B3\A4\CC\F5\BC\FE\A3\BA\C5Ğ¶\CF\CF\F3\CB\D8(xx\A3\ACyy)\BAÍµ\B1Ç°\CF\F3\CB\D8(nCurrX,nCurrY) \CF\F3\CB\D8Öµ\B2\EE\B5Ä¾\F8\B6\D4Öµ
 			if (	(xx < nWidth) && (xx>=0) && (yy<nHeight) && (yy>=0) 
 				    && (pUnRegion[yy*nWidth+xx]==0) 
 					&& abs(pUnchInput[yy*nSaveWidth+xx] - pUnchInput[nCurrY*nSaveWidth+nCurrX])<nThreshold )
 			{
-				// ¶ÑÕ»µÄÎ²²¿Ö¸ÕëºóÒÆÒ»Î»
+				// \B6\D1Õ»\B5\C4Î²\B2\BFÖ¸\D5\EB\BA\F3\D2\C6Ò»Î»
 				nEnd++;
 
-				// ÏóËØ(xx£¬yy) Ñ¹ÈëÕ»
+				// \CF\F3\CB\D8(xx\A3\ACyy) Ñ¹\C8\EBÕ»
 				pnGrowQueX[nEnd] = xx;
 				pnGrowQueY[nEnd] = yy;
 
-				// °ÑÏóËØ(xx£¬yy)ÉèÖÃ³ÉÂß¼­1£¨255£©
-				// Í¬Ê±Ò²±íÃ÷¸ÃÏóËØ´¦Àí¹ı
+				// \B0\D1\CF\F3\CB\D8(xx\A3\ACyy)\C9\E8\D6Ã³\C9\C2ß¼\AD1\A3\A8255\A3\A9
+				// Í¬Ê±Ò²\B1\ED\C3\F7\B8\C3\CF\F3\CBØ´\A6\C0\ED\B9\FD
 				pUnRegion[yy*nWidth+xx] = 255 ;
 			}
 		}
 		nStart++;
 	}
 
-	// ÊÍ·ÅÄÚ´æ
+	// \CAÍ·\C5\C4Ú´\E6
 	delete []pnGrowQueX;
 	delete []pnGrowQueY;
     pnGrowQueX = NULL ;
@@ -2211,20 +2230,20 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   SobelOperator()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib		  - Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   double * pdGrad	- Ö¸ÏòÌİ¶ÈÊı¾İµÄÖ¸Õë£¬º¬ÓĞÍ¼ÏñµÄÌİ¶ÈĞÅÏ¢
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib		  - Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   double * pdGrad	- Ö¸\CF\F2\CCİ¶\C8\CA\FD\BEİµ\C4Ö¸\D5ë£¬\BA\AC\D3\D0Í¼\CF\F1\B5\C4\CCİ¶\C8\D0\C5Ï¢
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   SobeËã×Ó
+ * \Ëµ\C3\F7:
+ *   Sobe\CB\E3\D7\D3
  *
- *   ²¢ĞĞ±ß½ç·Ö¸î
+ *   \B2\A2\D0Ğ±ß½\E7\B7Ö¸\EE
  *
  *************************************************************************
  */
@@ -2233,20 +2252,20 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   PrewittOperator()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib		  - Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   double * pdGrad	- Ö¸ÏòÌİ¶ÈÊı¾İµÄÖ¸Õë£¬º¬ÓĞÍ¼ÏñµÄÌİ¶ÈĞÅÏ¢
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib		  - Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   double * pdGrad	- Ö¸\CF\F2\CCİ¶\C8\CA\FD\BEİµ\C4Ö¸\D5ë£¬\BA\AC\D3\D0Í¼\CF\F1\B5\C4\CCİ¶\C8\D0\C5Ï¢
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   PrewittËã×Ó
+ * \Ëµ\C3\F7:
+ *   Prewitt\CB\E3\D7\D3
  *
- *   ²¢ĞĞ±ß½ç·Ö¸î
+ *   \B2\A2\D0Ğ±ß½\E7\B7Ö¸\EE
  *
  *************************************************************************
  */
@@ -2255,21 +2274,21 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   EdgeTrack()
  *
- * \ÊäÈë²ÎÊı:
- *   CDIB * pDib					- Ö¸ÏòCDIBÀàµÄÖ¸Õë£¬º¬ÓĞÔ­Ê¼Í¼ÏóĞÅÏ¢
- *   unsigned char * pUnEdgeTrack	- Ö¸Ïò±ß½ç¸ú×Ù½á¹ûµÄÖ¸Õë
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   CDIB * pDib					- Ö¸\CF\F2CDIB\C0\E0\B5\C4Ö¸\D5ë£¬\BA\AC\D3\D0Ô­Ê¼Í¼\CF\F3\D0\C5Ï¢
+ *   unsigned char * pUnEdgeTrack	- Ö¸\CF\F2\B1ß½\E7\B8\FA\D7Ù½\E1\B9\FB\B5\C4Ö¸\D5\EB
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   pUnEdgeTrackÖ¸ÕëÖ¸ÏòµÄÊı¾İÇø´æ´¢ÁË±ß½ç¸ú×ÙµÄ½á¹û£¬ÆäÖĞ1£¨Âß¼­£©±íÊ¾
- *	 ¶ÔÓ¦ÏóËØÎª±ß½çµã£¬0±íÊ¾Îª·Ç±ß½çµã
+ * \Ëµ\C3\F7:
+ *   pUnEdgeTrackÖ¸\D5\EBÖ¸\CF\F2\B5\C4\CA\FD\BE\DD\C7\F8\B4æ´¢\C1Ë±ß½\E7\B8\FA\D7ÙµÄ½\E1\B9\FB\A3\AC\C6\E4\D6\D01\A3\A8\C2ß¼\AD\A3\A9\B1\EDÊ¾
+ *	 \B6\D4Ó¦\CF\F3\CB\D8Îª\B1ß½\E7\B5ã£¬0\B1\EDÊ¾Îª\B7Ç±ß½\E7\B5\E3
  *
- *   ´®ĞĞ±ß½ç·Ö¸î
+ *   \B4\AE\D0Ğ±ß½\E7\B7Ö¸\EE
  *
  *************************************************************************
  */
@@ -2279,50 +2298,50 @@ void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, C
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   MakeGauss()
  *
- * \ÊäÈë²ÎÊı:
- *   double sigma									        - ¸ßË¹º¯ÊıµÄ±ê×¼²î
- *   double **pdKernel										- Ö¸Ïò¸ßË¹Êı¾İÊı×éµÄÖ¸Õë
- *   int *pnWindowSize										- Êı¾İµÄ³¤¶È
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   double sigma									        - \B8\DFË¹\BA\AF\CA\FD\B5Ä±\EA×¼\B2\EE
+ *   double **pdKernel										- Ö¸\CF\F2\B8\DFË¹\CA\FD\BE\DD\CA\FD\D7\E9\B5\C4Ö¸\D5\EB
+ *   int *pnWindowSize										- \CA\FD\BEİµÄ³\A4\B6\C8
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   Õâ¸öº¯Êı¿ÉÒÔÉú³ÉÒ»¸öÒ»Î¬µÄ¸ßË¹º¯ÊıµÄÊı×ÖÊı¾İ£¬ÀíÂÛÉÏ¸ßË¹Êı¾İµÄ³¤¶ÈÓ¦
- *   ¸ÃÊÇÎŞÏŞ³¤µÄ£¬µ«ÊÇÎªÁË¼ÆËãµÄ¼òµ¥ºÍËÙ¶È£¬Êµ¼ÊµÄ¸ßË¹Êı¾İÖ»ÄÜÊÇÓĞÏŞ³¤µÄ
- *   pnWindowSize¾ÍÊÇÊı¾İ³¤¶È
+ * \Ëµ\C3\F7:
+ *   \D5\E2\B8\F6\BA\AF\CA\FD\BF\C9\D2\D4\C9\FA\B3\C9Ò»\B8\F6Ò»Î¬\B5Ä¸\DFË¹\BA\AF\CA\FD\B5\C4\CA\FD\D7\D6\CA\FD\BEİ£\AC\C0\ED\C2\DB\C9Ï¸\DFË¹\CA\FD\BEİµÄ³\A4\B6\C8Ó¦
+ *   \B8\C3\CA\C7\CE\DE\CFŞ³\A4\B5Ä£\AC\B5\AB\CA\C7Îª\C1Ë¼\C6\CB\E3\B5Ä¼òµ¥º\CD\CBÙ¶È£\ACÊµ\BCÊµÄ¸\DFË¹\CA\FD\BE\DDÖ»\C4\DC\CA\C7\D3\D0\CFŞ³\A4\B5\C4
+ *   pnWindowSize\BE\CD\CA\C7\CA\FD\BEİ³\A4\B6\C8
  *   
  *************************************************************************
  */
 void MakeGauss(double sigma, double **pdKernel, int *pnWindowSize)
 {
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int i   ;
 	
-	// Êı×éµÄÖĞĞÄµã
+	// \CA\FD\D7\E9\B5\C4\D6\D0\D0Äµ\E3
 	int nCenter;
 
-	// Êı×éµÄÄ³Ò»µãµ½ÖĞĞÄµãµÄ¾àÀë
+	// \CA\FD\D7\E9\B5\C4Ä³Ò»\B5ãµ½\D6\D0\D0Äµ\E3\B5Ä¾\E0\C0\EB
 	double dDis;
 
 
-	// ÖĞ¼ä±äÁ¿
+	// \D6Ğ¼\E4\B1\E4\C1\BF
 	double  dValue; 
 	double  dSum;
 	dSum = 0 ; 
 	double pie;
 	pie=3.14159;
-	// Êı×é³¤¶È£¬¸ù¾İ¸ÅÂÊÂÛµÄÖªÊ¶£¬Ñ¡È¡[-3*sigma, 3*sigma]ÒÔÄÚµÄÊı¾İ¡£
-	// ÕâĞ©Êı¾İ»á¸²¸Ç¾ø´ó²¿·ÖµÄÂË²¨ÏµÊı
+	// \CA\FD\D7é³¤\B6È£\AC\B8\F9\BEİ¸\C5\C2\CA\C2Ûµ\C4ÖªÊ¶\A3\ACÑ¡È¡[-3*sigma, 3*sigma]\D2\D4\C4Úµ\C4\CA\FD\BEİ¡\A3
+	// \D5\E2Ğ©\CA\FD\BEİ»á¸²\B8Ç¾\F8\B4ó²¿·Öµ\C4\C2Ë²\A8Ïµ\CA\FD
 	*pnWindowSize = 1 + 2 * (int)ceil(3 * sigma);
 	
-	// ÖĞĞÄ
+	// \D6\D0\D0\C4
 	nCenter = (*pnWindowSize) / 2;
 	
-	// ·ÖÅäÄÚ´æ
+	// \B7\D6\C5\E4\C4Ú´\E6
 	*pdKernel = new double[*pnWindowSize] ;
 	
 	for(i=0; i< (*pnWindowSize); i++)
@@ -2333,7 +2352,7 @@ void MakeGauss(double sigma, double **pdKernel, int *pnWindowSize)
 		dSum += dValue;
 	}
 	
-	// ¹éÒ»»¯
+	// \B9\E9Ò»\BB\AF
 	for(i=0; i<(*pnWindowSize) ; i++)
 	{
 		(*pdKernel)[i] /= dSum;
@@ -2342,64 +2361,64 @@ void MakeGauss(double sigma, double **pdKernel, int *pnWindowSize)
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   GaussianSmooth()
  *
- * \ÊäÈë²ÎÊı:
- *   unsigned char * pUnchImg				- Ö¸ÏòÍ¼ÏóÊı¾İµÄÖ¸Õë
- *   int nWidth											- Í¼ÏóÊı¾İ¿í¶È
- *   int nHeight										- Í¼ÏóÊı¾İ¸ß¶È
- *   double dSigma									- ¸ßË¹º¯ÊıµÄ±ê×¼²î
- *   unsigned char * pUnchSmthdImg	- Ö¸Ïò¾­¹ıÆ½»¬Ö®ºóµÄÍ¼ÏóÊı¾İ
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   unsigned char * pUnchImg				- Ö¸\CF\F2Í¼\CF\F3\CA\FD\BEİµ\C4Ö¸\D5\EB
+ *   int nWidth											- Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
+ *   int nHeight										- Í¼\CF\F3\CA\FD\BEİ¸ß¶\C8
+ *   double dSigma									- \B8\DFË¹\BA\AF\CA\FD\B5Ä±\EA×¼\B2\EE
+ *   unsigned char * pUnchSmthdImg	- Ö¸\CFò¾­¹\FDÆ½\BB\ACÖ®\BA\F3\B5\C4Í¼\CF\F3\CA\FD\BE\DD
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   ÎªÁËÒÖÖ¹ÔëÉù£¬²ÉÓÃ¸ßË¹ÂË²¨¶ÔÍ¼Ïó½øĞĞÂË²¨£¬ÂË²¨ÏÈ¶Ôx·½Ïò½øĞĞ£¬È»ºó¶Ô
- *   y·½Ïò½øĞĞ¡£
+ * \Ëµ\C3\F7:
+ *   Îª\C1\CB\D2\D6Ö¹\D4\EB\C9\F9\A3\AC\B2\C9\D3Ã¸\DFË¹\C2Ë²\A8\B6\D4Í¼\CF\F3\BD\F8\D0\D0\C2Ë²\A8\A3\AC\C2Ë²\A8\CFÈ¶\D4x\B7\BD\CF\F2\BD\F8\D0Ğ£\ACÈ»\BA\F3\B6\D4
+ *   y\B7\BD\CF\F2\BD\F8\D0Ğ¡\A3
  *   
  *************************************************************************
  */
 void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight, 
 										double sigma, unsigned char * pUnchSmthdImg)
 {
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
   int y;
 	int x;
 	
 	int i;
 	
-	// ¸ßË¹ÂË²¨Æ÷µÄÊı×é³¤¶È
+	// \B8\DFË¹\C2Ë²\A8\C6\F7\B5\C4\CA\FD\D7é³¤\B6\C8
 	
 	int nWindowSize;
 	
-	//  ´°¿Ú³¤¶ÈµÄ1/2
+	//  \B4\B0\BFÚ³\A4\B6Èµ\C41/2
 	int	nHalfLen;   
 	
-	// Ò»Î¬¸ßË¹Êı¾İÂË²¨Æ÷
+	// Ò»Î¬\B8\DFË¹\CA\FD\BE\DD\C2Ë²\A8\C6\F7
 	double *pdKernel ;
 	
-	// ¸ßË¹ÏµÊıÓëÍ¼ÏóÊı¾İµÄµã³Ë
+	// \B8\DFË¹Ïµ\CA\FD\D3\EBÍ¼\CF\F3\CA\FD\BEİµÄµ\E3\B3\CB
 	double  dDotMul     ;
 	
-	// ¸ßË¹ÂË²¨ÏµÊıµÄ×ÜºÍ
+	// \B8\DFË¹\C2Ë²\A8Ïµ\CA\FD\B5\C4\D7Üº\CD
 	double  dWeightSum     ;          
   
-	// ÖĞ¼ä±äÁ¿
+	// \D6Ğ¼\E4\B1\E4\C1\BF
 	double * pdTmp ;
 	
-	// ·ÖÅäÄÚ´æ
+	// \B7\D6\C5\E4\C4Ú´\E6
 	pdTmp = new double[nWidth*nHeight];
 	
-	// ²úÉúÒ»Î¬¸ßË¹Êı¾İÂË²¨Æ÷
+	// \B2\FA\C9\FAÒ»Î¬\B8\DFË¹\CA\FD\BE\DD\C2Ë²\A8\C6\F7
 	// MakeGauss(sigma, &dKernel, &nWindowSize);
 	MakeGauss(sigma, &pdKernel, &nWindowSize) ;
 	
-	// MakeGauss·µ»Ø´°¿ÚµÄ³¤¶È£¬ÀûÓÃ´Ë±äÁ¿¼ÆËã´°¿ÚµÄ°ë³¤
+	// MakeGauss\B7\B5\BBØ´\B0\BFÚµÄ³\A4\B6È£\AC\C0\FB\D3Ã´Ë±\E4\C1\BF\BC\C6\CBã´°\BFÚµÄ°ë³¤
 	nHalfLen = nWindowSize / 2;
 	
-  // x·½Ïò½øĞĞÂË²¨
+  // x\B7\BD\CF\F2\BD\F8\D0\D0\C2Ë²\A8
 	for(y=0; y<nHeight; y++)
 	{
 		for(x=0; x<nWidth; x++)
@@ -2408,7 +2427,7 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 			dWeightSum = 0;
 			for(i=(-nHalfLen); i<=nHalfLen; i++)
 			{
-				// ÅĞ¶ÏÊÇ·ñÔÚÍ¼ÏóÄÚ²¿
+				// \C5Ğ¶\CF\CAÇ·\F1\D4\DAÍ¼\CF\F3\C4Ú²\BF
 				if( (i+x) >= 0  && (i+x) < nWidth )
 				{
 					dDotMul += (double)pUnchImg[y*nWidth + (i+x)] * pdKernel[nHalfLen+i];
@@ -2419,7 +2438,7 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 		}
 	}
 	
-	// y·½Ïò½øĞĞÂË²¨
+	// y\B7\BD\CF\F2\BD\F8\D0\D0\C2Ë²\A8
 	for(x=0; x<nWidth; x++)
 	{
 		for(y=0; y<nHeight; y++)
@@ -2428,7 +2447,7 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 			dWeightSum = 0;
 			for(i=(-nHalfLen); i<=nHalfLen; i++)
 			{
-				// ÅĞ¶ÏÊÇ·ñÔÚÍ¼ÏóÄÚ²¿
+				// \C5Ğ¶\CF\CAÇ·\F1\D4\DAÍ¼\CF\F3\C4Ú²\BF
 				if( (i+y) >= 0  && (i+y) < nHeight )
 				{
 					dDotMul += (double)pdTmp[(y+i)*nWidth + x] * pdKernel[nHalfLen+i];
@@ -2439,7 +2458,7 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 		}
 	}
 
-	// ÊÍ·ÅÄÚ´æ
+	// \CAÍ·\C5\C4Ú´\E6
 	delete []pdKernel;
 	pdKernel = NULL ;
 	
@@ -2450,21 +2469,21 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   DirGrad()
  *
- * \ÊäÈë²ÎÊı:
- *   unsigned char *pUnchSmthdImg					- ¾­¹ı¸ßË¹ÂË²¨ºóµÄÍ¼Ïó
- *   int nWidht														- Í¼Ïó¿í¶È
- *   int nHeight      										- Í¼Ïó¸ß¶È
- *   int *pnGradX                         - x·½ÏòµÄ·½Ïòµ¼Êı
- *   int *pnGradY                         - y·½ÏòµÄ·½Ïòµ¼Êı
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   unsigned char *pUnchSmthdImg					- \BE\AD\B9\FD\B8\DFË¹\C2Ë²\A8\BA\F3\B5\C4Í¼\CF\F3
+ *   int nWidht														- Í¼\CF\F3\BF\ED\B6\C8
+ *   int nHeight      										- Í¼\CF\F3\B8ß¶\C8
+ *   int *pnGradX                         - x\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD
+ *   int *pnGradY                         - y\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   Õâ¸öº¯Êı¼ÆËã·½Ïòµ¹Êı£¬²ÉÓÃµÄÎ¢·ÖËã×ÓÊÇ(-1 0 1) ºÍ (-1 0 1)'(×ªÖÃ)
- *   ¼ÆËãµÄÊ±ºò¶Ô±ß½çÏóËØ²ÉÓÃÁËÌØÊâ´¦Àí
+ * \Ëµ\C3\F7:
+ *   \D5\E2\B8\F6\BA\AF\CA\FD\BC\C6\CBã·½\CF\F2\B5\B9\CA\FD\A3\AC\B2\C9\D3Ãµ\C4Î¢\B7\D6\CB\E3\D7\D3\CA\C7(-1 0 1) \BA\CD (-1 0 1)'(×ª\D6\C3)
+ *   \BC\C6\CB\E3\B5\C4Ê±\BA\F2\B6Ô±ß½\E7\CF\F3\CBØ²\C9\D3\C3\C1\CB\CC\D8\CAâ´¦\C0\ED
  *   
  *   
  *************************************************************************
@@ -2472,11 +2491,11 @@ void GaussianSmooth(unsigned char *pUnchImg, int nWidth, int nHeight,
 void DirGrad(unsigned char *pUnchSmthdImg, int nWidth, int nHeight,
 										 int *pnGradX , int *pnGradY)
 {
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int y ;
 	int x ;
 	
-	// ¼ÆËãx·½ÏòµÄ·½Ïòµ¼Êı£¬ÔÚ±ß½ç³ö½øĞĞÁË´¦Àí£¬·ÀÖ¹Òª·ÃÎÊµÄÏóËØ³ö½ç
+	// \BC\C6\CB\E3x\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\A3\AC\D4Ú±ß½\E7\B3\F6\BD\F8\D0\D0\C1Ë´\A6\C0\ED\A3\AC\B7\C0Ö¹Òª\B7\C3\CEÊµ\C4\CF\F3\CBØ³\F6\BD\E7
 	for(y=0; y<nHeight; y++)
 	{
 		for(x=0; x<nWidth; x++)
@@ -2486,7 +2505,7 @@ void DirGrad(unsigned char *pUnchSmthdImg, int nWidth, int nHeight,
 		}
 	}
 
-	// ¼ÆËãy·½ÏòµÄ·½Ïòµ¼Êı£¬ÔÚ±ß½ç³ö½øĞĞÁË´¦Àí£¬·ÀÖ¹Òª·ÃÎÊµÄÏóËØ³ö½ç
+	// \BC\C6\CB\E3y\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\A3\AC\D4Ú±ß½\E7\B3\F6\BD\F8\D0\D0\C1Ë´\A6\C0\ED\A3\AC\B7\C0Ö¹Òª\B7\C3\CEÊµ\C4\CF\F3\CBØ³\F6\BD\E7
 	for(x=0; x<nWidth; x++)
 	{
 		for(y=0; y<nHeight; y++)
@@ -2498,32 +2517,32 @@ void DirGrad(unsigned char *pUnchSmthdImg, int nWidth, int nHeight,
 }
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   GradMagnitude()
  *
- * \ÊäÈë²ÎÊı:
- *   int *pnGradX                         - x·½ÏòµÄ·½Ïòµ¼Êı
- *   int *pnGradY                         - y·½ÏòµÄ·½Ïòµ¼Êı
- *   int nWidht														- Í¼Ïó¿í¶È
- *   int nHeight      										- Í¼Ïó¸ß¶È
- *   int *pnMag                           - Ìİ¶È·ù¶È   
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   int *pnGradX                         - x\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD
+ *   int *pnGradY                         - y\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD
+ *   int nWidht														- Í¼\CF\F3\BF\ED\B6\C8
+ *   int nHeight      										- Í¼\CF\F3\B8ß¶\C8
+ *   int *pnMag                           - \CCİ¶È·\F9\B6\C8   
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   Õâ¸öº¯ÊıÀûÓÃ·½Ïòµ¹Êı¼ÆËãÌİ¶È·ù¶È£¬·½Ïòµ¹ÊıÊÇDirGradº¯Êı¼ÆËãµÄ½á¹û
+ * \Ëµ\C3\F7:
+ *   \D5\E2\B8\F6\BA\AF\CA\FD\C0\FB\D3Ã·\BD\CF\F2\B5\B9\CA\FD\BC\C6\CB\E3\CCİ¶È·\F9\B6È£\AC\B7\BD\CF\F2\B5\B9\CA\FD\CA\C7DirGrad\BA\AF\CA\FD\BC\C6\CB\E3\B5Ä½\E1\B9\FB
  *   
  *************************************************************************
  */
 void GradMagnitude(int *pnGradX, int *pnGradY, int nWidth, int nHeight, int *pnMag)
 {
 	
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int y ;
 	int x ;
 
-	// ÖĞ¼ä±äÁ¿
+	// \D6Ğ¼\E4\B1\E4\C1\BF
 	double dSqtOne;
 	double dSqtTwo;
 	
@@ -2539,45 +2558,45 @@ void GradMagnitude(int *pnGradX, int *pnGradY, int nWidth, int nHeight, int *pnM
 }
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   NonmaxSuppress()
  *
- * \ÊäÈë²ÎÊı:
- *   int *pnMag                - Ìİ¶ÈÍ¼
- *   int *pnGradX							 - x·½ÏòµÄ·½Ïòµ¼Êı	
- *   int *pnGradY              - y·½ÏòµÄ·½Ïòµ¼Êı
- *   int nWidth                - Í¼ÏóÊı¾İ¿í¶È
- *   int nHeight               - Í¼ÏóÊı¾İ¸ß¶È
- *   unsigned char *pUnchRst   - ¾­¹ıNonmaxSuppress´¦ÀíºóµÄ½á¹û
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   int *pnMag                - \CCİ¶\C8Í¼
+ *   int *pnGradX							 - x\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD	
+ *   int *pnGradY              - y\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD
+ *   int nWidth                - Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
+ *   int nHeight               - Í¼\CF\F3\CA\FD\BEİ¸ß¶\C8
+ *   unsigned char *pUnchRst   - \BE\AD\B9\FDNonmaxSuppress\B4\A6\C0\ED\BA\F3\B5Ä½\E1\B9\FB
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   ÒÖÖ¹Ìİ¶ÈÍ¼ÖĞ·Ç¾Ö²¿¼«ÖµµãµÄÏóËØ¡£
+ * \Ëµ\C3\F7:
+ *   \D2\D6Ö¹\CCİ¶\C8Í¼\D6Ğ·Ç¾Ö²\BF\BC\ABÖµ\B5\E3\B5\C4\CF\F3\CBØ¡\A3
  *   
  *************************************************************************
  */
 void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth, 
 										int nHeight,	unsigned char *pUnchRst)
 {
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int y ;
 	int x ;
 	int nPos;
 
-	// x·½ÏòÌİ¶È·ÖÁ¿
+	// x\B7\BD\CF\F2\CCİ¶È·\D6\C1\BF
 	int gx  ;
 	int gy  ;
 
-	// ÁÙÊ±±äÁ¿
+	// \C1\D9Ê±\B1\E4\C1\BF
 	int g1, g2, g3, g4 ;
 	double weight  ;
 	double dTmp1   ;
 	double dTmp2   ;
 	double dTmp    ;
 	
-	// ÉèÖÃÍ¼Ïó±ßÔµ²¿·ÖÎª²»¿ÉÄÜµÄ±ß½çµã
+	// \C9\E8\D6\C3Í¼\CF\F3\B1\DFÔµ\B2\BF\B7\D6Îª\B2\BB\BF\C9\C4ÜµÄ±ß½\E7\B5\E3
 	for(x=0; x<nWidth; x++)		
 	{
 		pUnchRst[x] = 0 ;
@@ -2595,31 +2614,31 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 		{
 			nPos = y*nWidth + x ;
 			
-			// Èç¹ûµ±Ç°ÏóËØµÄÌİ¶È·ù¶ÈÎª0£¬Ôò²»ÊÇ±ß½çµã
+			// \C8\E7\B9\FB\B5\B1Ç°\CF\F3\CBØµ\C4\CCİ¶È·\F9\B6\C8Îª0\A3\AC\D4\F2\B2\BB\CAÇ±ß½\E7\B5\E3
 			if(pnMag[nPos] == 0 )
 			{
 				pUnchRst[nPos] = 0 ;
 			}
 			else
 			{
-				// µ±Ç°ÏóËØµÄÌİ¶È·ù¶È
+				// \B5\B1Ç°\CF\F3\CBØµ\C4\CCİ¶È·\F9\B6\C8
 				dTmp = pnMag[nPos] ;
 				
-				// x£¬y·½Ïòµ¼Êı
+				// x\A3\ACy\B7\BD\CF\F2\B5\BC\CA\FD
 				gx = pnGradX[nPos]  ;
 				gy = pnGradY[nPos]  ;
 
-				// Èç¹û·½Ïòµ¼Êıy·ÖÁ¿±Èx·ÖÁ¿´ó£¬ËµÃ÷µ¼ÊıµÄ·½Ïò¸ü¼Ó¡°Ç÷Ïò¡±ÓÚy·ÖÁ¿¡£
+				// \C8\E7\B9\FB\B7\BD\CF\F2\B5\BC\CA\FDy\B7\D6\C1\BF\B1\C8x\B7\D6\C1\BF\B4\F3\A3\ACËµ\C3\F7\B5\BC\CA\FD\B5Ä·\BD\CF\F2\B8\FC\BCÓ¡\B0\C7\F7\CF\F2\A1\B1\D3\DAy\B7\D6\C1\BF\A1\A3
 				if (abs(gy) > abs(gx)) 
 				{
-					// ¼ÆËã²åÖµµÄ±ÈÀı
+					// \BC\C6\CB\E3\B2\E5Öµ\B5Ä±\C8\C0\FD
 					weight = fabs((float)gx)/fabs((float)gy); 
 
 					g2 = pnMag[nPos-nWidth] ; 
 					g4 = pnMag[nPos+nWidth] ;
 					
-					// Èç¹ûx£¬yÁ½¸ö·½ÏòµÄ·½Ïòµ¼ÊıµÄ·ûºÅÏàÍ¬
-					// CÊÇµ±Ç°ÏóËØ£¬Óëg1-g4µÄÎ»ÖÃ¹ØÏµÎª£º
+					// \C8\E7\B9\FBx\A3\ACy\C1\BD\B8\F6\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\B5Ä·\FB\BA\C5\CF\E0Í¬
+					// C\CAÇµ\B1Ç°\CF\F3\CBØ£\AC\D3\EBg1-g4\B5\C4Î»\D6Ã¹\D8ÏµÎª\A3\BA
 					//	g1 g2 
 					//		 C         
 					//		 g4 g3 
@@ -2629,8 +2648,8 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 						g3 = pnMag[nPos+nWidth+1] ;
 					} 
 
-					// Èç¹ûx£¬yÁ½¸ö·½ÏòµÄ·½Ïòµ¼ÊıµÄ·ûºÅÏà·´
-					// CÊÇµ±Ç°ÏóËØ£¬Óëg1-g4µÄÎ»ÖÃ¹ØÏµÎª£º
+					// \C8\E7\B9\FBx\A3\ACy\C1\BD\B8\F6\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\B5Ä·\FB\BA\C5\CFà·´
+					// C\CAÇµ\B1Ç°\CF\F3\CBØ£\AC\D3\EBg1-g4\B5\C4Î»\D6Ã¹\D8ÏµÎª\A3\BA
 					//	   g2 g1
 					//		 C         
 					//	g3 g4  
@@ -2641,18 +2660,18 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 					} 
 				}
 				
-				// Èç¹û·½Ïòµ¼Êıx·ÖÁ¿±Èy·ÖÁ¿´ó£¬ËµÃ÷µ¼ÊıµÄ·½Ïò¸ü¼Ó¡°Ç÷Ïò¡±ÓÚx·ÖÁ¿
-				// Õâ¸öÅĞ¶ÏÓï¾ä°üº¬ÁËx·ÖÁ¿ºÍy·ÖÁ¿ÏàµÈµÄÇé¿ö
+				// \C8\E7\B9\FB\B7\BD\CF\F2\B5\BC\CA\FDx\B7\D6\C1\BF\B1\C8y\B7\D6\C1\BF\B4\F3\A3\ACËµ\C3\F7\B5\BC\CA\FD\B5Ä·\BD\CF\F2\B8\FC\BCÓ¡\B0\C7\F7\CF\F2\A1\B1\D3\DAx\B7\D6\C1\BF
+				// \D5\E2\B8\F6\C5Ğ¶\CF\D3\EF\BE\E4\B0\FC\BA\AC\C1\CBx\B7\D6\C1\BF\BA\CDy\B7\D6\C1\BF\CF\E0\B5Èµ\C4\C7\E9\BF\F6
 				else
 				{
-					// ¼ÆËã²åÖµµÄ±ÈÀı
+					// \BC\C6\CB\E3\B2\E5Öµ\B5Ä±\C8\C0\FD
 					weight = fabs((float)gy)/fabs((float)gx); 
 					
 					g2 = pnMag[nPos+1] ; 
 					g4 = pnMag[nPos-1] ;
 					
-					// Èç¹ûx£¬yÁ½¸ö·½ÏòµÄ·½Ïòµ¼ÊıµÄ·ûºÅÏàÍ¬
-					// CÊÇµ±Ç°ÏóËØ£¬Óëg1-g4µÄÎ»ÖÃ¹ØÏµÎª£º
+					// \C8\E7\B9\FBx\A3\ACy\C1\BD\B8\F6\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\B5Ä·\FB\BA\C5\CF\E0Í¬
+					// C\CAÇµ\B1Ç°\CF\F3\CBØ£\AC\D3\EBg1-g4\B5\C4Î»\D6Ã¹\D8ÏµÎª\A3\BA
 					//	g3   
 					//	g4 C g2       
 					//       g1
@@ -2661,8 +2680,8 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 						g1 = pnMag[nPos+nWidth+1] ;
 						g3 = pnMag[nPos-nWidth-1] ;
 					} 
-					// Èç¹ûx£¬yÁ½¸ö·½ÏòµÄ·½Ïòµ¼ÊıµÄ·ûºÅÏà·´
-					// CÊÇµ±Ç°ÏóËØ£¬Óëg1-g4µÄÎ»ÖÃ¹ØÏµÎª£º
+					// \C8\E7\B9\FBx\A3\ACy\C1\BD\B8\F6\B7\BD\CF\F2\B5Ä·\BD\CF\F2\B5\BC\CA\FD\B5Ä·\FB\BA\C5\CFà·´
+					// C\CAÇµ\B1Ç°\CF\F3\CBØ£\AC\D3\EBg1-g4\B5\C4Î»\D6Ã¹\D8ÏµÎª\A3\BA
 					//	     g1
 					//	g4 C g2       
 					//  g3     
@@ -2673,20 +2692,20 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 					}
 				}
 
-				// ÏÂÃæÀûÓÃg1-g4¶ÔÌİ¶È½øĞĞ²åÖµ
+				// \CF\C2\C3\E6\C0\FB\D3\C3g1-g4\B6\D4\CCİ¶È½\F8\D0Ğ²\E5Öµ
 				{
 					dTmp1 = weight*g1 + (1-weight)*g2 ;
 					dTmp2 = weight*g3 + (1-weight)*g4 ;
 					
-					// µ±Ç°ÏóËØµÄÌİ¶ÈÊÇ¾Ö²¿µÄ×î´óÖµ
-					// ¸Ãµã¿ÉÄÜÊÇ¸ö±ß½çµã
+					// \B5\B1Ç°\CF\F3\CBØµ\C4\CCİ¶\C8\CAÇ¾Ö²\BF\B5\C4\D7\EE\B4\F3Öµ
+					// \B8Ãµ\E3\BF\C9\C4\DC\CAÇ¸\F6\B1ß½\E7\B5\E3
 					if(dTmp>=dTmp1 && dTmp>=dTmp2)
 					{
 						pUnchRst[nPos] = 128 ;
 					}
 					else
 					{
-						// ²»¿ÉÄÜÊÇ±ß½çµã
+						// \B2\BB\BF\C9\C4\DC\CAÇ±ß½\E7\B5\E3
 						pUnchRst[nPos] = 0 ;
 					}
 				}
@@ -2698,32 +2717,32 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   TraceEdge()
  *
- * \ÊäÈë²ÎÊı:
- *   int    x									- ¸ú×ÙÆğµãµÄx×ø±ê 
- *   int    y									- ¸ú×ÙÆğµãµÄy×ø±ê
- *   int nLowThd							- ÅĞ¶ÏÒ»¸öµãÊÇ·ñÎª±ß½çµãµÄµÍãĞÖµ
- *   unsigned char *pUnchEdge - ¼ÇÂ¼±ß½çµãµÄ»º³åÇø
- *   int *pnMag               - Ìİ¶È·ù¶ÈÍ¼
- *   int nWidth               - Í¼ÏóÊı¾İ¿í¶È
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   int    x									- \B8\FA\D7\D9\C6\F0\B5\E3\B5\C4x\D7\F8\B1\EA 
+ *   int    y									- \B8\FA\D7\D9\C6\F0\B5\E3\B5\C4y\D7\F8\B1\EA
+ *   int nLowThd							- \C5Ğ¶\CFÒ»\B8\F6\B5\E3\CAÇ·\F1Îª\B1ß½\E7\B5\E3\B5Äµ\CD\E3\D0Öµ
+ *   unsigned char *pUnchEdge - \BC\C7Â¼\B1ß½\E7\B5\E3\B5Ä»\BA\B3\E5\C7\F8
+ *   int *pnMag               - \CCİ¶È·\F9\B6\C8Í¼
+ *   int nWidth               - Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   µİ¹éµ÷ÓÃ  
- *   ´Ó(x,y)×ø±ê³ö·¢£¬½øĞĞ±ß½çµãµÄ¸ú×Ù£¬¸ú×ÙÖ»¿¼ÂÇpUnchEdgeÖĞÃ»ÓĞ´¦Àí²¢ÇÒ
- *   ¿ÉÄÜÊÇ±ß½çµãµÄÄÇĞ©ÏóËØ(=128),ÏóËØÖµÎª0±íÃ÷¸Ãµã²»¿ÉÄÜÊÇ±ß½çµã£¬ÏóËØÖµ
- *   Îª255±íÃ÷¸ÃµãÒÑ¾­±»ÉèÖÃÎª±ß½çµã£¬²»±ØÔÙ¿¼ÂÇ
+ * \Ëµ\C3\F7:
+ *   \B5İ¹\E9\B5\F7\D3\C3  
+ *   \B4\D3(x,y)\D7\F8\B1\EA\B3\F6\B7\A2\A3\AC\BD\F8\D0Ğ±ß½\E7\B5\E3\B5Ä¸\FA\D7Ù£\AC\B8\FA\D7\D9Ö»\BF\BC\C2\C7pUnchEdge\D6\D0Ã»\D3Ğ´\A6\C0\ED\B2\A2\C7\D2
+ *   \BF\C9\C4\DC\CAÇ±ß½\E7\B5\E3\B5\C4\C4\C7Ğ©\CF\F3\CB\D8(=128),\CF\F3\CB\D8ÖµÎª0\B1\ED\C3\F7\B8Ãµã²»\BF\C9\C4\DC\CAÇ±ß½\E7\B5ã£¬\CF\F3\CB\D8Öµ
+ *   Îª255\B1\ED\C3\F7\B8Ãµ\E3\D2Ñ¾\AD\B1\BB\C9\E8\D6\C3Îª\B1ß½\E7\B5ã£¬\B2\BB\B1\D8\D4Ù¿\BC\C2\C7
  *   
  *   
  *************************************************************************
  */
 void TraceEdge (int y, int x, int nLowThd, unsigned char *pUnchEdge, int *pnMag, int nWidth) 
 { 
-	// ¶Ô8ÁÚÓòÏóËØ½øĞĞ²éÑ¯
+	// \B6\D48\C1\DA\D3\F2\CF\F3\CBØ½\F8\D0Ğ²\E9Ñ¯
 	int xNb[8] = {1, 1, 0,-1,-1,-1, 0, 1} ;
 	int yNb[8] = {0, 1, 1, 1,0 ,-1,-1,-1} ;
 
@@ -2736,14 +2755,14 @@ void TraceEdge (int y, int x, int nLowThd, unsigned char *pUnchEdge, int *pnMag,
 	{
 		yy = y + yNb[k] ;
 		xx = x + xNb[k] ;
-		// Èç¹û¸ÃÏóËØÎª¿ÉÄÜµÄ±ß½çµã£¬ÓÖÃ»ÓĞ´¦Àí¹ı
-		// ²¢ÇÒÌİ¶È´óÓÚãĞÖµ
+		// \C8\E7\B9\FB\B8\C3\CF\F3\CB\D8Îª\BF\C9\C4ÜµÄ±ß½\E7\B5ã£¬\D3\D6Ã»\D3Ğ´\A6\C0\ED\B9\FD
+		// \B2\A2\C7\D2\CCİ¶È´\F3\D3\DA\E3\D0Öµ
 		if(pUnchEdge[yy*nWidth+xx] == 128  && pnMag[yy*nWidth+xx]>=nLowThd)
 		{
-			// °Ñ¸ÃµãÉèÖÃ³ÉÎª±ß½çµã
+			// \B0Ñ¸Ãµ\E3\C9\E8\D6Ã³\C9Îª\B1ß½\E7\B5\E3
 			pUnchEdge[yy*nWidth+xx] = 255 ;
 
-			// ÒÔ¸ÃµãÎªÖĞĞÄ½øĞĞ¸ú×Ù
+			// \D2Ô¸Ãµ\E3Îª\D6\D0\D0Ä½\F8\D0Ğ¸\FA\D7\D9
 			TraceEdge(yy, xx, nLowThd, pUnchEdge, pnMag, nWidth);
 		}
 	}
@@ -2751,65 +2770,65 @@ void TraceEdge (int y, int x, int nLowThd, unsigned char *pUnchEdge, int *pnMag,
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   EstimateThreshold()
  *
- * \ÊäÈë²ÎÊı:
- *   int *pnMag               - Ìİ¶È·ù¶ÈÍ¼
- *	 int nWidth               - Í¼ÏóÊı¾İ¿í¶È
- *	 int nHeight              - Í¼ÏóÊı¾İ¸ß¶È
- *   int *pnThdHigh           - ¸ßãĞÖµ
- *   int *pnThdLow            - µÍãĞÖµ
- *	 double dRatioLow         - µÍãĞÖµºÍ¸ßãĞÖµÖ®¼äµÄ±ÈÀı
- *	 double dRatioHigh        - ¸ßãĞÖµÕ¼Í¼ÏóÏóËØ×ÜÊıµÄ±ÈÀı
- *   unsigned char *pUnchEdge - ¾­¹ınon-maximum´¦ÀíºóµÄÊı¾İ
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   int *pnMag               - \CCİ¶È·\F9\B6\C8Í¼
+ *	 int nWidth               - Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
+ *	 int nHeight              - Í¼\CF\F3\CA\FD\BEİ¸ß¶\C8
+ *   int *pnThdHigh           - \B8\DF\E3\D0Öµ
+ *   int *pnThdLow            - \B5\CD\E3\D0Öµ
+ *	 double dRatioLow         - \B5\CD\E3\D0Öµ\BAÍ¸\DF\E3\D0ÖµÖ®\BC\E4\B5Ä±\C8\C0\FD
+ *	 double dRatioHigh        - \B8\DF\E3\D0ÖµÕ¼Í¼\CF\F3\CF\F3\CB\D8\D7\DC\CA\FD\B5Ä±\C8\C0\FD
+ *   unsigned char *pUnchEdge - \BE\AD\B9\FDnon-maximum\B4\A6\C0\ED\BA\F3\B5\C4\CA\FD\BE\DD
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   ¾­¹ınon-maximum´¦ÀíºóµÄÊı¾İpUnchEdge£¬Í³¼ÆpnMagµÄÖ±·½Í¼£¬È·¶¨ãĞÖµ¡£
- *   ±¾º¯ÊıÖĞÖ»ÊÇÍ³¼ÆpUnchEdgeÖĞ¿ÉÄÜÎª±ß½çµãµÄÄÇĞ©ÏóËØ¡£È»ºóÀûÓÃÖ±·½Í¼£¬
- *   ¸ù¾İdRatioHighÉèÖÃ¸ßãĞÖµ£¬´æ´¢µ½pnThdHigh¡£ÀûÓÃdRationLowºÍ¸ßãĞÖµ£¬
- *   ÉèÖÃµÍãĞÖµ£¬´æ´¢µ½*pnThdLow¡£dRatioHighÊÇÒ»ÖÖ±ÈÀı£º±íÃ÷Ìİ¶ÈĞ¡ÓÚ
- *   *pnThdHighµÄÏóËØÊıÄ¿Õ¼ÏóËØ×ÜÊıÄ¿µÄ±ÈÀı¡£dRationLow±íÃ÷*pnThdHigh
- *   ºÍ*pnThdLowµÄ±ÈÀı£¬Õâ¸ö±ÈÀıÔÚcannyËã·¨µÄÔ­ÎÄÀï£¬×÷Õß¸ø³öÁËÒ»¸öÇø¼ä¡£
+ * \Ëµ\C3\F7:
+ *   \BE\AD\B9\FDnon-maximum\B4\A6\C0\ED\BA\F3\B5\C4\CA\FD\BE\DDpUnchEdge\A3\ACÍ³\BC\C6pnMag\B5\C4Ö±\B7\BDÍ¼\A3\ACÈ·\B6\A8\E3\D0Öµ\A1\A3
+ *   \B1\BE\BA\AF\CA\FD\D6\D0Ö»\CA\C7Í³\BC\C6pUnchEdge\D6Ğ¿\C9\C4\DCÎª\B1ß½\E7\B5\E3\B5\C4\C4\C7Ğ©\CF\F3\CBØ¡\A3È»\BA\F3\C0\FB\D3\C3Ö±\B7\BDÍ¼\A3\AC
+ *   \B8\F9\BE\DDdRatioHigh\C9\E8\D6Ã¸\DF\E3\D0Öµ\A3\AC\B4æ´¢\B5\BDpnThdHigh\A1\A3\C0\FB\D3\C3dRationLow\BAÍ¸\DF\E3\D0Öµ\A3\AC
+ *   \C9\E8\D6Ãµ\CD\E3\D0Öµ\A3\AC\B4æ´¢\B5\BD*pnThdLow\A1\A3dRatioHigh\CA\C7Ò»\D6Ö±\C8\C0\FD\A3\BA\B1\ED\C3\F7\CCİ¶\C8Ğ¡\D3\DA
+ *   *pnThdHigh\B5\C4\CF\F3\CB\D8\CA\FDÄ¿Õ¼\CF\F3\CB\D8\D7\DC\CA\FDÄ¿\B5Ä±\C8\C0\FD\A1\A3dRationLow\B1\ED\C3\F7*pnThdHigh
+ *   \BA\CD*pnThdLow\B5Ä±\C8\C0\FD\A3\AC\D5\E2\B8\F6\B1\C8\C0\FD\D4\DAcanny\CBã·¨\B5\C4Ô­\CE\C4\C0ï£¬\D7\F7\D5ß¸\F8\B3\F6\C1\CBÒ»\B8\F6\C7\F8\BCä¡£
  *
  *************************************************************************
  */
 void EstimateThreshold(int *pnMag, int nWidth, int nHeight, int *pnThdHigh,int *pnThdLow, 
 											 unsigned char * pUnchEdge, double dRatioHigh, double dRationLow) 
 { 
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int y;
 	int x;
 	int k;
 	
-	// ¸ÃÊı×éµÄ´óĞ¡ºÍÌİ¶ÈÖµµÄ·¶Î§ÓĞ¹Ø£¬Èç¹û²ÉÓÃ±¾³ÌĞòµÄËã·¨£¬ÄÇÃ´Ìİ¶ÈµÄ·¶Î§²»»á³¬¹ıpow(2,10)
+	// \B8\C3\CA\FD\D7\E9\B5Ä´\F3Ğ¡\BA\CD\CCİ¶\C8Öµ\B5Ä·\B6Î§\D3Ğ¹Ø£\AC\C8\E7\B9\FB\B2\C9\D3Ã±\BE\B3\CC\D0\F2\B5\C4\CBã·¨\A3\AC\C4\C7Ã´\CCİ¶ÈµÄ·\B6Î§\B2\BB\BBá³¬\B9\FDpow(2,10)
 	int nHist[1024] ;
 
-	// ¿ÉÄÜµÄ±ß½çÊıÄ¿
+	// \BF\C9\C4ÜµÄ±ß½\E7\CA\FDÄ¿
 	int nEdgeNb     ;
 
-	// ×î´óÌİ¶ÈÖµ
+	// \D7\EE\B4\F3\CCİ¶\C8Öµ
 	int nMaxMag     ;
 
 	int nHighCount  ;
 
 	nMaxMag = 0     ; 
 	
-	// ³õÊ¼»¯
+	// \B3\F5Ê¼\BB\AF
 	for(k=0; k<1024; k++) 
 	{
 		nHist[k] = 0; 
 	}
 
-	// Í³¼ÆÖ±·½Í¼£¬È»ºóÀûÓÃÖ±·½Í¼¼ÆËããĞÖµ
+	// Í³\BC\C6Ö±\B7\BDÍ¼\A3\ACÈ»\BA\F3\C0\FB\D3\C3Ö±\B7\BDÍ¼\BC\C6\CB\E3\E3\D0Öµ
 	for(y=0; y<nHeight; y++)
 	{
 		for(x=0; x<nWidth; x++)
 		{
-			// Ö»ÊÇÍ³¼ÆÄÇĞ©¿ÉÄÜÊÇ±ß½çµã£¬²¢ÇÒ»¹Ã»ÓĞ´¦Àí¹ıµÄÏóËØ
+			// Ö»\CA\C7Í³\BC\C6\C4\C7Ğ©\BF\C9\C4\DC\CAÇ±ß½\E7\B5ã£¬\B2\A2\C7Ò»\B9Ã»\D3Ğ´\A6\C0\ED\B9\FD\B5\C4\CF\F3\CB\D8
 			if(pUnchEdge[y*nWidth+x]==128)
 			{
 				nHist[ pnMag[y*nWidth+x] ]++;
@@ -2819,70 +2838,70 @@ void EstimateThreshold(int *pnMag, int nWidth, int nHeight, int *pnThdHigh,int *
 
 	nEdgeNb = nHist[0]  ;
 	nMaxMag = 0         ;
-	// Í³¼Æ¾­¹ı¡°·Ç×î´óÖµÒÖÖ¹(non-maximum suppression)¡±ºóÓĞ¶àÉÙÏóËØ
+	// Í³\BCÆ¾\AD\B9\FD\A1\B0\B7\C7\D7\EE\B4\F3Öµ\D2\D6Ö¹(non-maximum suppression)\A1\B1\BA\F3\D3Ğ¶\E0\C9\D9\CF\F3\CB\D8
 	for(k=1; k<1024; k++)
 	{
 		if(nHist[k] != 0)
 		{
-			// ×î´óÌİ¶ÈÖµ
+			// \D7\EE\B4\F3\CCİ¶\C8Öµ
 			nMaxMag = k;
 		}
 		
-		// Ìİ¶ÈÎª0µÄµãÊÇ²»¿ÉÄÜÎª±ß½çµãµÄ
-		// ¾­¹ınon-maximum suppressionºóÓĞ¶àÉÙÏóËØ
+		// \CCİ¶\C8Îª0\B5Äµ\E3\CAÇ²\BB\BF\C9\C4\DCÎª\B1ß½\E7\B5\E3\B5\C4
+		// \BE\AD\B9\FDnon-maximum suppression\BA\F3\D3Ğ¶\E0\C9\D9\CF\F3\CB\D8
 		nEdgeNb += nHist[k];
 	}
 
-	// Ìİ¶È±È¸ßãĞÖµ*pnThdHighĞ¡µÄÏóËØµã×ÜÊıÄ¿
+	// \CCİ¶È±È¸\DF\E3\D0Öµ*pnThdHighĞ¡\B5\C4\CF\F3\CBØµ\E3\D7\DC\CA\FDÄ¿
 	nHighCount = (int)(dRatioHigh * nEdgeNb +0.5);
 	
 	k = 1;
 	nEdgeNb = nHist[1];
 	
-	// ¼ÆËã¸ßãĞÖµ
+	// \BC\C6\CB\E3\B8\DF\E3\D0Öµ
 	while( (k<(nMaxMag-1)) && (nEdgeNb < nHighCount) )
 	{
 		k++;
 		nEdgeNb += nHist[k];
 	}
 
-	// ÉèÖÃ¸ßãĞÖµ
+	// \C9\E8\D6Ã¸\DF\E3\D0Öµ
 	*pnThdHigh = k ;
 
-	// ÉèÖÃµÍãĞÖµ
+	// \C9\E8\D6Ãµ\CD\E3\D0Öµ
 	*pnThdLow  = (int)((*pnThdHigh) * dRationLow+ 0.5);
 }
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   Hysteresis()
  *
- * \ÊäÈë²ÎÊı:
- *   int *pnMag               - Ìİ¶È·ù¶ÈÍ¼
- *	 int nWidth               - Í¼ÏóÊı¾İ¿í¶È
- *	 int nHeight              - Í¼ÏóÊı¾İ¸ß¶È
- *	 double dRatioLow         - µÍãĞÖµºÍ¸ßãĞÖµÖ®¼äµÄ±ÈÀı
- *	 double dRatioHigh        - ¸ßãĞÖµÕ¼Í¼ÏóÏóËØ×ÜÊıµÄ±ÈÀı
- *   unsigned char *pUnchEdge - ¼ÇÂ¼±ß½çµãµÄ»º³åÇø
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   int *pnMag               - \CCİ¶È·\F9\B6\C8Í¼
+ *	 int nWidth               - Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
+ *	 int nHeight              - Í¼\CF\F3\CA\FD\BEİ¸ß¶\C8
+ *	 double dRatioLow         - \B5\CD\E3\D0Öµ\BAÍ¸\DF\E3\D0ÖµÖ®\BC\E4\B5Ä±\C8\C0\FD
+ *	 double dRatioHigh        - \B8\DF\E3\D0ÖµÕ¼Í¼\CF\F3\CF\F3\CB\D8\D7\DC\CA\FD\B5Ä±\C8\C0\FD
+ *   unsigned char *pUnchEdge - \BC\C7Â¼\B1ß½\E7\B5\E3\B5Ä»\BA\B3\E5\C7\F8
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   ±¾º¯ÊıÊµÏÖÀàËÆ¡°´ÅÖÍÏÖÏó¡±µÄÒ»¸ö¹¦ÄÜ£¬Ò²¾ÍÊÇ£¬ÏÈµ÷ÓÃEstimateThreshold
- *   º¯Êı¶Ô¾­¹ınon-maximum´¦ÀíºóµÄÊı¾İpUnchSpr¹À¼ÆÒ»¸ö¸ßãĞÖµ£¬È»ºóÅĞ¶Ï
- *   pUnchSprÖĞ¿ÉÄÜµÄ±ß½çÏóËØ(=128)µÄÌİ¶ÈÊÇ²»ÊÇ´óÓÚ¸ßãĞÖµnThdHigh£¬Èç¹û±È
- *   ¸ÃãĞÖµ´ó£¬¸Ãµã½«×÷ÎªÒ»¸ö±ß½çµÄÆğµã£¬µ÷ÓÃTraceEdgeº¯Êı£¬°Ñ¶ÔÓ¦¸Ã±ß½ç
- *   µÄËùÓĞÏóËØÕÒ³öÀ´¡£×îºó£¬µ±Õû¸öËÑË÷Íê±ÏÊ±£¬Èç¹û»¹ÓĞÏóËØÃ»ÓĞ±»±êÖ¾³É
- *   ±ß½çµã£¬ÄÇÃ´¾ÍÒ»¶¨²»ÊÇ±ß½çµã¡£
+ * \Ëµ\C3\F7:
+ *   \B1\BE\BA\AF\CA\FDÊµ\CF\D6\C0\E0\CBÆ¡\B0\B4\C5\D6\CD\CF\D6\CFó¡±µ\C4Ò»\B8\F6\B9\A6\C4Ü£\ACÒ²\BE\CD\CAÇ£\AC\CFÈµ\F7\D3\C3EstimateThreshold
+ *   \BA\AF\CA\FD\B6Ô¾\AD\B9\FDnon-maximum\B4\A6\C0\ED\BA\F3\B5\C4\CA\FD\BE\DDpUnchSpr\B9\C0\BC\C6Ò»\B8\F6\B8\DF\E3\D0Öµ\A3\ACÈ»\BA\F3\C5Ğ¶\CF
+ *   pUnchSpr\D6Ğ¿\C9\C4ÜµÄ±ß½\E7\CF\F3\CB\D8(=128)\B5\C4\CCİ¶\C8\CAÇ²\BB\CAÇ´\F3\D3Ú¸\DF\E3\D0ÖµnThdHigh\A3\AC\C8\E7\B9\FB\B1\C8
+ *   \B8\C3\E3\D0Öµ\B4ó£¬¸Ãµã½«\D7\F7ÎªÒ»\B8\F6\B1ß½\E7\B5\C4\C6\F0\B5ã£¬\B5\F7\D3\C3TraceEdge\BA\AF\CA\FD\A3\AC\B0Ñ¶\D4Ó¦\B8Ã±ß½\E7
+ *   \B5\C4\CB\F9\D3\D0\CF\F3\CB\D8\D5Ò³\F6\C0\B4\A1\A3\D7\EE\BAó£¬µ\B1\D5\FB\B8\F6\CB\D1\CB\F7\CD\EA\B1\CFÊ±\A3\AC\C8\E7\B9\FB\BB\B9\D3\D0\CF\F3\CB\D8Ã»\D3Ğ±\BB\B1\EAÖ¾\B3\C9
+ *   \B1ß½\E7\B5ã£¬\C4\C7Ã´\BE\CDÒ»\B6\A8\B2\BB\CAÇ±ß½\E7\B5ã¡£
  *   
  *************************************************************************
  */
 void Hysteresis(int *pnMag, int nWidth, int nHeight, double dRatioLow, 
 								double dRatioHigh, unsigned char *pUnchEdge)
 {
-	// Ñ­»·¿ØÖÆ±äÁ¿
+	// Ñ­\BB\B7\BF\D8\D6Æ±\E4\C1\BF
 	int y;
 	int x;
 
@@ -2891,30 +2910,30 @@ void Hysteresis(int *pnMag, int nWidth, int nHeight, double dRatioLow,
 
 	int nPos;
 
-	// ¹À¼ÆTraceEdgeĞèÒªµÄµÍãĞÖµ£¬ÒÔ¼°Hysteresisº¯ÊıÊ¹ÓÃµÄ¸ßãĞÖµ
+	// \B9\C0\BC\C6TraceEdge\D0\E8Òª\B5Äµ\CD\E3\D0Öµ\A3\AC\D2Ô¼\B0Hysteresis\BA\AF\CA\FDÊ¹\D3ÃµÄ¸\DF\E3\D0Öµ
 	EstimateThreshold(pnMag, nWidth, nHeight, &nThdHigh, 
 		               &nThdLow, pUnchEdge,dRatioHigh, dRatioLow);
 
-  // Õâ¸öÑ­»·ÓÃÀ´Ñ°ÕÒ´óÓÚnThdHighµÄµã£¬ÕâĞ©µã±»ÓÃÀ´µ±×÷±ß½çµã£¬È»ºóÓÃ
-	// TraceEdgeº¯ÊıÀ´¸ú×Ù¸Ãµã¶ÔÓ¦µÄ±ß½ç
+  // \D5\E2\B8\F6Ñ­\BB\B7\D3\C3\C0\B4Ñ°\D5Ò´\F3\D3\DAnThdHigh\B5Äµã£¬\D5\E2Ğ©\B5ã±»\D3\C3\C0\B4\B5\B1\D7\F7\B1ß½\E7\B5ã£¬È»\BA\F3\D3\C3
+	// TraceEdge\BA\AF\CA\FD\C0\B4\B8\FA\D7Ù¸Ãµ\E3\B6\D4Ó¦\B5Ä±ß½\E7
    for(y=0; y<nHeight; y++)
 	 {
       for(x=0; x<nWidth; x++)
 			{
 				nPos = y*nWidth + x ; 
 
-				// Èç¹û¸ÃÏóËØÊÇ¿ÉÄÜµÄ±ß½çµã£¬²¢ÇÒÌİ¶È´óÓÚ¸ßãĞÖµ£¬¸ÃÏóËØ×÷Îª
-				// Ò»¸ö±ß½çµÄÆğµã
+				// \C8\E7\B9\FB\B8\C3\CF\F3\CB\D8\CAÇ¿\C9\C4ÜµÄ±ß½\E7\B5ã£¬\B2\A2\C7\D2\CCİ¶È´\F3\D3Ú¸\DF\E3\D0Öµ\A3\AC\B8\C3\CF\F3\CB\D8\D7\F7Îª
+				// Ò»\B8\F6\B1ß½\E7\B5\C4\C6\F0\B5\E3
 				if((pUnchEdge[nPos] == 128) && (pnMag[nPos] >= nThdHigh))
 				{
-					// ÉèÖÃ¸ÃµãÎª±ß½çµã
+					// \C9\E8\D6Ã¸Ãµ\E3Îª\B1ß½\E7\B5\E3
 					pUnchEdge[nPos] = 255;
 					TraceEdge(y, x, nThdLow, pUnchEdge, pnMag, nWidth);
 				}
       }
    }
 
-	 // ÄÇĞ©»¹Ã»ÓĞ±»ÉèÖÃÎª±ß½çµãµÄÏóËØÒÑ¾­²»¿ÉÄÜ³ÉÎª±ß½çµã
+	 // \C4\C7Ğ©\BB\B9Ã»\D3Ğ±\BB\C9\E8\D6\C3Îª\B1ß½\E7\B5\E3\B5\C4\CF\F3\CB\D8\D2Ñ¾\AD\B2\BB\BF\C9\C4Ü³\C9Îª\B1ß½\E7\B5\E3
    for(y=0; y<nHeight; y++)
 	 {
 		 for(x=0; x<nWidth; x++)
@@ -2922,7 +2941,7 @@ void Hysteresis(int *pnMag, int nWidth, int nHeight, double dRatioLow,
 			 nPos = y*nWidth + x ; 
 			 if(pUnchEdge[nPos] != 255)
 			 {
-				 // ÉèÖÃÎª·Ç±ß½çµã
+				 // \C9\E8\D6\C3Îª\B7Ç±ß½\E7\B5\E3
 				 pUnchEdge[nPos] = 0 ;
 			 }
 		 }
@@ -2932,40 +2951,40 @@ void Hysteresis(int *pnMag, int nWidth, int nHeight, double dRatioLow,
 
 /*************************************************************************
  *
- * \º¯ÊıÃû³Æ£º
+ * \\BA\AF\CA\FD\C3\FB\B3Æ£\BA
  *   Canny()
  *
- * \ÊäÈë²ÎÊı:
- *   unsigned char *pUnchImage- Í¼ÏóÊı¾İ
- *	 int nWidth               - Í¼ÏóÊı¾İ¿í¶È
- *	 int nHeight              - Í¼ÏóÊı¾İ¸ß¶È
- *   double sigma             - ¸ßË¹ÂË²¨µÄ±ê×¼·½²î
- *	 double dRatioLow         - µÍãĞÖµºÍ¸ßãĞÖµÖ®¼äµÄ±ÈÀı
- *	 double dRatioHigh        - ¸ßãĞÖµÕ¼Í¼ÏóÏóËØ×ÜÊıµÄ±ÈÀı
- *   unsigned char *pUnchEdge - cannyËã×Ó¼ÆËãºóµÄ·Ö¸îÍ¼
+ * \\CA\E4\C8\EB\B2\CE\CA\FD:
+ *   unsigned char *pUnchImage- Í¼\CF\F3\CA\FD\BE\DD
+ *	 int nWidth               - Í¼\CF\F3\CA\FD\BEİ¿\ED\B6\C8
+ *	 int nHeight              - Í¼\CF\F3\CA\FD\BEİ¸ß¶\C8
+ *   double sigma             - \B8\DFË¹\C2Ë²\A8\B5Ä±\EA×¼\B7\BD\B2\EE
+ *	 double dRatioLow         - \B5\CD\E3\D0Öµ\BAÍ¸\DF\E3\D0ÖµÖ®\BC\E4\B5Ä±\C8\C0\FD
+ *	 double dRatioHigh        - \B8\DF\E3\D0ÖµÕ¼Í¼\CF\F3\CF\F3\CB\D8\D7\DC\CA\FD\B5Ä±\C8\C0\FD
+ *   unsigned char *pUnchEdge - canny\CB\E3\D7Ó¼\C6\CB\E3\BA\F3\B5Ä·Ö¸\EEÍ¼
  *
- * \·µ»ØÖµ:
- *   ÎŞ
+ * \\B7\B5\BB\D8Öµ:
+ *   \CE\DE
  *
- * \ËµÃ÷:
- *   canny·Ö¸îËã×Ó£¬¼ÆËãµÄ½á¹û±£´æÔÚpUnchEdgeÖĞ£¬Âß¼­1(255)±íÊ¾¸ÃµãÎª
- *   ±ß½çµã£¬Âß¼­0(0)±íÊ¾¸ÃµãÎª·Ç±ß½çµã¡£¸Ãº¯ÊıµÄ²ÎÊısigma£¬dRatioLow
- *   dRatioHigh£¬ÊÇĞèÒªÖ¸¶¨µÄ¡£ÕâĞ©²ÎÊı»áÓ°Ïì·Ö¸îºó±ß½çµãÊıÄ¿µÄ¶àÉÙ
+ * \Ëµ\C3\F7:
+ *   canny\B7Ö¸\EE\CB\E3\D7Ó£\AC\BC\C6\CB\E3\B5Ä½\E1\B9\FB\B1\A3\B4\E6\D4\DApUnchEdge\D6Ğ£\AC\C2ß¼\AD1(255)\B1\EDÊ¾\B8Ãµ\E3Îª
+ *   \B1ß½\E7\B5ã£¬\C2ß¼\AD0(0)\B1\EDÊ¾\B8Ãµ\E3Îª\B7Ç±ß½\E7\B5ã¡£\B8Ãº\AF\CA\FD\B5Ä²\CE\CA\FDsigma\A3\ACdRatioLow
+ *   dRatioHigh\A3\AC\CA\C7\D0\E8ÒªÖ¸\B6\A8\B5Ä¡\A3\D5\E2Ğ©\B2\CE\CA\FD\BB\E1Ó°\CF\EC\B7Ö¸\EE\BA\F3\B1ß½\E7\B5\E3\CA\FDÄ¿\B5Ä¶\E0\C9\D9
  *************************************************************************
  */
 void Canny(unsigned char *pUnchImage, int nWidth, int nHeight, double sigma,
 					 double dRatioLow, double dRatioHigh, unsigned char *pUnchEdge)
 {
-	// ¾­¹ı¸ßË¹ÂË²¨ºóµÄÍ¼ÏóÊı¾İ
+	// \BE\AD\B9\FD\B8\DFË¹\C2Ë²\A8\BA\F3\B5\C4Í¼\CF\F3\CA\FD\BE\DD
 	unsigned char * pUnchSmooth ;
   
-	// Ö¸Ïòx·½Ïòµ¼ÊıµÄÖ¸Õë
+	// Ö¸\CF\F2x\B7\BD\CF\F2\B5\BC\CA\FD\B5\C4Ö¸\D5\EB
 	int * pnGradX ; 
 
-	// Ö¸Ïòy·½Ïòµ¼ÊıµÄÖ¸Õë
+	// Ö¸\CF\F2y\B7\BD\CF\F2\B5\BC\CA\FD\B5\C4Ö¸\D5\EB
 	int * pnGradY ;
 
-	// Ìİ¶ÈµÄ·ù¶È
+	// \CCİ¶ÈµÄ·\F9\B6\C8
 	int * pnGradMag ;
 
 	pUnchSmooth  = new unsigned char[nWidth*nHeight] ;
@@ -2973,23 +2992,23 @@ void Canny(unsigned char *pUnchImage, int nWidth, int nHeight, double sigma,
 	pnGradY      = new int [nWidth*nHeight]          ;
 	pnGradMag    = new int [nWidth*nHeight]          ;
 
-	// ¶ÔÔ­Í¼Ïó½øĞĞÂË²¨
+	// \B6\D4Ô­Í¼\CF\F3\BD\F8\D0\D0\C2Ë²\A8
 	GaussianSmooth(pUnchImage, nWidth, nHeight, sigma, pUnchSmooth) ;
 
-	// ¼ÆËã·½Ïòµ¼Êı
+	// \BC\C6\CBã·½\CF\F2\B5\BC\CA\FD
 	DirGrad(pUnchSmooth, nWidth, nHeight, pnGradX, pnGradY) ;
 
-	// ¼ÆËãÌİ¶ÈµÄ·ù¶È
+	// \BC\C6\CB\E3\CCİ¶ÈµÄ·\F9\B6\C8
 	GradMagnitude(pnGradX, pnGradY, nWidth, nHeight, pnGradMag) ;
 
-	// Ó¦ÓÃnon-maximum ÒÖÖÆ
+	// Ó¦\D3\C3non-maximum \D2\D6\D6\C6
 	NonmaxSuppress(pnGradMag, pnGradX, pnGradY, nWidth, nHeight, pUnchEdge) ;
 
-	// Ó¦ÓÃHysteresis£¬ÕÒµ½ËùÓĞµÄ±ß½ç
+	// Ó¦\D3\C3Hysteresis\A3\AC\D5Òµ\BD\CB\F9\D3ĞµÄ±ß½\E7
 	Hysteresis(pnGradMag, nWidth, nHeight, dRatioLow, dRatioHigh, pUnchEdge);
 
 
-	// ÊÍ·ÅÄÚ´æ
+	// \CAÍ·\C5\C4Ú´\E6
 	delete []pnGradX      ;
 	pnGradX      = NULL ;
 	delete []pnGradY      ;

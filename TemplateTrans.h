@@ -1,4 +1,26 @@
-// TemplateTrans.h
+/**************************************************************************
+
+ *  文件名：TemplateTrans.h
+
+ *
+
+ *  图像模板变换API函数库：
+
+ *
+
+ *  Template()			- 图像模板变换，通过改变模板，可以用它实现
+
+ *						  图像的平滑、锐化、边缘识别等操作。
+
+ *  MedianFilter()		- 图像中值滤波。
+
+ *  GetMedianNum()		- 获取中值。被函数MedianFilter()调用来求中值。
+
+ *  ReplaceColorPal()	- 更换伪彩色编码表。
+
+ *
+
+ *************************************************************************/
 
 #ifndef _INC_TemplateTransAPI
 #define _INC_TemplateTransAPI
