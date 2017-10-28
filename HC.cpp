@@ -1603,8 +1603,8 @@ void CHC::InitiateRegions()
 				nptemp=++nplp;
 				while(nplp!=S[x].NPList.end()&&(nplp->rInd)==y)
 					++nplp;
-				S[x].NPList.erase(nptemp,nplp);
-				nplp=nptemp;//this line is added for vector<NP>
+				nplp = S[x].NPList.erase(nptemp,nplp);
+				
 			}
 			else
 			{
@@ -1628,9 +1628,7 @@ void CHC::InitiateRegions()
 				A[linknum].r[0]=x;
 				A[linknum].r[1]=y;
 				++linknum;
-				S[x].NPList.erase(++nptemp,nplp);
-				nplp=nptemp;//this line is intended for vector<NP>
-				
+				nplp=S[x].NPList.erase(++nptemp,nplp);				
 			}
 		}
 	}
@@ -2676,10 +2674,7 @@ int CHC::HierClust()
 		{
 			if(lit->rInd==pl)
 			{
-				//to save time remove lit is not performed
-				ltemp=lit;				
-				//lit++;
-				S[ql].NPList.erase(ltemp);
+				lit=S[ql].NPList.erase(lit);
 				continue;
 			}
 			if((ltemp=find(S[pl].NPList.begin(),S[pl].NPList.end(),*lit))!=S[pl].NPList.end())
@@ -2710,10 +2705,8 @@ int CHC::HierClust()
 		while(lit!=S[pl].NPList.end())
 		{
 			if(lit->rInd==ql)
-			{
-				ltemp=lit;
-				//++lit; this line works for list<NP> but not for vector<NP>
-				S[pl].NPList.erase(ltemp);
+			{				
+				lit = S[pl].NPList.erase(lit);
 				continue;
 			}
 			assert((A[lit->pInd].r[0]==pl&&A[lit->pInd].r[1]==lit->rInd)||(A[lit->pInd].r[0]==lit->rInd&&A[lit->pInd].r[1]==pl));
@@ -4466,10 +4459,7 @@ void CHC::MRS(float hdiff)
 				{
 					if(lit->rInd==pl)
 					{
-						
-						ltemp=lit;				
-						//lit++;
-						S[ql].NPList.erase(ltemp);
+						lit = S[ql].NPList.erase(lit);
 						continue;
 					}
 					if((ltemp=find(S[pl].NPList.begin(),S[pl].NPList.end(),*lit))!=S[pl].NPList.end())
@@ -4499,10 +4489,8 @@ void CHC::MRS(float hdiff)
 				while(lit!=S[pl].NPList.end())
 				{
 					if(lit->rInd==ql)
-					{
-						ltemp=lit;
-						//++lit; this line works for list<NP> but not for vector<NP>
-						S[pl].NPList.erase(ltemp);
+					{						
+						lit = S[pl].NPList.erase(lit);
 						continue;
 					}
 					assert((A[lit->pInd].r[0]==pl&&A[lit->pInd].r[1]==lit->rInd)||(A[lit->pInd].r[0]==lit->rInd&&A[lit->pInd].r[1]==pl));
