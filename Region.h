@@ -116,17 +116,50 @@ public:
 
 	//void DeleteNeighbor(const int tag);
 	unsigned int size; 
-	float *addition;//all the pixel gray value sum
-	float *sSum;//all the pixels gray scale value square sum
+	float *addition; // each entry is the sum of intensity values in one
+	    // channel of all pixels in the region normalized by the intensity
+		// range limit, e.g., 256
+	float *sSum; // each entry is the sum of squares of intensity values in 
+	    // one channel of all pixels in the region normalized by the squared
+		// intensity range limit, e.g., 256^2
 	NPL NPList;
 	int perim;
 	int bestp;// best merge candidate pair index
 	int p;//parent region index
-	float interdif;
+
+/* The heterogeneity of the region defined following equations (2-6) of 
+Benz, U. C., Hofmann, P., Willhauck, G., Lingenfelder, I., & Heynen, M. (2004).
+ Multi-resolution, object-oriented fuzzy analysis of remote sensing data for 
+ GIS-ready information. ISPRS Journal of photogrammetry and remote sensing, 
+ 58(3-4), 239-258." 
+For clarity, the exact equation is given below.
+$ heterogeneity = w_{color} h_{color} + (1 - w_{color}) h_{shape} \\
+h_{color} = \sum_{c=1}^{d} w_c \sqrt{\frac{1}{n-1}\left( \sum^n I_{c,j}^2 - 
+  \frac{(\sum^n I_{c,j})^2}{n} \right )} \\
+h_{shape} = w_{compt} h_{compt} +  (1 - w_{compt}) h_{smooth} \\
+h_{smooth} = n l/b \\
+h_{compt} = l\sqrt{n} $ 
+where d is the number of channels of the image, 
+ n the number of pixels in the region, l the perimeter of the region, 
+ b the perimeter of the region's bounding box
+*/
+	float interdif; 
+
+
 	bool isChecked;
 	CRect *norbox;//regular box bounding the region
 public:
-	float InterDiff(int d=1,float wc=0.9,float=0.5,float=256.f);
+	/** compute the heterogeneity of the region
+	 * param: d number of channels
+	 * param: wcolor weight of color heterogeneity, $w_{color}$ in equation (2)
+	 *  of Benz 04, note it is not $w_c$
+	 * param: wp weight of compactness heterogeneity, implying that 
+	 *  smoothness heterogeneity weight == 1 - wp
+	 * param: range is the right range limit of the intensity values, a power 
+	 *  of 2. For a intensity range [0, 255], it ought to be 256
+	 * return the computed heterogeneity combining color and shape info
+	 */
+	float InterDiff(int d=1,float wcolor=0.9,float wp=0.5,float range=256.f);
 	Region(unsigned int sz=0):size(sz),addition(NULL),sSum(NULL),perim(0),
 		bestp(-1),p(-1),interdif(0),isChecked(false),norbox(NULL){}
 	Region(const Region&cpy):size(cpy.size),addition(cpy.addition),sSum(cpy.sSum),perim(cpy.perim),

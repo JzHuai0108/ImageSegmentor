@@ -68,7 +68,7 @@ void AdaptiveFindThreshold(CvMat *dx, CvMat *dy, double &low, double &high,doubl
     float* ranges[] = { range_0 };
 	size = cvGetSize(dx);
 	imge = cvCreateImage(size, IPL_DEPTH_32F, 1);
-	// ¼ÆËã±ßÔµµÄÇ¿¶È, ²¢´æÓÚÍ¼ÏñÖÐ
+	// compute the magnitudes of edges and save
 	float maxv = 0;
 	for(i = 0; i < size.height; i++ )
 	{
@@ -81,7 +81,7 @@ void AdaptiveFindThreshold(CvMat *dx, CvMat *dy, double &low, double &high,doubl
 			maxv = maxv < _image[j] ? _image[j]: maxv;
 		}
 	}
-	// ¼ÆËãÖ±·½Í¼
+	// compute histogram
 	range_0[1] = maxv;
 	hist_size = (int)(hist_size > maxv ? maxv:hist_size);
 	hist = cvCreateHist(1, &hist_size, CV_HIST_ARRAY, ranges, 1);
@@ -96,7 +96,7 @@ void AdaptiveFindThreshold(CvMat *dx, CvMat *dy, double &low, double &high,doubl
 		sum += h[i];
 		if( sum > total )
 			break; 
-	} // ¼ÆËã¸ßµÍÃÅÏÞ
+	} // compute low and high thresholds
 	high = (i+1) * maxv / hist_size ;
 	low = high * 0.4;
 	cvReleaseImage( &imge );
@@ -275,9 +275,9 @@ IplImage*LoadGDALToIPL(const char*fN,int bC, int bits)
 		return NULL;
 	}
 	int w,h,spp,d,x,y,temp;
-	w=pDataset->GetRasterXSize(); //Ó°ÏìµÄ¸ß¶È£¬¿í¶È
+	w=pDataset->GetRasterXSize();
 	h=pDataset->GetRasterYSize();
-	spp=pDataset->GetRasterCount();//²¨¶ÎµÄÊýÄ¿
+	spp=pDataset->GetRasterCount(); // #band
 	GDALRasterBand  *m_pBand=NULL;
 	IplImage* goal;
 	
@@ -1118,7 +1118,7 @@ int MyKmeans(float*points,int dim, int*label,int count, float** estimates, int c
 	}
 	out<<endl;*/
 }
-// ¹¹Ôìº¯Êý£¬³õÊ¼»¯CHC¶ÔÏóµÄÊý¾Ý
+// ï¿½ï¿½ï¿½ìº¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½CHCï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 CHC::CHC():Width(0),Height(0),data_(NULL),sData_(NULL),
 propData(NULL),tag(NULL),Delta(0),d_(0),comps(0),
 typeProp(0),propDim(0),loop(1),minsize(3),K(20.0f),maxDelta(50.f),
@@ -1127,14 +1127,14 @@ wp(0.5f),wc(0.9f),mindiff(20.f),sortDM(true),metric(DISTBENZ)
 	++Count;
 }
 
-// Îö¹¹º¯Êý
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 CHC::~CHC()
 {
 	Clear();
 //	cvDestroyWindow("result");
 }
 
-// Çå³ýÒÔÇ°µÄÍ¼ÏñÊý¾Ý£¬²¢ÊÍ·ÅÄÚ´æ
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½Ú´ï¿½
 void CHC::Clear()
 {
 	d_=0;//avoid storeseg output spectral data
@@ -2214,7 +2214,7 @@ float EvalQs(const CHC&sHC,const CString&fn,vector<float>&bWArray)
 		AfxMessageBox("Segment image before calling EvalQS!");
 		return -1.f;
 	}
-	int spp=pDataset->GetRasterCount();//²¨¶ÎµÄÊýÄ¿
+	int spp=pDataset->GetRasterCount();//ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½Ä¿
 	int w=sHC.Width,h=sHC.Height,sernum,trans,ext;
 
 	double pedler;
@@ -2483,7 +2483,10 @@ void CHC::InitiateRegionSet()
 			S[y].sSum=sData_+y*d_;
 			S[y].size=1;
 			S[y].perim=4;
+			// The below value is set in accordance with the description of
+			// heterogeneity for class Region at Region.h
 			S[y].interdif=(1-wc)*(1+3*wp);
+
 			i=y%width;
 			j=y/width;
 			S[y].norbox=&grid[y];
@@ -4079,7 +4082,7 @@ int BuildData(CHC&sHC, const CString&path, vector<float>&bWArray)
 {
 	GDALDataset* pDataset=(GDALDataset *) GDALOpen(path,GA_ReadOnly);
 	assure(pDataset,path);
-	int spp=pDataset->GetRasterCount();//²¨¶ÎµÄÊýÄ¿
+	int spp=pDataset->GetRasterCount();//ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½Ä¿
 	int d;
 	if(bWArray.size()>0)
 	{
@@ -5101,7 +5104,7 @@ void BorderEncode(int *tag,int Width, int Height)
 	long int l=0,l0; 
 //	int l2,i1=0,j1=0;
 	int *g=tag;
-	/*¼ì²â³ö·¢µã*/
+	/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	sernum=0;
 	for(i=0;i<Height;++i)
 	{
@@ -5131,7 +5134,7 @@ void BorderEncode(int *tag,int Width, int Height)
 			nrn=0;
 			for(k=1;k<=8;++k)
 				nrn+=n[k];
-			/*¹ÂÁ¢µã¼ì²â*/
+			/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 			if(nrn==-8)
 			{				
 				pt0.x =j;
@@ -5144,7 +5147,7 @@ void BorderEncode(int *tag,int Width, int Height)
 				g[immed+j]=-1;
 				continue;
 			}
-			/*iteration check chains¼ì²â*/
+			/*iteration check chainsï¿½ï¿½ï¿½*/
 			//l length of the loop, cc previous link relative position
 			l=1;
 			curtag=g[immed+t];
@@ -5162,11 +5165,11 @@ void BorderEncode(int *tag,int Width, int Height)
 				{
 					if(n[k]!=curtag)continue;
 					if(k==8)k=0;
-					//ÅÐ¶ÏÊÇ·ñÊÇÇ°Ò»¸öµã£¿·ñ¼ÌÐøÒÆÏòÏàÁÚµã
+					//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Ç°Ò»ï¿½ï¿½ï¿½ã£¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½
 					if(l!=1){if(abs(k-cc)==4)continue;}
 					cc=k;
 					++l;
-					/* ½«3¡Á3´°¿ÚÒÆÏòÏàÁÚµã*/
+					/* ï¿½ï¿½3ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½*/
 					switch(k)
 					{
 					case 1:s--;t++;break;
@@ -5181,7 +5184,7 @@ void BorderEncode(int *tag,int Width, int Height)
 					//if((s<1)||(s>height-2)||(t<1)||(t>width-2))break;
 					if(l0<l)break;					
 					
-				}/*×ªÏòÏÂÒ»¸ö³ö·¢µã*/
+				}/*×ªï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 				if(k==9)break;
 				GetMask(t,s,g,Width,Height,n);	
 			}while(s!=i||t!=j);
@@ -6243,8 +6246,8 @@ void GetProfile(float line[4],int len,int Width, vector<int>&pontiff)
 void GetBand(GDALDataset* m_pSrc,float*buf,int d)
 {
 	GDALRasterBand  *m_pBand=NULL;
-	int Width=m_pSrc->GetRasterXSize(); //Ó°ÏìµÄ¸ß¶È£¬¿í¶È
-	int	Height=m_pSrc->GetRasterYSize();
+	int Width=m_pSrc->GetRasterXSize();
+	int Height=m_pSrc->GetRasterYSize();
 	float *tempbuf=new float[Width*Height];
 	int x,y,sernum,temp;
 		m_pBand= m_pSrc->GetRasterBand(d);
@@ -7348,7 +7351,7 @@ void SaveSeg2(CHC&sHC,const CString&pathname,const int bn)
 	vector<exRegion>::iterator xiter;
 	GDALRasterBand  *poBand=NULL;
 	poBand= m_pDataset->GetRasterBand(1);
-	//GDALDataType dataType=poBand->GetRasterDataType();//Êý¾ÝÀàÐÍ
+	//GDALDataType dataType=poBand->GetRasterDataType();//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	GDALDataType dataType=GDT_Float32;
 	int x,y,i,j;
 	int d,sernum,label;
@@ -8436,8 +8439,8 @@ int BuildData(CHC&sHC,const CString& fn1,const CString&fn2, vector<float>&bWArra
 	assure(pDataset1,fn1);
 	GDALDataset* pDataset2=(GDALDataset *) GDALOpen(fn2,GA_ReadOnly);
 	assure(pDataset2,fn2);
-	int spp1=pDataset1->GetRasterCount();//²¨¶ÎµÄÊýÄ¿
-	int spp2=pDataset2->GetRasterCount();//²¨¶ÎµÄÊýÄ¿
+	int spp1=pDataset1->GetRasterCount();//ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½Ä¿
+	int spp2=pDataset2->GetRasterCount();//ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½Ä¿
 	int d;
 	if(bWArray.size()>0)
 	{

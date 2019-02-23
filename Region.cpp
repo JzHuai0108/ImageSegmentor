@@ -43,7 +43,8 @@ Region::~Region()
 float Region::InterDiff(int d,float wc,float wp,float range)
 {
 	if(size==1)
-		return interdif=(1-wc)*(1+3*wp);
+		return interdif=(1-wc)*(1+3*wp); // a shorthand to bail out the 
+		// following calculations
 	float trek=0;
 	interdif=0;
 	for(int i=0;i<d;i++)
