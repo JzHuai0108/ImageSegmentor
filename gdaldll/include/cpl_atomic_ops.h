@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_atomic_ops.h 19885 2010-06-17 22:01:56Z rouault $
+ * $Id: cpl_atomic_ops.h 19884 2010-06-17 22:01:19Z rouault $
  *
  * Name:     cpl_atomic_ops.h
  * Project:  CPL - Common Portability Library

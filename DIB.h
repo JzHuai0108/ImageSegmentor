@@ -24,9 +24,8 @@
 #define __DIB_H
 //#include <windows.h>
 #include <afx.h>
-#include <stdlib.h>
-#include "..\\include\\gdal.h"
-#include "..\\include\\gdal_priv.h"
+//#include <stdlib.h>
+
 
 #define WIDTHBYTES(bits)    (((bits) + 31) / 32 * 4)
 // 计算图像每行象素所占的字节数目 
@@ -61,12 +60,11 @@ public:
 	int LoadDIBToIPL(char*imageData, int bits);
 	int LoadDIBToBuf(BYTE* buf);
 	int LoadDIBToBuf(float *buf);
-	CString GetDataType(GDALDataset *);
-	bool SaveToFile(GDALDataset*,CString);
+	bool SaveToFile(const CString&,CString&);
 	int lookregion(int label,int*tag, CRect rect,int area);
 	void ShowReg(int*tag=0,int step=32);
 	// 将Dib位图数据填充到到CDib类的数据结构
-	BOOL CreateDIB(int r, int g, int b,GDALDataset* =NULL);
+	BOOL CreateDIB(int r, int g, int b,const CString&);
 	BOOL LoadDib(BYTE* lpDib);
 	// 将CDib类的数据结构中的数据转换为Dib位图格式数据
 	BOOL SaveToDib(BYTE *lpDib);
@@ -80,6 +78,7 @@ public:
 	void histovector(float*hive);
 	BOOL InteEqualize();
 	CDIB();		// CDib类的构造函数
+
 	CDIB( const char *pszFileName);
 	~CDIB();	// CDib类的析构函数
 
@@ -123,5 +122,13 @@ public:
 	BOOL Rotate();
 	// 将图像转换为负像
 	BOOL Negative();
+private:
+	CDIB(const CDIB&);
+	CDIB& operator=(const CDIB&);
 };
+
+void ImageProps(int&, CString&,const CString&fn);
+//input:allocated EM 
+//output: EM initiated with data for edge detection
+BYTE* GetEM(const CString&fn, BYTE *EM,int eB);
 #endif //dib.h

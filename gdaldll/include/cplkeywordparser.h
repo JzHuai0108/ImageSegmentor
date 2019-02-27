@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplkeywordparser.h 18063 2009-11-21 21:11:49Z warmerdam $
+ * $Id: cplkeywordparser.h 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  Common Portability Library
  * Purpose:  Implementation of CPLKeywordParser - a class for parsing
@@ -57,7 +57,7 @@ public:
     CPLKeywordParser();
     ~CPLKeywordParser();
 
-    int     Ingest( FILE *fp );
+    int     Ingest( VSILFILE *fp );
 
     const char *GetKeyword( const char *pszPath, const char *pszDefault=NULL );
     char  **GetAllKeywords() { return papszKeywordList; }

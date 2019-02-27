@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "GlobalApi.h"
-#include <queue>
+
 #include "susan.h"
+#include "Thinner.h"
+#include "MMOFUNC.h"
 //#include "math.h"
 //#include <direct.h>
-
+#include <queue>
 using namespace std;
 //following freeman code style as introduced in opencv reference
 //roadseed points a memory space of size width*height with 1 denotes roads 0 for background 
@@ -935,7 +937,7 @@ void GetGradient(BYTE* image, int width, int height
 
 	for (y=0; y<graheight; y++)
 	{
-		for (x=0; x<grawidth; x++)
+		for (int x=0; x<grawidth; x++)
 		{
 			int temppos = y*grawidth + x;
 			if ( (deltaxarr[temppos])==0 )
@@ -982,9 +984,9 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 	const int INIT = -2;
 	const int MASK = -1;
 	const int WATERSHED = 0;
-	int h = 0;
+	int h = 0,i=0;
 	int imagelen = imageWidth * imageHeight;
-	for (int i=0; i<imagelen; i++)
+	for (i=0; i<imagelen; i++)
 	{
 		flagarr[i] = INIT;
 	}
@@ -997,12 +999,12 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 	//memset(imd, 0, sizeof(int)*imagelen);
 	std::queue <int> myqueue;
 	int curlabel = 0;//各盆地标记；
-
+	int ini;
 	for (h=minh; h<=maxh; h++)
 	{
 		int stpos = graddarr[h];
 		int edpos = graddarr[h+1];
-		for (int ini=stpos; ini<edpos; ini++)
+		for (ini=stpos; ini<edpos; ini++)
 		{
 			int x = imiarr[ini].x;
 			int y = imiarr[ini].y;
@@ -1197,7 +1199,7 @@ void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* gra
 		}//以上现有盆地的扩展；
 
 		//以下处理新发现的盆地；
-		for (ini=stpos; ini<edpos; ini++)
+		for ( ini=stpos; ini<edpos; ini++)
 		{
 			int x = imiarr[ini].x;
 			int y = imiarr[ini].y;
@@ -2611,7 +2613,7 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 				if (abs(gy) > abs(gx)) 
 				{
 					// 计算插值的比例
-					weight = fabs(gx)/fabs(gy); 
+					weight = fabs((float)gx)/fabs((float)gy); 
 
 					g2 = pnMag[nPos-nWidth] ; 
 					g4 = pnMag[nPos+nWidth] ;
@@ -2644,7 +2646,7 @@ void NonmaxSuppress(int *pnMag, int *pnGradX, int *pnGradY, int nWidth,
 				else
 				{
 					// 计算插值的比例
-					weight = fabs(gy)/fabs(gx); 
+					weight = fabs((float)gy)/fabs((float)gx); 
 					
 					g2 = pnMag[nPos+1] ; 
 					g4 = pnMag[nPos-1] ;

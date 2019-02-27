@@ -74,7 +74,7 @@
 * The file randomc.htm contains further documentation on these random number
 * generators.
 *
-* © 1997 - 2004 Agner Fog. 
+* ?1997 - 2004 Agner Fog. 
 * GNU General Public License www.gnu.org/copyleft/gpl.html
 *******************************************************************************/
 
@@ -89,7 +89,7 @@
 // Change these definitions, if necessary, on 64 bit computers
 typedef   signed long int32;     
 typedef unsigned long uint32;     
-
+enum TArch{LittleEndian=0, BigEndian, NonIEEE};
 class TRandomMersenne {                // encapsulate random number generator
   #if 0
     // define constants for MT11213A:
@@ -128,8 +128,7 @@ class TRandomMersenne {                // encapsulate random number generator
   private:
   uint32 mt[MERS_N];                   // state vector
   int mti;                             // index into mt
-  enum TArch {LITTLEENDIAN, BIGENDIAN, NONIEEE};
-  TArch Architecture;                  // conversion to float depends on computer architecture
+	TArch Architecture;                  // conversion to float depends on computer architecture
   };    
 
 class TRanrotBGenerator {              // encapsulate random number generator
@@ -144,7 +143,6 @@ class TRanrotBGenerator {              // encapsulate random number generator
   int p1, p2;                          // indexes into buffer
   uint32 randbuffer[KK];               // history buffer
   uint32 randbufcopy[KK*2];            // used for self-test
-  enum TArch {LITTLEENDIAN, BIGENDIAN, NONIEEE};
   TArch Architecture;                  // conversion to float depends on computer architecture
 };
 
@@ -165,7 +163,6 @@ class TRanrotWGenerator {              // encapsulate random number generator
     uint32 randbits[3];};  
   uint32 randbuffer[KK][2];            // history buffer
   uint32 randbufcopy[KK*2][2];         // used for self-test
-  enum TArch {LITTLEENDIAN, BIGENDIAN, NONIEEE, EXTENDEDPRECISIONLITTLEENDIAN};
   TArch Architecture;                  // conversion to float depends on computer architecture
 };
 

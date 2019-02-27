@@ -30,10 +30,10 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 public:
-	void SetImage(BYTE* indata, INT width, INT height);//…Ë÷√ÕºœÒ£ª
+	void SetImage(BYTE* indata, INT width, INT height, int);//…Ë÷√ÕºœÒ£ª
 
 protected:
-	CDIB myImageobject; 
+	CDIB myImageObj; 
 	BOOL isImageOk;
 
 // Implementation

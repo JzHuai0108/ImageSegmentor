@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.h 11873 2007-08-11 17:37:43Z mloskot $
+ * $Id: gdaljp2metadata.h 22678 2011-07-09 19:47:12Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  JP2 Box Reader (and GMLJP2 Interpreter)
@@ -41,7 +41,7 @@
 class CPL_DLL GDALJP2Box
 {
 
-    FILE        *fpVSIL;
+    VSILFILE   *fpVSIL;
 
     char        szBoxType[5];
 
@@ -55,7 +55,7 @@ class CPL_DLL GDALJP2Box
     GByte      *pabyData;
 
 public:
-                GDALJP2Box( FILE * = NULL );
+                GDALJP2Box( VSILFILE * = NULL );
                 ~GDALJP2Box();
 
     int         SetOffset( GIntBig nNewOffset );
@@ -76,7 +76,7 @@ public:
 
     int         DumpReadable( FILE * );
 
-    FILE        *GetFILE() { return fpVSIL; }
+    VSILFILE   *GetFILE() { return fpVSIL; }
 
     const GByte *GetUUID() { return abyUUID; }
 
@@ -112,21 +112,24 @@ private:
     GByte  *pabyMSIGData;
 
 public:
-    char   **papszGMLMetadata;
+    char  **papszGMLMetadata;
     
     int     bHaveGeoTransform;
     double  adfGeoTransform[6];
 
-    char    *pszProjection;
+    char   *pszProjection;
 
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
+
+    char  **papszMetadata;
+    char   *pszXMPMetadata;
 
 public:
             GDALJP2Metadata();
             ~GDALJP2Metadata();
 
-    int     ReadBoxes( FILE * fpVSIL );
+    int     ReadBoxes( VSILFILE * fpVSIL );
 
     int     ParseJP2GeoTIFF();
     int     ParseMSIG();

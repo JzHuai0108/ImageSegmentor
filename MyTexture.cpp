@@ -245,7 +245,7 @@ void CMyTexture::GetGradient(BYTE* image, INT width, INT height
 
 	for (y=1; y<graheight-1; y++)
 	{
-		for (x=1; x<grawidth-1; x++)
+		for (int x=1; x<grawidth-1; x++)
 		{
 			INT inarrpos = ((y)*width + (x)) + 1;//在输入块中的位置；
 			INT deltaarrpos = y*grawidth + x;//在梯度数组中的位置；
@@ -267,9 +267,9 @@ void CMyTexture::GetGradient(BYTE* image, INT width, INT height
 		}
 	}
 
-	for (y=0; y<graheight; y++)
+	for ( y=0; y<graheight; y++)
 	{
-		for (x=0; x<grawidth; x++)
+		for (int x=0; x<grawidth; x++)
 		{
 			INT temppos = y*grawidth + x;
 			if ( (deltaxarr[temppos])==0 )

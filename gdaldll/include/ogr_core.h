@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_core.h 17722 2009-10-01 16:40:26Z warmerdam $
+ * $Id: ogr_core.h 22448 2011-05-28 18:49:54Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Define some core portability services for cross-platform OGR code.
@@ -47,9 +47,8 @@
 class CPL_DLL OGREnvelope
 {
   public:
-        OGREnvelope()
+        OGREnvelope() : MinX(0.0), MaxX(0.0), MinY(0.0), MaxY(0.0)
         {
-                MinX = MaxX = MinY = MaxY = 0;
         }
     double      MinX;
     double      MaxX;
@@ -137,6 +136,121 @@ typedef struct
 } OGREnvelope;
 #endif
 
+
+/**
+ * Simple container for a bounding region in 3D.
+ */
+
+#if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
+class CPL_DLL OGREnvelope3D : public OGREnvelope
+{
+  public:
+        OGREnvelope3D() : OGREnvelope(), MinZ(0.0), MaxZ(0.0)
+        {
+        }
+
+    double      MinZ;
+    double      MaxZ;
+
+    int  IsInit() const { return MinX != 0 || MinY != 0 || MaxX != 0 || MaxY != 0 || MinZ != 0 || MaxZ != 0; }
+    void Merge( OGREnvelope3D const& sOther ) {
+        if( IsInit() )
+        {
+            MinX = MIN(MinX,sOther.MinX);
+            MaxX = MAX(MaxX,sOther.MaxX);
+            MinY = MIN(MinY,sOther.MinY);
+            MaxY = MAX(MaxY,sOther.MaxY);
+            MinZ = MIN(MinZ,sOther.MinZ);
+            MaxZ = MAX(MaxZ,sOther.MaxZ);
+        }
+        else
+        {
+            MinX = sOther.MinX;
+            MaxX = sOther.MaxX;
+            MinY = sOther.MinY;
+            MaxY = sOther.MaxY;
+            MinZ = sOther.MinZ;
+            MaxZ = sOther.MaxZ;
+        }
+    }
+    void Merge( double dfX, double dfY, double dfZ ) {
+        if( IsInit() )
+        {
+            MinX = MIN(MinX,dfX);
+            MaxX = MAX(MaxX,dfX);
+            MinY = MIN(MinY,dfY);
+            MaxY = MAX(MaxY,dfY);
+            MinZ = MIN(MinZ,dfZ);
+            MaxZ = MAX(MaxZ,dfZ);
+        }
+        else
+        {
+            MinX = MaxX = dfX;
+            MinY = MaxY = dfY;
+            MinZ = MaxZ = dfZ;
+        }
+    }
+
+    void Intersect( OGREnvelope3D const& sOther ) {
+        if(Intersects(sOther))
+        {
+            if( IsInit() )
+            {
+                MinX = MAX(MinX,sOther.MinX);
+                MaxX = MIN(MaxX,sOther.MaxX);
+                MinY = MAX(MinY,sOther.MinY);
+                MaxY = MIN(MaxY,sOther.MaxY);
+                MinZ = MAX(MinZ,sOther.MinZ);
+                MaxZ = MIN(MaxZ,sOther.MaxZ);
+            }
+            else
+            {
+                MinX = sOther.MinX;
+                MaxX = sOther.MaxX;
+                MinY = sOther.MinY;
+                MaxY = sOther.MaxY;
+                MinZ = sOther.MinZ;
+                MaxZ = sOther.MaxZ;
+            }
+        }
+        else
+        {
+            MinX = 0;
+            MaxX = 0;
+            MinY = 0;
+            MaxY = 0;
+            MinZ = 0;
+            MaxZ = 0;
+        }
+    }
+
+    int Intersects(OGREnvelope3D const& other) const
+    {
+        return MinX <= other.MaxX && MaxX >= other.MinX &&
+               MinY <= other.MaxY && MaxY >= other.MinY &&
+               MinZ <= other.MaxZ && MaxZ >= other.MinZ;
+    }
+
+    int Contains(OGREnvelope3D const& other) const
+    {
+        return MinX <= other.MinX && MinY <= other.MinY &&
+               MaxX >= other.MaxX && MaxY >= other.MaxY &&
+               MaxZ >= other.MaxZ && MaxZ >= other.MaxZ;
+    }
+};
+#else
+typedef struct
+{
+    double      MinX;
+    double      MaxX;
+    double      MinY;
+    double      MaxY;
+    double      MinZ;
+    double      MaxZ;
+} OGREnvelope3D;
+#endif
+
+
 CPL_C_START
 
 void CPL_DLL *OGRMalloc( size_t );
@@ -219,6 +333,11 @@ typedef enum
 #  define DB2_V72_FIX_BYTE_ORDER(x) (x)
 #  define DB2_V72_UNFIX_BYTE_ORDER(x) (x)
 #endif
+
+#define ALTER_NAME_FLAG            0x1
+#define ALTER_TYPE_FLAG            0x2
+#define ALTER_WIDTH_PRECISION_FLAG 0x4
+#define ALTER_ALL_FLAG             (ALTER_NAME_FLAG | ALTER_TYPE_FLAG | ALTER_WIDTH_PRECISION_FLAG)
 
 /************************************************************************/
 /*                  ogr_feature.h related definitions.                  */
@@ -324,10 +443,14 @@ int CPL_DLL OGRParseDate( const char *pszInput, OGRField *psOutput,
 #define OLCFastFeatureCount    "FastFeatureCount"
 #define OLCFastGetExtent       "FastGetExtent"
 #define OLCCreateField         "CreateField"
+#define OLCDeleteField         "DeleteField"
+#define OLCReorderFields       "ReorderFields"
+#define OLCAlterFieldDefn      "AlterFieldDefn"
 #define OLCTransactions        "Transactions"
 #define OLCDeleteFeature       "DeleteFeature"
 #define OLCFastSetNextByIndex  "FastSetNextByIndex"
 #define OLCStringsAsUTF8       "StringsAsUTF8"
+#define OLCIgnoreFields        "IgnoreFields"
 
 #define ODsCCreateLayer        "CreateLayer"
 #define ODsCDeleteLayer        "DeleteLayer"

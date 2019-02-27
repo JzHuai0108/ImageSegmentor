@@ -54,7 +54,7 @@ void CMyGabor::InitPara(INT m, INT n)
     curWmn = myUl * pow( curAlpha, m );
 
 	DOUBLE tempd1, tempd2, tempd3;
-    tempd1 = (curAlpha+1) * ( sqrt( 2*log(2) ) );
+    tempd1 = (curAlpha+1) * ( sqrt( 2*log(2.f) ) );
 	tempd2 = 2 * PI * pow(curAlpha, m) * (curAlpha-1) * myUl;
 	deltaXmn = tempd1 / tempd2;
 

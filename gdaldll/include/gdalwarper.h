@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h 17659 2009-09-20 19:02:37Z rouault $
+ * $Id: gdalwarper.h 20819 2010-10-13 15:59:44Z warmerdam $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -76,6 +76,12 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
                         int nXOff, int nYOff, int nXSize, int nYSize,
                         GByte ** /*ppImageData */,
                         int bMaskIsFloat, void *pValidityMask );
+
+CPLErr CPL_DLL 
+GDALWarpSrcMaskMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
+                       int nXOff, int nYOff, int nXSize, int nYSize,
+                       GByte ** /*ppImageData */,
+                       int bMaskIsFloat, void *pValidityMask );
 
 CPLErr CPL_DLL 
 GDALWarpCutlineMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
@@ -311,9 +317,6 @@ class CPL_DLL GDALWarpOperation {
 private:
     GDALWarpOptions *psOptions;
 
-    double          dfProgressBase;
-    double          dfProgressScale;
-
     void            WipeOptions();
     int             ValidateOptions();
 
@@ -357,14 +360,16 @@ public:
     CPLErr          WarpRegion( int nDstXOff, int nDstYOff, 
                                 int nDstXSize, int nDstYSize,
                                 int nSrcXOff=0, int nSrcYOff=0,
-                                int nSrcXSize=0, int nSrcYSize=0 );
+                                int nSrcXSize=0, int nSrcYSize=0,
+                                double dfProgressBase=0.0, double dfProgressScale=1.0);
     
     CPLErr          WarpRegionToBuffer( int nDstXOff, int nDstYOff, 
                                         int nDstXSize, int nDstYSize, 
                                         void *pDataBuf, 
                                         GDALDataType eBufDataType,
                                         int nSrcXOff=0, int nSrcYOff=0,
-                                        int nSrcXSize=0, int nSrcYSize=0 );
+                                        int nSrcXSize=0, int nSrcYSize=0,
+                                        double dfProgressBase=0.0, double dfProgressScale=1.0);
 };
 
 #endif /* def __cplusplus */

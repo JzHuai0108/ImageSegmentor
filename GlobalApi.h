@@ -1,16 +1,10 @@
 #ifndef _GLOBAL_API
 #define _GLOBAL_API
 
-//#include "stdafx.h"
+#include "mycolorspace.h"
 #include <math.h>
-#include "mymath.h"
-#include "MyColorSpace.h"
-#include "Thinner.h"
-#include "MMOFUNC.h"
-
 //#include "ColorTable.h"
 //#include <complex>
-//using namespace std;
 typedef struct tagMyFeatureVector{
 	CString classname;
 	DOUBLE colorl;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h 19887 2010-06-17 22:47:55Z rouault $
+ * $Id: cpl_port.h 23431 2011-11-27 15:02:24Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -30,11 +30,6 @@
 
 #ifndef CPL_BASE_H_INCLUDED
 #define CPL_BASE_H_INCLUDED
-
-/* Remove annoying warnings Microsoft Visual C++ */
-#if defined(_MSC_VER)
-#  pragma warning(disable:4251 4275 4786)
-#endif
 
 /**
  * \file cpl_port.h
@@ -102,6 +97,31 @@
 #endif
 
 /* ==================================================================== */
+/*      If iconv() is available use extended recoding module.           */
+/*      Stub implementation is always compiled in, because it works     */
+/*      faster than iconv() for encodings it supports.                  */
+/* ==================================================================== */
+
+#if defined(HAVE_ICONV)
+#  define CPL_RECODE_ICONV
+#endif
+
+#define CPL_RECODE_STUB
+
+/* ==================================================================== */
+/*      MinGW stuff                                                     */
+/* ==================================================================== */
+
+/* We need __MSVCRT_VERSION__ >= 0x0601 to have "struct __stat64" */
+/* Latest versions of mingw32 define it, but with older ones, */
+/* we need to define it manually */
+#if defined(__MINGW32__)
+#ifndef __MSVCRT_VERSION__
+#define __MSVCRT_VERSION__ 0x0601
+#endif
+#endif
+
+/* ==================================================================== */
 /*      Standard include files.                                         */
 /* ==================================================================== */
 
@@ -166,7 +186,12 @@ typedef unsigned int    GUInt32;
 typedef short           GInt16;
 typedef unsigned short  GUInt16;
 typedef unsigned char   GByte;
+/* hack for PDF driver and poppler >= 0.15.0 that defines incompatible "typedef bool GBool" */
+/* in include/poppler/goo/gtypes.h */
+#ifndef CPL_GBOOL_DEFINED
+#define CPL_GBOOL_DEFINED
 typedef int             GBool;
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      64bit support                                                   */
@@ -293,14 +318,19 @@ typedef unsigned long    GUIntBig;
 #  define CPLIsEqual(x,y) (fabs((x) - (y)) < 0.0000000000001)
 #endif
 
+/* -------------------------------------------------------------------- */
+/*      Provide macros for case insensitive string comparisons.         */
+/* -------------------------------------------------------------------- */
 #ifndef EQUAL
-#if defined(WIN32) || defined(WIN32CE)
-#  define EQUALN(a,b,n)           (strnicmp(a,b,n)==0)
-#  define EQUAL(a,b)              (stricmp(a,b)==0)
-#else
-#  define EQUALN(a,b,n)           (strncasecmp(a,b,n)==0)
-#  define EQUAL(a,b)              (strcasecmp(a,b)==0)
-#endif
+#  if defined(WIN32) || defined(WIN32CE)
+#    define STRCASECMP(a,b)         (stricmp(a,b))
+#    define STRNCASECMP(a,b,n)      (strnicmp(a,b,n))
+#  else
+#    define STRCASECMP(a,b)         (strcasecmp(a,b))
+#    define STRNCASECMP(a,b,n)      (strncasecmp(a,b,n))
+#  endif
+#  define EQUALN(a,b,n)           (STRNCASECMP(a,b,n)==0)
+#  define EQUAL(a,b)              (STRCASECMP(a,b)==0)
 #endif
 
 #ifdef macos_pre10
@@ -309,8 +339,8 @@ int strncasecmp(char * str1, char * str2, int len);
 char * strdup (char *instr);
 #endif
 
-#ifndef CPL_THREADLOCAL 
-#  define CPL_THREADLOCAL 
+#ifndef CPL_THREADLOCAL
+#  define CPL_THREADLOCAL
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -498,5 +528,12 @@ static char *cvsid_aw() { return( cvsid_aw() ? ((char *) NULL) : cpl_cvsid ); }
 #else
 #define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )
 #endif
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(DOXYGEN_SKIP)
+#define CPL_WARN_UNUSED_RESULT                        __attribute__((warn_unused_result))
+#else
+#define CPL_WARN_UNUSED_RESULT
+#endif
+
 
 #endif /* ndef CPL_BASE_H_INCLUDED */

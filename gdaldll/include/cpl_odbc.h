@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: cpl_odbc.h 20579 2010-09-12 11:43:35Z rouault $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -164,6 +164,8 @@ class CPL_DLL CPLODBCSession {
     char      m_szLastError[SQL_MAX_MESSAGE_LENGTH + 1];
     HENV      m_hEnv;
     HDBC      m_hDBC;
+    int       m_bInTransaction;
+    int       m_bAutoCommit;
 
   public:
     CPLODBCSession();
@@ -173,6 +175,14 @@ class CPL_DLL CPLODBCSession {
                                   const char *pszUserid, 
                                   const char *pszPassword );
     const char  *GetLastError();
+
+    // Transaction handling
+
+    int         ClearTransaction();
+    int         BeginTransaction();
+    int         CommitTransaction();
+    int         RollbackTransaction();
+    int         IsInTransaction() { return m_bInTransaction; }
 
     // Essentially internal. 
 
@@ -226,7 +236,7 @@ class CPL_DLL CPLODBCStatement {
     void           Append( const char * );
     void           Append( int );
     void           Append( double );
-    int            Appendf( const char *, ... );
+    int            Appendf( const char *, ... ) CPL_PRINT_FUNC_FORMAT (2, 3);
     const char    *GetCommand() { return m_pszStatement; }
 
     int            ExecuteSQL( const char * = NULL );

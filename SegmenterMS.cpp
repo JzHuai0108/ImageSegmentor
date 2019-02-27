@@ -74,11 +74,14 @@ static char THIS_FILE[]=__FILE__;
 #include <math.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <fstream.h>
+
 #include <memory.h>
 #include <time.h>
-
+#include <iostream.h>
+#include <fstream.h>
+//using namespace std;
 int option = 2;
+
 static const int rect_gen_contor=3;
 
 // Radius of the searching window
@@ -327,7 +330,7 @@ void SegmenterMS::convert_RGB_LUV( RasterIpChannels* signal, long selects )
 	delete [] A02; delete [] A01; delete [] A00;
 	delete [] _col_misc;
 	delete [] _col_RGB;
-	cerr<<":";
+	
 }
 
 // 3-D Histogram computation
@@ -427,7 +430,7 @@ void SegmenterMS::my_histogram(RasterIpChannels* signal, long selects)
 				_col1=_col_all[1] = new int[_n_colors];
 				_col2=_col_all[2] = new int[_n_colors];
 				_col_index = new int[_ro_col];
-				cerr<<":";
+				
 }    
 
 // Update _col_remain[], _m_col_remain, and _n_col_remain
@@ -702,7 +705,7 @@ void SegmenterMS::optimize(float T[][p_max], int n_rects)
 	{
 		get_codeblock(T,n_rects);
 	}
-	cerr<<":";
+	
 }
 
 
@@ -926,7 +929,7 @@ void SegmenterMS::conn_comp(Octet *my_class, int *n_rects, Octet *inv_map, float
 		eliminate_region(n_rects,my_lim,T,first_region);
 	destroy_region_list(first_region);
 	if(change_type==0) delete [] my_max_region;
-	cerr<<":";
+	
 }
 
 
@@ -966,7 +969,7 @@ void SegmenterMS::cut_rectangle( sRectangle* rect )
 						_data[d][idx2] = _data_all[d][idx1];
 				}
 		}
-		cerr<<":";
+		
 }
 
 // Compute the mean of N points given by J[]
@@ -997,7 +1000,7 @@ int SegmenterMS::subsample(float *Xmean )
 	else
 		i0=J[my_contor]=int(float(_n_points)*float(rand())/float(SHRT_MAX));
 	my_contor++;
-	for(register i=0;i<8;i++){
+	for(register int i=0;i<8;i++){
 		uj=i0 + my_neigh_r[i];
 		if(uj>=0 && uj<_n_points)
 		{
@@ -1166,9 +1169,9 @@ void SegmenterMS::init_matr(void)
 #ifdef TRACE
 	printf("\n %.2f %.2f ", fix_RADIUS[0], final_RADIUS);
 #endif
-	act_threshold=(int)((my_threshold[option]>sqrt(_ro_col)/my_rap[option])? 
-		my_threshold[option]:sqrt(_ro_col)/my_rap[option]);
-	cerr<<":";
+	act_threshold=(int)((my_threshold[option]>sqrt((float)_ro_col)/my_rap[option])? 
+		my_threshold[option]:sqrt((float)_ro_col)/my_rap[option]);
+	
 } 
 
 // Init
@@ -1239,7 +1242,7 @@ Boolean SegmenterMS::ms_segment( RasterIpChannels* pic, sRectangle rects[],
 	float L,U,V,RAD2,q;
 	register int i,k;
 	
-	srand( seed_default ); cerr<<":";
+	srand( seed_default ); 
 	initializations(pic, rects, &n_rects, selects, &active_gen_contor);
 	
 	// Mean shift algorithm and removal of the detected feature
@@ -1457,7 +1460,7 @@ MS:
 			}
 		}// end of for ( k = 0; k < _ro_col; k++ ) 
 		
-		my_write_Contour_file( "debug\\result.jpg", my_class, _rows, _colms);
+//		my_write_Contour_file( "result.bmp", my_class, _rows, _colms);
 		SaveContour2Buf(my_class, _rows, _colms);
 		delete [] my_class;
     }else  // if not auto_segmentation
@@ -1495,9 +1498,7 @@ MS:
 	pic->raster_info(info);
 	result_ras_ = new RasterIpChannels( info, 3, eDATA_OCTET,
 		isegment, true );
-	cerr << endl << "Original Colors: " << _n_colors << endl;
-	cerr << "Segment. Colors: " << n_rects << endl;
-	
+
 	return true;  
 }
 
@@ -1558,7 +1559,7 @@ return false;
 			resultdata[pos*3+2] = (BYTE) signal[pos];
 		}
 	}
-	myresult.CreateDIBFromBits( w, h, resultdata);
+	myresult.CreateDIBFromBits( w, h, resultdata,24);
 	myresult.SaveToFile(outfname);
 	return true;
 }

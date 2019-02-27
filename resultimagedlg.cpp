@@ -23,10 +23,11 @@ CResultImageDlg::CResultImageDlg(CWnd* pParent /*=NULL*/)
 	//}}AFX_DATA_INIT
 	isImageOk = FALSE;
 }
-void CResultImageDlg::SetImage(BYTE* indata, INT width, INT height)
+void CResultImageDlg::SetImage(BYTE* indata, INT width, INT height, int nBits)
 //ÉèÖÃÍ¼Ïñ£»
 {
-	myImageobject.CreateDIBFromBits(width, height, indata);
+
+	myImageObj.CreateDIBFromBits(width, height, indata,nBits);
 	CWnd* myMatrix = GetDlgItem(IDC_RESULTIMAGE);
 	CRect matrixrect;
 	myMatrix->GetClientRect(matrixrect);
@@ -35,7 +36,7 @@ void CResultImageDlg::SetImage(BYTE* indata, INT width, INT height)
 	
 	CClientDC dc(this);
 	
-	myImageobject.Stretch( dc.GetSafeHdc(), matrixrect.left
+	myImageObj.Stretch( dc.GetSafeHdc(), matrixrect.left
 		, matrixrect.top, matrixrect.right-matrixrect.left
 		, matrixrect.bottom-matrixrect.top,DIB_RGB_COLORS, SRCCOPY);
 	isImageOk = TRUE;
@@ -82,7 +83,7 @@ void CResultImageDlg::OnPaint()
 		
 		CClientDC dc(this);
 		
-		myImageobject.Stretch( dc.GetSafeHdc(), matrixrect.left
+		myImageObj.Stretch( dc.GetSafeHdc(), matrixrect.left
 			, matrixrect.top, matrixrect.right-matrixrect.left
 			, matrixrect.bottom-matrixrect.top, DIB_RGB_COLORS, SRCCOPY);	
 	}	

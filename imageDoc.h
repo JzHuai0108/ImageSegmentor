@@ -18,7 +18,7 @@ class CImageDoc : public CDocument
 protected: // create from serialization only
 	CImageDoc();
 	DECLARE_DYNCREATE(CImageDoc)
-
+  
 // Attributes
 public:
 	void ImgToRasterIp(RasterIpChannels** signal);
@@ -26,31 +26,27 @@ public:
 	int lookregion(int cx,int cy,int=0);
 	void SetEM();
 
-	BYTE* GetEM(BYTE*EM,int eB);
-
 	CResultImageDlg resultDlg;
 	int edgeBand;//the band for edge poing extraction or edge strength computation
 	double m_dRoom;
 //	CPoint current;
 	bool viewRegion;
 
-//	bool export;
 	int curRegion;
 //	CStroke* NewStroke();
 //	CPen m_penCur;
 //	uint32 m_nPenWidth;
 //	CTypedPtrList<CObList,CStroke*> m_strokeList;
 	double quantum;
-	GDALDataset* m_pDataset;//当前影像
 	//long m_bandNum;//波段的数目
 	CDIB m_DIB;
 	CHC m_HC;
 	BYTE*edgeMap;
 	int storey;
-	vector<float> bWArray;//recorded the weight for each band
+	std::vector<float> bWArray;//recorded the weight for each band
 
-	vector<int> levelUse; //level used for multilevel change detection
-
+	std::vector<int> levelUse; //level used for multilevel change detection
+	double eval;//evvaluation 
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CImageDoc)
@@ -79,7 +75,6 @@ protected:
 	afx_msg void OnViewZoomout();
 	afx_msg void OnEvalQs();
 	afx_msg void OnSegQthc();
-	afx_msg void OnClassRegprop();
 	afx_msg void OnSegGshc();
 	afx_msg void OnSegGraph();
 	afx_msg void OnClassRoadclump();
@@ -97,7 +92,6 @@ protected:
 	afx_msg void OnSegSavetour();
 	afx_msg void OnSegExportshp();
 	afx_msg void OnMultiFeatureDiff();
-	afx_msg void OnClassMultiFeat();
 	afx_msg void OnPrepTextimg();
 	afx_msg void OnSegRandIndex();
 	afx_msg void OnPrepSatHue();
@@ -119,6 +113,8 @@ protected:
 	afx_msg void OnPrepOpening();
 	afx_msg void OnTextureHistoStatCD();
 	afx_msg void OnClassBuildingIsodata();
+	afx_msg void OnClassMultiBuild();
+	afx_msg void OnTextureGeometricCD();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 

@@ -6,15 +6,21 @@
 //#include "image.h"
 
 #include "HC.h"
-
-
+#include "fuzzylogic.h"
+#include "require.h"
+#include "ImpExpData.h"
 #include "segment-image.h"
+
+
 //#include "mwcomtypes.h" 
 //#include "regprops_idl_i.c" 
 //#include "regprops_idl.h" 
-//#include <limits>
+#include "..\\include\\gdal.h"
+#include "..\\include\\gdal_priv.h"
+#include "..\\include\\ogrsf_frmts.h"
 #include "..\\include\\gdal_alg.h"
-//using namespace std;
+
+using namespace std;
 #ifdef _DEBUG
 #undef THIS_FILE
 static char THIS_FILE[]=__FILE__;
@@ -23,11 +29,7 @@ static char THIS_FILE[]=__FILE__;
 //Programming Tips
 //recommend using vector instead of array, but remember to use reference & when using function to assign values to vector memory allocated previously
 //match new and delete, cvCreateXX and cvReleaseXX, 
-//recommend using ifstream and ofstream instead of FILE
-//debug errors
-//regmoment, to close opencv windows after application is exited cause objcore debug error and application process not terminated.
-//in contrast, by the similar operation, regionthresh function does not elicit the debug error and few chances of unterminated application process.
-//
+
 //Notes: Import data into and export data from CHC, the raster array order remained the same as that obtained by GDALRasterIO()
 //Import and Export data in CDIB, the raster matrix order is vertically reversed from that of GDALRasterIO()
 //////////////////////////////////////////////////////////////////////
@@ -37,7 +39,50 @@ static char THIS_FILE[]=__FILE__;
 
 static int Count=0;
 
-
+void AdaptiveFindThreshold(CvMat *dx, CvMat *dy, double &low, double &high,double PercentOfPixelsNotEdges)
+{
+	CvSize size;
+	IplImage *imge=0;
+	int i,j;  CvHistogram *hist;
+	int hist_size = 255;
+    float range_0[]={0,256};
+    float* ranges[] = { range_0 };
+	size = cvGetSize(dx);
+	imge = cvCreateImage(size, IPL_DEPTH_32F, 1);
+	// 计算边缘的强度, 并存于图像中
+	float maxv = 0;
+	for(i = 0; i < size.height; i++ )
+	{
+		const short* _dx = (short*)(dx->data.ptr + dx->step*i);
+        const short* _dy = (short*)(dy->data.ptr + dy->step*i);
+		float* _image = (float *)(imge->imageData + imge->widthStep*i);
+		for(j = 0; j < size.width; j++)
+		{
+			_image[j] = (float)(abs(_dx[j]) + abs(_dy[j]));
+			maxv = maxv < _image[j] ? _image[j]: maxv;
+		}
+	}
+	// 计算直方图
+	range_0[1] = maxv;
+	hist_size = (int)(hist_size > maxv ? maxv:hist_size);
+	hist = cvCreateHist(1, &hist_size, CV_HIST_ARRAY, ranges, 1);
+	cvCalcHist( &imge, hist, 0, NULL );
+	int total = (int)(size.height * size.width * PercentOfPixelsNotEdges);
+	float sum=0;
+	int icount = hist->mat.dim[0].size;
+	
+	float *h = (float*)cvPtr1D( hist->bins, 0 );
+	for(i = 0; i < icount; i++)
+	{
+		sum += h[i];
+		if( sum > total )
+			break; 
+	} // 计算高低门限
+	high = (i+1) * maxv / hist_size ;
+	low = high * 0.4;
+	cvReleaseImage( &imge );
+	cvReleaseHist(&hist);
+}
 /****************************************************************************************\
 *                   Antialiazed Elliptic Arcs via Antialiazed Lines                      *
 \****************************************************************************************/
@@ -122,12 +167,21 @@ static const float icvSinTable[] =
 };
 
 
+
 static void
 icvSinCos( int angle, float *cosval, float *sinval )
 {
     angle += (angle < 0 ? 360 : 0);
     *sinval = icvSinTable[angle];
     *cosval = icvSinTable[450 - angle];
+}
+float JHLineAngle(CvPoint pt1, CvPoint pt2, CvPoint pt3)//calculate the cosine of the angle formed by 
+//line pt1 to pt2 and line pt2 to pt3
+{
+	float cross=(pt1.x-pt2.x)*(pt2.x-pt3.x)+(pt1.y-pt2.y)*(pt2.y-pt3.y);
+	float ln1=sqrt((float)(pt1.x-pt2.x)*(pt1.x-pt2.x)+(pt1.y-pt2.y)*(pt1.y-pt2.y));
+	float ln2=sqrt((float)(pt3.x-pt2.x)*(pt3.x-pt2.x)+(pt3.y-pt2.y)*(pt3.y-pt2.y));
+	return cross/(ln1*ln2);
 }
 //intensity similarity performed on regular grid of step size 
 //input step 16 by default, band1 and band2 two gray scale single band images
@@ -181,7 +235,7 @@ void VRegSimi(IplImage*band1,IplImage*band2, int step, IplImage*coeff)
 		cvCalcHist(&band2, histv2, 0, 0 ); //Compute histogram
 		cvNormalizeHist( histv2, 1.0 ); //Normalize it
 		cvSetImageROI(coeff, cvRect(xs,ys,step,step));
-		temp=cvCompareHist(histv1,histv2,CV_COMP_CORREL);
+		temp=(float)cvCompareHist(histv1,histv2,CV_COMP_CORREL);
 		temp=(temp*128+127);
 		cvSet(coeff,cvRealScalar(temp));
 		}
@@ -607,8 +661,13 @@ int cvWinCorr(IplImage*gray1,IplImage* gray2, int l, IplImage* outcome)
 			{
 				temp=((float*)(fg1->imageData + fg1->widthStep*bt))[rt]/sz-
 					((float*)(mean1->imageData + mean1->widthStep*j))[i];
-				temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
+				if(((float*)(var1->imageData + var1->widthStep*j))[i]==0)
+					((float*)(outcome->imageData + outcome->widthStep*j))[i]=1000;
+				else
+				{
+					temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
 				((float*)(outcome->imageData + outcome->widthStep*j))[i]=temp;
+				}
 			}
 			else if(tp==0&&lf>0)
 			{
@@ -616,8 +675,14 @@ int cvWinCorr(IplImage*gray1,IplImage* gray2, int l, IplImage* outcome)
 					((float*)(fg1->imageData + fg1->widthStep*bt))[lf-1];
 				temp/=sz;
 				temp-=((float*)(mean1->imageData + mean1->widthStep*j))[i];
-				temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
+			
+				if(((float*)(var1->imageData + var1->widthStep*j))[i]==0)
+					((float*)(outcome->imageData + outcome->widthStep*j))[i]=1000;
+				else
+				{
+					temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
 				((float*)(outcome->imageData + outcome->widthStep*j))[i]=temp;
+				}
 				
 				
 			}
@@ -627,9 +692,13 @@ int cvWinCorr(IplImage*gray1,IplImage* gray2, int l, IplImage* outcome)
 					((float*)(fg1->imageData + fg1->widthStep*(tp-1)))[rt];
 				temp/=sz;
 				temp-=((float*)(mean1->imageData + mean1->widthStep*j))[i];
-				temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
+				if(((float*)(var1->imageData + var1->widthStep*j))[i]==0)
+					((float*)(outcome->imageData + outcome->widthStep*j))[i]=1000;
+				else
+				{
+					temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
 				((float*)(outcome->imageData + outcome->widthStep*j))[i]=temp;
-				
+				}
 				
 			}
 			else
@@ -640,8 +709,13 @@ int cvWinCorr(IplImage*gray1,IplImage* gray2, int l, IplImage* outcome)
 					((float*)(fg1->imageData + fg1->widthStep*bt))[lf-1];
 				temp/=sz;
 				temp-=((float*)(mean1->imageData + mean1->widthStep*j))[i];
-				temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
+				if(((float*)(var1->imageData + var1->widthStep*j))[i]==0)
+					((float*)(outcome->imageData + outcome->widthStep*j))[i]=1000;
+				else
+				{
+					temp/=sqrt(((float*)(var1->imageData + var1->widthStep*j))[i]);
 				((float*)(outcome->imageData + outcome->widthStep*j))[i]=temp;
+				}
 			}
 		}
 	}
@@ -766,49 +840,6 @@ double RandIndex(int size,int*U,int R,int*V,int C,double &EI)
 	delete[] VT;
 	return 1+(double)(2*snij2-sni2-snj2)/div/2;
 }
-//READ FEATURE FROM file ft1 and ft2 to feat1 and feat2 which is connected to feat1, 
-//each file has count rows, dim columns, dimUse indicates which column to import
-int ReadFeat(const char *ft1, const char *ft2,float*feat1,float*feat2,int count,int dim,vector<int>&dimUse)
-{
-	//read in feat1 and feat2 and select dimen to use
-
-	float*feat=new float[dim*count];
-	if(!ImportData(ft1,feat,dim*count))
-	{
-		AfxMessageBox("error reading feat1.txt");
-		return 0;
-	}
-	int dimOn=__min(dim,dimUse.size());
-
-	int i,j,seqnum,subspt;
-
-	for(i=0;i<count;++i)
-	{
-		seqnum=i*dimOn;
-		subspt=i*dim;
-		for(j=0;j<dimOn;++j)
-		{	
-			feat1[seqnum+j]=feat[subspt+dimUse[j]];
-		}
-	}
-	
-	if(!ImportData(ft2,feat,dim*count))
-	{
-		AfxMessageBox("error reading feat2.txt");
-		return 0;
-	}
-	for(i=0;i<count;++i)
-	{	
-		seqnum=i*dimOn;
-		subspt=i*dim;
-		for(j=0;j<dimOn;++j)
-		{		
-			feat2[seqnum+j]=feat[subspt+dimUse[j]];
-		}
-	}
-	delete []feat;
-	return 1;
-}
 
 
 static double* _cv_max_element( double* start, double* end )
@@ -924,21 +955,7 @@ cvChangeDetection( IplImage*  prev_frame,
     return 1;
 }
 
-//compute euclidean distance between each vector stored in feat1 and feat2 of count data and dimOn dimension
-//output distance is recorded in points of count size, note the momory of feat1 and feat2 are connected
-int CHC::EuclidDist(float*feat1,float*feat2,int count,int dim, float* points)
-{
-	int i;
-	CvMat vec1,vec2;
-	
-	for(i=0;i<count;++i)
-	{
-		cvInitMatHeader(&vec1,1,dim,CV_32FC1,(feat1+i*dim));
-		cvInitMatHeader(&vec2,1,dim,CV_32FC1,(feat2+i*dim));
-		points[i]=cvNorm(&vec1,&vec2,CV_L2,NULL);		
-	}
-	return 1;		
-}
+
 //compute mahalanobis distance for each parcel between feature vectors of time1 and time2, 
 //stored in ft1 and ft2, respectively. dimUse denotes dimension of feature vector 
 //for distance calculation, method=0  means directly computing distance between corresponding 
@@ -946,7 +963,7 @@ int CHC::EuclidDist(float*feat1,float*feat2,int count,int dim, float* points)
 //between the feature vector for this parcel at time1 and the feature vectors for its neighbood 
 //parcels at time2 including this parcel.
 //note the momory of feat1 and feat2 are connected
-
+/*
 int CHC::MahalDist(float*feat1,float*feat2,int count,int dimOn, float* points,int method)
 {
 	int i,seqnum,subspt,j;
@@ -1027,7 +1044,7 @@ int CHC::MahalDist(float*feat1,float*feat2,int count,int dimOn, float* points,in
 
 	return 1;		
 }
-
+*/
 
 //for each dimension, estimates {mean1,var1, mean2, var2}
 int MyKmeans(float*points,int dim, int*label,int count, float** estimates, int cls)
@@ -1084,9 +1101,8 @@ int MyKmeans(float*points,int dim, int*label,int count, float** estimates, int c
 }
 // 构造函数，初始化CHC对象的数据
 CHC::CHC():Width(0),Height(0),data_(NULL),sData_(NULL),
-propData(NULL),tag(NULL),Delta(0),d_(3),comps(0),
-typeProp(0),propDim(0),loop(1),eval(0),
-minsize(3),K(20.0f),maxDelta(50.f),
+propData(NULL),tag(NULL),Delta(0),d_(0),comps(0),
+typeProp(0),propDim(0),loop(1),minsize(3),K(20.0f),maxDelta(50.f),
 wp(0.5f),wc(0.9f),mindiff(20.f),sortDM(true),metric(DISTBENZ)
 {
 	++Count;
@@ -1102,7 +1118,7 @@ CHC::~CHC()
 // 清除以前的图像数据，并释放内存
 void CHC::Clear()
 {
-	
+	d_=0;//avoid storeseg output spectral data
 	if(data_)
 	{
 		delete[] data_;
@@ -1132,6 +1148,204 @@ void CHC::Clear()
 
 inline bool Prior(const NP&a,const NP&b)
 	{return a.rInd<b.rInd;}
+	void CHC::DistBenz(Region&a,Region&b,unsigned int len,float &ret)
+	{
+	//	ofstream out("fault.txt",ios::app);
+		ret=0;
+		//compute sigma first
+		float ext=a.size+b.size;
+		float trek=0;
+		for(int i=0;i<d_;i++)
+		{
+			trek=a.sSum[i]+b.sSum[i]-square((a.addition[i]+b.addition[i])/ext)*ext;
+			if(trek<0)
+			{
+				assert(abs(trek)<1e-2);
+		/*	if(abs(trek)>=0.05f)
+				{
+					float m=a.sSum[i];
+					m=a.addition[i];
+					m=b.sSum[i];
+					m=b.addition[i];
+				}*/
+				continue;
+			}
+			ret+=sqrt(trek/(ext-1));
+		}
+		ret*=(wc*Delta/d_);//back to normal to follow the invariant color space parctice in eCognition
+		unsigned int perim=a.perim+b.perim-2*len;
+		ret+=(1-wc)*wp*perim/sqrt(ext);
+		CRect c;
+		c.UnionRect(a.norbox,b.norbox);
+		unsigned int wid=c.Width(),hei=c.Height();
+		unsigned int realb=2*(wid+hei);
+/*		UINT ba=2*(a.norbox->Width()+a.norbox->Height()),bb=2*(b.norbox->Width()+b.norbox->Height());
+		UINT pa=a.perim,pb=b.perim;
+		if(((1.f*perim/realb)<(1.f*pa/ba))||((1.f*perim/realb)<(1.f*pb/bb)))
+out<<"{perim, realb}*{a+b,a,b}"<<perim<<"\t"<<realb<<"\t"<<pa<<"\t"<<ba<<"\t"<<pb<<"\t"<<bb<<"\n";
+		if((1.f*perim/sqrt(ext))<(1.f*pa/sqrt(a.size))||(1.f*perim/sqrt(ext))<(1.f*pb/sqrt(b.size)))
+out<<"{perim, ext}*{a+b,a,b}"<<perim<<"\t"<<ext<<"\t"<<pa<<"\t"<<a.size<<"\t"<<pb<<"\t"<<b.size<<"\n";
+*/
+		assert(perim>=realb);
+		ret+=(1-wc)*(1-wp)*perim/realb;
+		ret*=ext;
+		ret-=(a.interdif+b.interdif);
+	}
+	//fisher distance is used in "multistage graph-based segmentation of thoracoscopic images"
+	//this distance is aimed at 1d intensity data
+	void CHC::DistFisher(Region&a,Region&b,unsigned int len,float &ret)
+	{
+		float as=a.size,bs=b.size;
+		float trek=0;
+		
+		trek=a.sSum[0]/as-square(a.addition[0]/as);
+		trek=square(trek*trek);
+		ret=b.sSum[0]/bs-square(b.addition[0]/bs);
+		ret=square(ret*ret);
+		ret+=trek;
+		
+		ret=sqrt(ret);
+		trek=__min(a.perim,b.perim)/(float)len;
+		trek*=abs((a.sSum[0])/as-(b.sSum[0])/bs);
+		ret*=trek;
+		ret*=(Delta*Delta);	//to amplify the result	
+	}
+	//shape similarity size1/size2*min(perim1,perim2)/common boundary 
+	void CHC::DistShape(Region&a,Region&b,unsigned int len,float &ret)
+	{
+		float as=a.size,bs=b.size;
+		float trek=0;
+		if(as>bs)
+			ret=bs/as;
+		else ret=as/bs;
+		ret*=__min(a.perim,b.perim)/(float)len;
+	}
+	//distance used in "implementation of a fast algorithm for segmenting SAR imagery", 
+	//later, I added edge weight but now discarded
+	void CHC::JhHypo(Region&a,Region&b,unsigned int len,float &ret)
+	{//edge weight
+		ret=0;
+		float as=a.size,bs=b.size;
+		//compute sigma first
+		for(int i=0;i<d_;++i)
+		{
+			//here for the quotient of addition sum the fractional part is discarded for small difference
+			ret+=square((a.addition[i])/as-(b.addition[i])/bs);
+		}
+		ret*=(Delta*Delta);
+		ret*=(as*bs);
+		ret/=(as+bs);
+		
+	//	ret*=phi;
+	//	ret+=(1-phi)*ew;
+		ret/=len;
+	}
+	//for the pixels indexing from xori+uly*w downwards until step.
+	//inout:xori uly are the x and y coord of the upper left point to check
+	//step is the height for the line of pixels,must be power of 2, rID is the tag of region 
+	//which is checking neighbors,sernum is the last void A tuple serno.
+	void CHC::NamNeiY(int xori,int uly, int step, int rID,int&sernum)
+	{
+		int t=tag[uly*Width+xori];
+		
+		if(step==1)
+		{
+			NP np(t,sernum);
+			S[rID].NPList.push_back(np);
+			np.rInd=rID;
+			S[t].NPList.push_back(np);
+			
+			A[sernum].r[0]=rID;
+			A[sernum].r[1]=t;
+			A[sernum].bl=1;
+			++sernum;
+			return;
+		}
+		int hs=step>>1;
+		if(t==tag[(uly+hs)*Width+xori])
+		{
+			NP np(t,sernum);
+			S[rID].NPList.push_back(np);
+			np.rInd=rID;
+			S[t].NPList.push_back(np);
+			A[sernum].r[0]=rID;
+			A[sernum].r[1]=t;
+			A[sernum].bl=step;
+			++sernum;
+			return;
+		}
+		else
+		{
+			NamNeiY(xori,uly,hs,rID,sernum);
+			NamNeiY(xori,uly+hs,hs,rID, sernum);
+		}
+	}
+	//improved version namneiy for arbitray positive step this function intended for boundary neighbor initiation
+	void CHC::NamNeiYEx(int xori,int uly, int step, int rID,int&sernum)
+	{
+		int back=step+uly;
+		int k=0;
+		while(step)
+		{
+			if(step&1)
+			{
+				back-=1<<k;
+				NamNeiY(xori,back,1<<k,rID,sernum);
+			}
+			step>>=1;
+			++k;
+		}
+	}
+	//checking pixels from index yori*w+ulx to yori*w+lrx for region rID
+	void CHC::NamNeiX(int yori,int ulx, int step, int rID, int&sernum)
+	{
+		int t=tag[yori*Width+ulx];
+		if(step==1)
+		{
+			NP np(t,sernum);
+			S[rID].NPList.push_back(np);
+			np.rInd=rID;
+			S[t].NPList.push_back(np);
+			A[sernum].r[0]=rID;
+			A[sernum].r[1]=t;
+			A[sernum].bl=1;
+			++sernum;
+			return;
+		}
+		int hs=step>>1;
+		if(t==tag[yori*Width+ulx+hs])
+		{
+			NP np(t,sernum);
+			S[rID].NPList.push_back(np);
+			np.rInd=rID;
+			S[t].NPList.push_back(np);
+			A[sernum].r[0]=rID;
+			A[sernum].r[1]=t;
+			A[sernum].bl=step;
+			++sernum;
+			return;
+		}
+		else
+		{
+			NamNeiX(yori,ulx,hs,rID, sernum);
+			NamNeiX(yori,ulx+hs,hs,rID, sernum);
+		}
+	}
+	void CHC::NamNeiXEx(int yori,int ulx, int step, int rID, int&sernum)
+	{
+		int back=step+ulx;
+		int k=0;
+		while(step)
+		{
+			if(step&1)
+			{
+				back-=1<<k;
+				NamNeiX(yori,back,1<<k,rID,sernum);
+			}
+			step>>=1;
+			++k;
+		}
+	}
 //initiate S[] based on tagMat and parts,note pre: max(tagMat)==parts-1 and min(tagMat)==0;
 //post: S[tagMat[i]].p==tagMat[i]
 //tagMat is array of labels for each pixel
@@ -1151,7 +1365,7 @@ int CHC::DefReg(int*tagMat,int parts)
 	for(y=0;y<parts;++y)
 	{
 		S[y].p=y;
-		S[y].norbox=grid.begin()+y;
+		S[y].norbox=&grid[y];
 	//	grid[y]=abox;
 	}
 	if(data_)
@@ -1429,7 +1643,7 @@ void CHC::InitiateRegions8()
 		S[y].p=y;
 		S[y].addition=data_+y*d_;
 		S[y].sSum=sData_+y*d_;
-		S[y].norbox=grid.begin()+y;
+		S[y].norbox=&grid[y];
 		grid[y]=abox;
 	}
 
@@ -1975,24 +2189,25 @@ void CHC::InitiateRegions8()
 //Quantitative evaluation of color image segmentation results
 //EvalQS can only be called after regionLabel and before any change of tag[]
 //tag[L] corresponds to S[L] in QT seg
-int EvalQs(CHC*PHC,GDALDataset*pDataset,vector<float>&bWArray)
+float EvalQs(const CHC&sHC,const CString&fn,vector<float>&bWArray)
 {	
-	if(PHC->comps<1)
+	GDALDataset*pDataset=(GDALDataset*)GDALOpen(fn,GA_ReadOnly);
+	if(sHC.comps<1)
 	{
 		AfxMessageBox("Segment image before calling EvalQS!");
-		return -1;
+		return -1.f;
 	}
 	int spp=pDataset->GetRasterCount();//波段的数目
-	int w=PHC->Width,h=PHC->Height,sernum,trans,ext;
+	int w=sHC.Width,h=sHC.Height,sernum,trans,ext;
 
 	double pedler;
 	int d,cur,temp,x,y;
 
 	assert(bWArray.size()==spp);
 	
-	float** buf=new float*[PHC->d_];
-	for(d=0;d<PHC->d_;++d)
-		buf[d]=new float[PHC->Width*PHC->Height];
+	float** buf=new float*[sHC.d_];
+	for(d=0;d<sHC.d_;++d)
+		buf[d]=new float[sHC.Width*sHC.Height];
 
 	GDALRasterBand  *m_pBand=NULL;
 	float max=0.f;	
@@ -2010,29 +2225,13 @@ int EvalQs(CHC*PHC,GDALDataset*pDataset,vector<float>&bWArray)
 		{	
 			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, w, h, buf[cur], w,h, GDT_Float32, 0, 0 ))
 			{
-				if(PHC->Delta==0)
-				{
-					temp=PHC->Height*PHC->Width;
-					for(y=0;y<temp;++y)
-					{
-						max=max>buf[cur][y]?max:buf[cur][y];
-					}
-					sernum=(int)ceil(max);
-					x=1;
-					while(sernum>1)
-					{
-						++x;
-						sernum>>=1;
-					}
-					PHC->Delta=(float)(1<<x);
-				}		
-			
+				assert(sHC.Delta>0);
 				temp=0;
-				for(y=0;y<PHC->Height;++y)
+				for(y=0;y<sHC.Height;++y)
 				{
-					for (x = 0; x < PHC->Width; ++x) 
+					for (x = 0; x < sHC.Width; ++x) 
 					{
-						buf[cur][temp]/=PHC->Delta;					
+						buf[cur][temp]/=sHC.Delta;					
 						++temp;
 					}				
 				}
@@ -2040,16 +2239,16 @@ int EvalQs(CHC*PHC,GDALDataset*pDataset,vector<float>&bWArray)
 		}
 		++cur;
 	}
-	assert(cur==PHC->d_);
+	assert(cur==sHC.d_);
 	//compute the average of each region
 
 
 
-	int*record=new int[PHC->comps]; 
+	int*record=new int[sHC.comps]; 
 	int*pi=record;//record region number has the same size with prededing ones
 	//		record[y].first=y;
-	int len=PHC->S.size();
-	PHC->eval=0;
+	int len=sHC.S.size();
+	float eval=0.f;
 		
 	double *errsum=new double[len];
 	memset(errsum,0,sizeof(double)*len);
@@ -2059,10 +2258,10 @@ int EvalQs(CHC*PHC,GDALDataset*pDataset,vector<float>&bWArray)
 		for (x = 0; x < w; x++) 
 		{
 			pedler=0;
-			trans=PHC->tag[sernum];
-			for(d=0;d<PHC->d_;d++)
+			trans=sHC.tag[sernum];
+			for(d=0;d<sHC.d_;d++)
 			{
-				pedler+=square(buf[d][sernum]-PHC->S[trans].addition[d]/PHC->S[trans].size);
+				pedler+=square(buf[d][sernum]-sHC.S[trans].addition[d]/sHC.S[trans].size);
 			}
 			errsum[trans]+=sqrt(pedler);
 			++sernum;
@@ -2070,46 +2269,47 @@ int EvalQs(CHC*PHC,GDALDataset*pDataset,vector<float>&bWArray)
 	}
 	for(x=0,y=0;x<len;++x)
 	{
-		if(PHC->S[x].p!=x)continue;
+		if(sHC.S[x].p!=x)continue;
 		errsum[x]=(1<<16)*square(errsum[x]);
 		++y;
 	}
-	assert(y==PHC->comps);
+	assert(y==sHC.comps);
 
 	for(x=0;x<len;x++)
 	{
-		if(PHC->S[x].p==x)//reg
+		if(sHC.S[x].p==x)//reg
 		{
-			ext=PHC->S[x].size;	
+			ext=sHC.S[x].size;	
 			*(pi)=ext;
 			++pi;
-			errsum[x]/=(1+log(ext));
-			PHC->eval+=errsum[x];
+			errsum[x]/=(1+log((float)ext));
+			eval+=errsum[x];
 			//eval+=square(record[ext]/ext);
 		}
 	}
-	assert(pi-record==PHC->comps);
+	assert(pi-record==sHC.comps);
 	pi=record;
-	sort(record,record+PHC->comps);
-	while((pi-record)<PHC->comps)
+	sort(record,record+sHC.comps);
+	while((pi-record)<sHC.comps)
 	{ 
 		y=*pi;
 		ext=0;
-		while(((pi-record)<PHC->comps)&&*pi==y)
+		while(((pi-record)<sHC.comps)&&*pi==y)
 		{
 			++ext;
 			++pi;
 		}
-		PHC->eval+=(double)ext*ext/(y*y);
+		eval+=(double)ext*ext/(y*y);
 	}
 
-	PHC->eval=PHC->eval*sqrt(PHC->comps)/(1e4*w*h);
+	eval=eval*sqrt((float)sHC.comps)/(1e4*w*h);
 	delete []errsum;
 	delete []record;
-	for(d=0;d<PHC->d_;++d)
+	for(d=0;d<sHC.d_;++d)
 		delete[] buf[d];
 	delete[] buf;
-	return 1;
+	GDALClose((GDALDatasetH)pDataset);
+	return eval;
 }
 
 
@@ -2269,7 +2469,7 @@ void CHC::InitiateRegionSet()
 			S[y].interdif=(1-wc)*(1+3*wp);
 			i=y%width;
 			j=y/width;
-			S[y].norbox=grid.begin()+y;
+			S[y].norbox=&grid[y];
 			grid[y].top=j;
 			grid[y].bottom=j+1;
 			grid[y].left=i;
@@ -2902,7 +3102,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs2;
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -2922,7 +3122,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=y+hs;
 						grid[ur].left=x+hs;
 						grid[ur].right=x+step;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=hs2;
 						proxy=ur;
 						for(j=0;j<hs;j++)
@@ -2942,7 +3142,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=y+step;
 						grid[ll].left=x;
 						grid[ll].right=x+hs;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=hs2;
 						proxy=ll;
 						for(j=0;j<hs;j++)
@@ -2962,7 +3162,7 @@ void CHC::QTMerge()
 						grid[lr].bottom=y+step;
 						grid[lr].left=x+hs;
 						grid[lr].right=x+step;
-						S[lr].norbox=grid.begin()+lr;
+						S[lr].norbox=&grid[lr];
 						S[lr].size=hs2;
 						proxy=lr;
 						for(j=0;j<hs;j++)
@@ -3010,7 +3210,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=h;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=(h-y)*hs;
 						proxy=ul;
 						for(j=0;j<h-y;j++)
@@ -3030,7 +3230,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=h;
 						grid[ur].left=x+hs;
 						grid[ur].right=x+step;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=hs*(h-y);
 						proxy=ur;
 						for(j=0;j<h-y;j++)
@@ -3073,7 +3273,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs2;
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -3093,7 +3293,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=y+hs;
 						grid[ur].left=x+hs;
 						grid[ur].right=x+step;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=hs2;
 						proxy=ur;
 						for(j=0;j<hs;j++)
@@ -3113,7 +3313,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=h;
 						grid[ll].left=x;
 						grid[ll].right=x+hs;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=hs*(h-y-hs);
 						proxy=ll;
 						for(j=0;j<h-y-hs;j++)
@@ -3133,7 +3333,7 @@ void CHC::QTMerge()
 						grid[lr].bottom=h;
 						grid[lr].left=x+hs;
 						grid[lr].right=x+step;
-						S[lr].norbox=grid.begin()+lr;
+						S[lr].norbox=&grid[lr];
 						S[lr].size=hs*(h-y-hs);
 						proxy=lr;
 						for(j=0;j<h-y-hs;j++)
@@ -3178,7 +3378,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=w;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs*(w-x);
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -3198,7 +3398,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=y+step;
 						grid[ll].left=x;
 						grid[ll].right=w;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=hs*(w-x);
 						proxy=ll;
 						for(j=0;j<hs;j++)
@@ -3245,7 +3445,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs2;
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -3265,7 +3465,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=y+hs;
 						grid[ur].left=x+hs;
 						grid[ur].right=w;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=hs*(w-x-hs);
 						proxy=ur;
 						for(j=0;j<hs;j++)
@@ -3285,7 +3485,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=y+step;
 						grid[ll].left=x;
 						grid[ll].right=x+hs;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=hs2;
 						proxy=ll;
 						for(j=0;j<hs;j++)
@@ -3305,7 +3505,7 @@ void CHC::QTMerge()
 						grid[lr].bottom=y+step;
 						grid[lr].left=x+hs;
 						grid[lr].right=w;
-						S[lr].norbox=grid.begin()+lr;
+						S[lr].norbox=&grid[lr];
 						S[lr].size=hs*(w-x-hs);
 						proxy=lr;
 						for(j=0;j<hs;j++)
@@ -3354,7 +3554,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=w;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs*(w-x);
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -3375,7 +3575,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=h;
 						grid[ll].left=x;
 						grid[ll].right=w;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=(h-y-hs)*(w-x);
 						proxy=ll;
 						for(j=0;j<h-y-hs;j++)
@@ -3432,7 +3632,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=y+hs;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs2;
 						proxy=ul;
 						for(j=0;j<hs;j++)
@@ -3452,7 +3652,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=y+hs;
 						grid[ur].left=x+hs;
 						grid[ur].right=w;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=hs*(w-x-hs);
 						proxy=ur;
 						for(j=0;j<hs;j++)
@@ -3472,7 +3672,7 @@ void CHC::QTMerge()
 						grid[ll].bottom=h;
 						grid[ll].left=x;
 						grid[ll].right=x+hs;
-						S[ll].norbox=grid.begin()+ll;
+						S[ll].norbox=&grid[ll];
 						S[ll].size=hs*(h-y-hs);
 						proxy=ll;
 						for(j=0;j<h-y-hs;j++)
@@ -3492,7 +3692,7 @@ void CHC::QTMerge()
 						grid[lr].bottom=h;
 						grid[lr].left=x+hs;
 						grid[lr].right=w;
-						S[lr].norbox=grid.begin()+lr;
+						S[lr].norbox=&grid[lr];
 						S[lr].size=(h-y-hs)*(w-x-hs);
 						proxy=lr;
 						for(j=0;j<h-y-hs;j++)
@@ -3532,7 +3732,7 @@ void CHC::QTMerge()
 						grid[ul].bottom=h;
 						grid[ul].left=x;
 						grid[ul].right=x+hs;
-						S[ul].norbox=grid.begin()+ul;
+						S[ul].norbox=&grid[ul];
 						S[ul].size=hs*(h-y);
 						proxy=ul;
 						for(j=0;j<h-y;j++)
@@ -3553,7 +3753,7 @@ void CHC::QTMerge()
 						grid[ur].bottom=h;
 						grid[ur].left=x+hs;
 						grid[ur].right=w;
-						S[ur].norbox=grid.begin()+ur;
+						S[ur].norbox=&grid[ur];
 						S[ur].size=(w-x-hs)*(h-y);
 						proxy=ur;
 						for(j=0;j<h-y;j++)
@@ -3863,9 +4063,11 @@ int CHC::InitializeASM(int ln,int com, enum Appro flag)
 }
 
 //if origin data format is byte, regularization i.e. division by 256 is used to keep precise
-int BuildData(CHC*PHC,GDALDataset* m_pDataset, vector<float>&bWArray)
+int BuildData(CHC&sHC, const CString&path, vector<float>&bWArray)
 {
-	int spp=m_pDataset->GetRasterCount();//波段的数目
+	GDALDataset* pDataset=(GDALDataset *) GDALOpen(path,GA_ReadOnly);
+	assure(pDataset,path);
+	int spp=pDataset->GetRasterCount();//波段的数目
 	int d;
 	if(bWArray.size()>0)
 	{
@@ -3874,38 +4076,38 @@ int BuildData(CHC*PHC,GDALDataset* m_pDataset, vector<float>&bWArray)
 			AfxMessageBox("weight of band size incompatible with band number in Dataset!");
 			return 0;
 		}
-		for(d=0,PHC->d_=0;d<spp;++d)
-			PHC->d_+=(bWArray[d]>0?1:0);
+		for(d=0,sHC.d_=0;d<spp;++d)
+			sHC.d_+=(bWArray[d]>0?1:0);
 	}
 	else
 	{
 		for(d=0;d<spp;++d)
 			bWArray.push_back(1.f);
-		PHC->d_=spp;
+		sHC.d_=spp;
 	}
-	
-	PHC->Width=m_pDataset->GetRasterXSize();
-	PHC->Height=m_pDataset->GetRasterYSize();
-	int L=PHC->Height*PHC->Width;
-	PHC->comps=L;
-	if(PHC->tag)
-		delete[]PHC->tag;
-	PHC->tag=new int[L];	
-	if (PHC->data_)
+
+	sHC.Width=pDataset->GetRasterXSize();
+	sHC.Height=pDataset->GetRasterYSize();
+	int L=sHC.Height*sHC.Width;
+	sHC.comps=L;
+	if(sHC.tag)
+		delete[]sHC.tag;
+	sHC.tag=new int[L];	
+	if (sHC.data_)
 	{
-		delete []PHC->data_;
-		delete []PHC->sData_;
+		delete []sHC.data_;
+		delete []sHC.sData_;
 	}	
-	PHC->data_=new float[L*PHC->d_];
-	PHC->sData_=new float[L*PHC->d_];
-	if(PHC->A.size())
+	sHC.data_=new float[L*sHC.d_];
+	sHC.sData_=new float[L*sHC.d_];
+	if(sHC.A.size())
 	{
-		PHC->A.clear();
-		PHC->S.clear();
+		sHC.A.clear();
+		sHC.S.clear();
 	}
 	int x,y,sernum,temp,cur=0;//cur for current data channel index
-	int nByteWidth=PHC->d_*PHC->Width;
-	float* buf =new float[PHC->Width*PHC->Height];
+	int nByteWidth=sHC.d_*sHC.Width;
+	float* buf =new float[sHC.Width*sHC.Height];
 
 	GDALRasterBand  *m_pBand=NULL;
 	float max=0, min=0;		
@@ -3916,17 +4118,17 @@ int BuildData(CHC*PHC,GDALDataset* m_pDataset, vector<float>&bWArray)
 			continue;
 		}
 
-		m_pBand= m_pDataset->GetRasterBand(d+1);
+		m_pBand= pDataset->GetRasterBand(d+1);
 	
 //		m_pBand->GetStatistics( 0,  1,&min, &max,0,0);
 
 		if (m_pBand)
 		{	
-			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, PHC->Width, PHC->Height, buf,PHC->Width,PHC->Height, GDT_Float32, 0, 0 ))
+			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, sHC.Width, sHC.Height, buf,sHC.Width,sHC.Height, GDT_Float32, 0, 0 ))
 			{
-				if(PHC->Delta==0)
+				if(sHC.Delta==0)
 				{
-					temp=PHC->Height*PHC->Width;
+					temp=sHC.Height*sHC.Width;
 					for(y=0;y<temp;++y)
 					{
 						max=max>buf[y]?max:buf[y];
@@ -3938,18 +4140,18 @@ int BuildData(CHC*PHC,GDALDataset* m_pDataset, vector<float>&bWArray)
 						++x;
 						sernum>>=1;
 					}
-					PHC->Delta=(float)(1<<x);
+					sHC.Delta=(float)(1<<x);
 				}
 				
 				sernum=cur;
 				temp=0;
-				for(y=0;y<PHC->Height;++y)
+				for(y=0;y<sHC.Height;++y)
 				{
-					for (x = 0; x < PHC->Width; ++x) 
+					for (x = 0; x < sHC.Width; ++x) 
 					{
-						PHC->data_[sernum]=buf[temp]/PHC->Delta;							
-						PHC->sData_[sernum]=PHC->data_[sernum]*PHC->data_[sernum];
-						sernum+=PHC->d_;
+						sHC.data_[sernum]=buf[temp]/sHC.Delta;							
+						sHC.sData_[sernum]=sHC.data_[sernum]*sHC.data_[sernum];
+						sernum+=sHC.d_;
 						++temp;
 					}				
 				}
@@ -3957,8 +4159,9 @@ int BuildData(CHC*PHC,GDALDataset* m_pDataset, vector<float>&bWArray)
 		}
 		++cur;
 	}
-	assert(cur==PHC->d_);
+	assert(cur==sHC.d_);
 	delete[]buf;
+	GDALClose( (GDALDatasetH) pDataset);
 	return 1;
 }
 
@@ -4535,17 +4738,78 @@ CvSeq* GetBoundary(int *tag, int Width, int Height,CvMemStorage* storage)
 	delete []g;
 	return ptseq;
 }
-//compute  the region features, NDVI compactness length/width(elongation) roundness 
-void RegionProps(CHC*PHC,IplImage*veil)
+//compute shade or nochange ratio of one region
+//input segmentation stored in myHC, shade or nochange pixels with label 0 stored in shade
+//output: exS[each region].attList[shadeRatio], or attList[changeRatio] are computed.
+void ShadeRatio(CHC&myHC, IplImage*shade,bool shadow)
 {
-	if(!PHC->S.size())
+	if(!myHC.S.size())
 	{
 		AfxMessageBox("Segment image before computing region properties!");
 		return;
 	}
-	if(PHC->exS.size())
+	int len=myHC.S.size();
+	exRegion turg;//temp exregion
+	vector<exRegion>::iterator xiter=myHC.exS.begin(),xtemp;	
+	
+	int x,mW,mH,mx,my,i,j,pos,dest,total;
+	for (x = 0; x <len; x++) 
+	{		
+		if(x!=myHC.S[x].p)			
+			continue;
+		assert(xiter->label==x);
+		mH=myHC.S[x].norbox->Height();
+		mW=myHC.S[x].norbox->Width();
+		mx=myHC.S[x].norbox->left;
+		my=myHC.S[x].norbox->top;
+		pos=my*myHC.Width+mx;
+		total=0;
+		dest=0;
+		for(j=0;j<mH;++j)
+		{			
+			for(i=0;i<mW;++i)
+			{
+				if(myHC.tag[pos]==x)
+				{
+					if(((BYTE*)(shade->imageData + shade->widthStep*(my+j)))[mx+i]==0)
+						++dest;
+					++total;
+				}
+				++pos;			
+			}
+			pos+=myHC.Width-mW;				
+		}
+		
+		assert(total==myHC.S[x].size);
+		float temp=float(dest)/myHC.S[x].size;
+		NPL::iterator lit=myHC.S[x].NPList.begin();
+		exRegion turg;
+		if(shadow)
+		{
+			xiter->attList[shadeRatio]=temp;
+			//for each neighbor update the neighbor's maximum neiShadereatio
+			while(lit!=myHC.S[x].NPList.end())
+			{
+				turg.label=lit->rInd;
+				xtemp=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+				if(xtemp->attList[neiShadeRatio]<temp)
+					xtemp->attList[neiShadeRatio]=temp;		
+				++lit;
+			}
+		}
+		else			
+			xiter->attList[changeRatio]=1.0f-temp;
+		++xiter;
+	}
+}
+
+//compute  the region features, NDVI compactness length/width(elongation) roundness 
+void CHC::RegionProps()
+{
+	if(!S.size())
 	{
-		PHC->exS.clear();
+		AfxMessageBox("Segment image before computing region properties!");
+		return;
 	}
 	CvMemStorage* storage= cvCreateMemStorage(0);
 	CvSeq*contours;
@@ -4554,42 +4818,26 @@ void RegionProps(CHC*PHC,IplImage*veil)
 	int sernum,hullcount;
 	
 	int x,mW,mH,mx,my,i,j,pos,dest,total;
-	BYTE*patch;
-	float*pool;
+
 	CvMat Ma, Mb;
 	CvMoments mom;
 	CvHuMoments huMom;
 	double min,max;
-	int len=PHC->S.size();
+	int len=S.size();
 	exRegion turg;//temp exregion
 	vector<exRegion>::iterator xiter;
-	PHC->propDim=8;//add mask prop
-	PHC->propData=new float[PHC->propDim*PHC->comps];
-	memset(PHC->propData,-1,sizeof(float)*PHC->propDim*PHC->comps);
-	PHC->exS=vector<exRegion>(PHC->comps);
 	
-	//initialize region list storing features
-	for (x = 0,i=0; x <len; ++x) 
-	{		
-		if(x!=PHC->S[x].p)			
-			continue;
-		PHC->exS[i].label=x;
-		PHC->exS[i].attList=PHC->propData+i*PHC->propDim;
-		++i;
-	}
-
-//	sort(exS.begin(),exS.end());
-	contours=GetBoundary(PHC->tag,PHC->Width,PHC->Height,storage);
+	contours=GetBoundary(tag,Width,Height,storage);
 	hullcount=0;
 	while( contours)
 	{		
 		rect=cvMinAreaRect2(contours);
 //		cvBoxPoints(rect,ptf);
 		pt =*CV_GET_SEQ_ELEM( CvPoint, contours, 0 );
-		sernum=pt.y*PHC->Width+pt.x;
-		turg.label=PHC->tag[sernum];	
-		assert(PHC->S[PHC->tag[sernum]].p==PHC->tag[sernum]);
-		xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+		sernum=pt.y*Width+pt.x;
+		turg.label=tag[sernum];	
+		assert(S[tag[sernum]].p==tag[sernum]);
+		xiter=lower_bound(exS.begin(),exS.end(),turg);
 		if(xiter->isVisited==true)//if one object is enclosed by another object, revisit may occur!
 		{
 			contours = contours->h_next;
@@ -4601,7 +4849,7 @@ void RegionProps(CHC*PHC,IplImage*veil)
 		xiter->attList[minRectHeg]=rect.size.height+1;
 	//	float temp=(rect.size.width+1.0f)*(rect.size.height+1.0f)+1.f;
 	//	int quirk=S[tag[sernum]].size;
-		assert(((rect.size.width+1.0f)*(rect.size.height+1.0f)+1.f)>=PHC->S[PHC->tag[sernum]].size);
+		assert(((rect.size.width+1.0f)*(rect.size.height+1.0f)+1.f)>=S[tag[sernum]].size);
 	/*if(temp<quirk)
 		{
 		
@@ -4621,36 +4869,38 @@ void RegionProps(CHC*PHC,IplImage*veil)
 		// take the next contour
 		contours = contours->h_next;
 	}
-	assert(hullcount==PHC->comps);
+	assert(hullcount==comps);
 
 	cvClearMemStorage( storage);
 
 	//average width and length
 
 	//search father for each region
+//	xiter=exS.begin();
+	int k=0;
 	for (x = 0; x <len; x++) 
 	{		
-		if(x!=PHC->S[x].p)			
+		if(x!=S[x].p)			
 			continue;
-
-		mH=PHC->S[x].norbox->Height();
-		mW=PHC->S[x].norbox->Width();
-		patch=new BYTE[(mH+2)*(mW+2)];
-		pool=new float[(mH+2)*(mW+2)];
+		assert(exS[k].label==x);
+		mH=S[x].norbox->Height();
+		mW=S[x].norbox->Width();
+		BYTE*patch=new BYTE[(mH+2)*(mW+2)];
+		float *pool=new float[(mH+2)*(mW+2)];
 		memset(patch,0,sizeof(BYTE)*(mH+2)*(mW+2));
 		cvInitMatHeader( &Ma, mH+2, mW+2, CV_8UC1, patch);
 		cvInitMatHeader( &Mb, mH+2, mW+2, CV_32FC1, pool);
 
-		mx=PHC->S[x].norbox->left;
-		my=PHC->S[x].norbox->top;
-		pos=my*PHC->Width+mx;
+		mx=S[x].norbox->left;
+		my=S[x].norbox->top;
+		pos=my*Width+mx;
 		dest=(mW+2)+1;
 		total=0;
 		for(j=0;j<mH;++j)
 		{			
 			for(i=0;i<mW;++i)
 			{
-				if(PHC->tag[pos]==x)
+				if(tag[pos]==x)
 				{
 					patch[dest]=1;	
 					++total;
@@ -4658,34 +4908,13 @@ void RegionProps(CHC*PHC,IplImage*veil)
 				++pos;
 				++dest;
 			}
-			pos+=PHC->Width-mW;
+			pos+=Width-mW;
 			dest+=2;
 		}
 		
-		assert(total==PHC->S[x].size);
-		if(veil)
-		{
-			pos=my*PHC->Width+mx;
-			dest=0;
-			total=0;
-			for(j=0;j<mH;++j)
-			{			
-				for(i=0;i<mW;++i)
-				{
-					if(PHC->tag[pos]==x)
-					{
-						if(((BYTE*)(veil->imageData + veil->widthStep*(my+j)))[mx+i]>0)
-							++dest;
-						++total;
-					}
-					++pos;			
-				}
-				pos+=PHC->Width-mW;				
-			}
-		
-			assert(total==PHC->S[x].size);
-		}
-		cvDistTransform(&Ma,&Mb,CV_DIST_L2,5);
+		assert(total==S[x].size);
+	
+		cvDistTransform(&Ma,&Mb,CV_DIST_L2,3);
 		cvMinMaxLoc(&Mb,&min,&max);
 	/*	for(i=1;i<mH+1;++i)
 		{
@@ -4695,20 +4924,20 @@ void RegionProps(CHC*PHC,IplImage*veil)
 		}
 		sum=sum/mH*2;*/	
 		max*=2;
-		turg.label=x;
-		xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
-		xiter->attList[meanThick]=max;	
-		xiter->attList[validRate]=float(dest)/PHC->S[x].size;
+//		turg.label=x;
+//		xiter=lower_bound(exS.begin(),exS.end(),turg);
+		exS[k].attList[meanThick]=max;	
+	
 		cvMoments(&Ma, &mom, 1 );
 		cvGetHuMoments(&mom,&huMom);
 		min=huMom.hu1;
 		max=huMom.hu2;
-		xiter->attList[eigRatio]=sqrt((min+sqrt(max))/(min-sqrt(max)));	
+		exS[k].attList[eigRatio]=sqrt((min+sqrt(max))/(min-sqrt(max)));	
 		delete[]patch;
 		delete[]pool;
+		++k;
 	}
-
-	
+	assert(k==comps);
 }
 //press ONLY f5 produces only 1 contour enveloping the whole image, press ctrl+f5 produces contours
 //more than 1 except the frame contour,  debug error memory damage is often admonished, with no idea
@@ -4976,9 +5205,9 @@ void CHC::LenWidR()
 	CvMemStorage* storage= cvCreateMemStorage(0);
 	CvSeq*contours,*hull;
 	CvPoint pt0;//,pt;
-	CvPoint2D32f ptf[4];
+//	CvPoint2D32f ptf[4];
 	CvSize sz=cvSize(Width,Height);
-	CvBox2D rect;
+//	CvBox2D rect;
 	int sernum=0,i=0,j=0,hullcount=0;
     IplImage* gray = cvCreateImage( sz, 8, 3 ); 
 	
@@ -4990,8 +5219,8 @@ void CHC::LenWidR()
 	while( contours)
 	{	
 		//		int  dam=contours->total; 
-		rect=cvMinAreaRect2(contours);
-		cvBoxPoints(rect,ptf);
+//		rect=cvMinAreaRect2(contours);
+//		cvBoxPoints(rect,ptf);
 	//	if((rect.size.height/rect.size.width>2.f)||(rect.size.width/rect.size.height>2.f))
 		{
 			//draw the rect in img representation approach 1
@@ -5016,6 +5245,11 @@ void CHC::LenWidR()
 			//draw the convex hull result display approach 3
 			hull = cvConvexHull2( contours, 0, CV_CLOCKWISE, 0 );
 			hullcount = hull->total;
+			float thresh=cos(80/180*3.1415926);
+			for( i = 0; i < hullcount; i++ )
+			{
+		//	JHLineAngle(pt0,pt,pt);
+			}
 			pt0 = **CV_GET_SEQ_ELEM( CvPoint*, hull, hullcount - 1 );
 			for( i = 0; i < hullcount; i++ )
 			{
@@ -5831,35 +6065,37 @@ void CHC::RegMoment(int label)
     cvReleaseImage( &cpy );
 	cvDestroyWindow( wndname);
 }
-//save object mean and contour image of segmentation and contour only applies to small image
-void SaveSeg(CHC*PHC,GDALDataset *m_pDataset,CString pathname)
+//save object mean and contour of segmentation of the image with pathname to dest
+
+void SaveSeg(const CHC&sHC,const CString& dest,const CString& pathname)
 {
-	int L=PHC->Height*PHC->Width;
+	int L=sHC.Height*sHC.Width;
 
 	int x,y,d,sernum,label;
-	int nByteWidth=PHC->d_*PHC->Width;
-	float* buf =new float[PHC->Width*PHC->Height];
+	int nByteWidth=sHC.d_*sHC.Width;
+	float* buf =new float[sHC.Width*sHC.Height];
+	GDALDataset *m_pDataset=(GDALDataset *) GDALOpen(pathname,GA_ReadOnly);
 	GDALRasterBand  *m_pBand=NULL;
-	for(d=1;d<PHC->d_+1;++d)
+	for(d=1;d<sHC.d_+1;++d)
 	{
 		m_pBand= m_pDataset->GetRasterBand(d);
 		if (m_pBand)
 		{	
 			sernum=0;
 			
-			for(y=0;y<PHC->Height;++y)
+			for(y=0;y<sHC.Height;++y)
 			{
-				for (x = 0; x <PHC-> Width; ++x) 
+				for (x = 0; x <sHC. Width; ++x) 
 				{					
-					label=PHC->tag[sernum];
-					buf[sernum]=(PHC->S[label].addition[d-1])/(PHC->S[label].size)*Range;							
-					if(x>0&&y>0&&(x<PHC->Width-1)&&(y<PHC->Height-1))
-						if(label!=PHC->tag[sernum+1]||label!=PHC->tag[sernum+PHC->Width])//one pixel width boundary
+					label=sHC.tag[sernum];
+					buf[sernum]=(sHC.S[label].addition[d-1])/(sHC.S[label].size)*Range;							
+					if(x>0&&y>0&&(x<sHC.Width-1)&&(y<sHC.Height-1))
+						if(label!=sHC.tag[sernum+1]||label!=sHC.tag[sernum+sHC.Width])//one pixel width boundary
 							buf[sernum]=0;
 						++sernum;
 				}				
 			}
-			if (CE_None!=m_pBand->RasterIO( GF_Write,0,0, PHC->Width,PHC->Height, buf, PHC->Width,PHC->Height,GDT_Float32, 0, 0 ))
+			if (CE_None!=m_pBand->RasterIO( GF_Write,0,0, sHC.Width,sHC.Height, buf, sHC.Width,sHC.Height,GDT_Float32, 0, 0 ))
 			{
 				AfxMessageBox("error write mpdataset!");
 			}
@@ -5871,7 +6107,7 @@ void SaveSeg(CHC*PHC,GDALDataset *m_pDataset,CString pathname)
 	char **papszMetadata;
 	GDALDataset* poDstDS;
 
-	const char*pszDstFilename=(const char*)pathname;
+
 	poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
 	
 	if( poDriver == NULL)
@@ -5884,8 +6120,9 @@ void SaveSeg(CHC*PHC,GDALDataset *m_pDataset,CString pathname)
 	if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATECOPY, FALSE ) )
 	{	herald.Format( "Driver %s supports CreateCopy() method.\n", pszFormat );
 	AfxMessageBox(herald);}*/
-	if(poDstDS=poDriver->CreateCopy( pszDstFilename, m_pDataset, FALSE, NULL, NULL, NULL))
+	if(poDstDS=poDriver->CreateCopy( dest, m_pDataset, FALSE, NULL, NULL, NULL))
 		GDALClose( (GDALDatasetH) poDstDS);
+	GDALClose( (GDALDatasetH) m_pDataset);
 }
 
 int CHC::GetRegSize(int label)
@@ -5998,7 +6235,6 @@ void GetProfile(float line[4],int len,int Width, vector<int>&pontiff)
 }
 void GetBand(GDALDataset* m_pSrc,float*buf,int d)
 {
-
 	GDALRasterBand  *m_pBand=NULL;
 	int Width=m_pSrc->GetRasterXSize(); //影响的高度，宽度
 	int	Height=m_pSrc->GetRasterYSize();
@@ -6165,7 +6401,7 @@ float Correlate(float *src, vector<int>&bench, vector<int>&test)
 //road tracking starting from valid endpoints stored in terminal
 //in roadmap, 0 for background,1 for road, 2 for road centerline,3 for terminal points.
 // in terminal the order index of end point
-void RoadExpo(CHC*PHC,BYTE*roadmap,vector<int>&terminal,GDALDataset* m_pSrc)
+void RoadExpo(CHC*PHC,BYTE*roadmap,vector<int>&terminal,const char*fName)
 {
 	int tsize=terminal.size(),i,j,k;//x,y coordinate i,j for index incremental
 	vector<int> edgecode;
@@ -6181,7 +6417,9 @@ void RoadExpo(CHC*PHC,BYTE*roadmap,vector<int>&terminal,GDALDataset* m_pSrc)
 	cvZero(portal);
 	
 	float *vegind=new float[PHC->Width*PHC->Height];
-	GetBand(m_pSrc,vegind,4);
+	GDALDataset* m_pSrc=(GDALDataset *) GDALOpen(fName,GA_ReadOnly);
+	GetBand(m_pSrc,vegind,1);
+	GDALClose((GDALDatasetH)m_pSrc);
 	for(i=0;i<PHC->Height;++i)
 	{
 		for(j=0;j<PHC->Width;++j)
@@ -6582,6 +6820,7 @@ void CHC::GetHistogramData(int *dataBin, float &rmax,float &rmin)
 		AfxMessageBox("Compute Region Property before preview!");
 		return;
 	}
+	memset(dataBin,0,sizeof(int)*256);
 	int i, length, binnum;
 	int index=typeProp;
 	float step,curd;//range max,range min,current data
@@ -6621,64 +6860,64 @@ void CHC::GetHistogramData(int *dataBin, float &rmax,float &rmin)
 		case REGSIZE:
 			rmax=0;
 			rmin=1e10;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;	
-				curd=S[i].size;
+		xiter=exS.begin();
+			while(xiter!=exS.end())
+			{
+				curd=S[xiter->label].size;
 				rmax=__max(rmax,curd);
-				rmin=__min(rmin,curd);		
+				rmin=__min(rmin,curd);
+				++xiter;
 			}
 			step=(rmax-rmin)/255.f;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;
-				curd=S[i].size;			
+				xiter=exS.begin();
+			while(xiter!=exS.end())
+			{
+				curd=S[xiter->label].size;		
 				binnum=(int)floor((curd-rmin)/step);
-				++dataBin[binnum];		
+				++dataBin[binnum];	
+				++xiter;
 			}
 			break;
 		case PERIM:
 			rmax=0;
 			rmin=1e10;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;	
-				curd=S[i].perim;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{
+				curd=S[xiter->label].perim;
 				rmax=__max(rmax,curd);
-				rmin=__min(rmin,curd);		
+				rmin=__min(rmin,curd);
+					++xiter;
 			}
 			step=(rmax-rmin)/255.f;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;
-				curd=S[i].perim;			
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{
+				curd=S[xiter->label].perim;			
 				binnum=(int)floor((curd-rmin)/step);
-				++dataBin[binnum];		
+				++dataBin[binnum];
+					++xiter;
 			}
 			break;
 		case CMPCT:
 			rmax=0;
 			rmin=1;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;	
-				curd=sqrt(S[i].size*4/3.1416)/S[i].perim;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{
+				curd=S[xiter->label].size/(xiter->attList[minRectHeg]*xiter->attList[minRectWid]);
 				rmax=__max(rmax,curd);
-				rmin=__min(rmin,curd);		
+				rmin=__min(rmin,curd);	
+				++xiter;
 			}
 			step=(rmax-rmin)/255.f;
-			for (i = 0; i <length; i++) 
-			{		
-				if(i!=S[i].p)			
-					continue;	
-				curd=sqrt(S[i].size*4/3.1416)/S[i].perim;			
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{	
+				curd=S[xiter->label].size/(xiter->attList[minRectHeg]*xiter->attList[minRectWid]);
 				binnum=(int)floor((curd-rmin)/step);
-				++dataBin[binnum];		
+				++dataBin[binnum];
+				++xiter;
 			}
 			break;
 		case MAXAL:
@@ -6723,13 +6962,15 @@ void CHC::GetHistogramData(int *dataBin, float &rmax,float &rmin)
 				++xiter;
 			}
 			break;
-		case COVLWR:
+		case ELONG:
 			rmax=0;
 			rmin=1e5;
 			xiter=exS.begin();
 			while(xiter!=exS.end())
 			{	
-				curd=xiter->attList[eigRatio];
+				curd=__max(xiter->attList[minRectHeg],xiter->attList[minRectWid])/__min(xiter->attList[minRectHeg],xiter->attList[minRectWid]);
+				
+				curd=__min(xiter->attList[eigRatio],curd);
 				rmax=__max(rmax,curd);
 				rmin=__min(rmin,curd);
 				++xiter;
@@ -6738,23 +6979,90 @@ void CHC::GetHistogramData(int *dataBin, float &rmax,float &rmin)
 			xiter=exS.begin();
 			while(xiter!=exS.end())
 			{	
-				curd=xiter->attList[eigRatio];		
+				curd=__max(xiter->attList[minRectHeg],xiter->attList[minRectWid])/__min(xiter->attList[minRectHeg],xiter->attList[minRectWid]);
+				
+				curd=__min(xiter->attList[eigRatio],curd);	
+				binnum=(int)floor((curd-rmin)/step);
+				++dataBin[binnum];	
+				++xiter;
+			}
+			break;
+		case SHADERATIO:
+			rmax=0;
+			rmin=1;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{				
+				curd=xiter->attList[shadeRatio];
+				rmax=__max(rmax,curd);
+				rmin=__min(rmin,curd);
+				++xiter;
+			}
+			step=(rmax-rmin)/255.f;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{				
+				curd=xiter->attList[shadeRatio];
+				binnum=(int)floor((curd-rmin)/step);
+				++dataBin[binnum];	
+				++xiter;
+			}
+			break;
+		case NEISHADERATIO:
+			rmax=0;
+			rmin=1;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{				
+				curd=xiter->attList[neiShadeRatio];
+				rmax=__max(rmax,curd);
+				rmin=__min(rmin,curd);
+				++xiter;
+			}
+			step=(rmax-rmin)/255.f;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{	
+				
+				curd=xiter->attList[neiShadeRatio];
+				binnum=(int)floor((curd-rmin)/step);
+				++dataBin[binnum];	
+				++xiter;
+			}
+			break;
+		case CHANGERATIO:
+			rmax=0;
+			rmin=1;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{				
+				curd=xiter->attList[changeRatio];
+				rmax=__max(rmax,curd);
+				rmin=__min(rmin,curd);
+				++xiter;
+			}
+			step=(rmax-rmin)/255.f;
+			xiter=exS.begin();
+			while(xiter!=exS.end())
+			{	
+				
+				curd=xiter->attList[changeRatio];
 				binnum=(int)floor((curd-rmin)/step);
 				++dataBin[binnum];	
 				++xiter;
 			}
 			break;
 		default:			
-			AfxMessageBox("This index is illegible!");break;
+			AfxMessageBox("This index is illegible!");
 		}
 	}
 }
 //distinguish regions with the type indexed property value larger than thresh 
 //those regions locate in wind defined area, pixels concerned forms (left,right-1)x(top,bottom-1)
 //use opencv image to display the result
-void RegionThresh(CHC*PHC,float thresh,CRect wind,IplImage*cpy)
+void RegionThresh(CHC&myHC,float thresh,CRect wind,IplImage*cpy)
 {
-	if(PHC->S.size()==0)
+	if(myHC.S.size()==0)
 	{
 		AfxMessageBox("Data not available!");
 		return;
@@ -6764,12 +7072,12 @@ void RegionThresh(CHC*PHC,float thresh,CRect wind,IplImage*cpy)
 	Region*chariot;
 	if(wind.top<0)
 		wind.top=0;
-	if(wind.bottom>PHC->Height)
-		wind.bottom=PHC->Height;
+	if(wind.bottom>myHC.Height)
+		wind.bottom=myHC.Height;
 	if(wind.left<0)
 		wind.left=0;
-	if(wind.right>PHC->Width)
-		wind.right=PHC->Width;
+	if(wind.right>myHC.Width)
+		wind.right=myHC.Width;
 	int mH=wind.bottom-wind.top;
 	int mW=wind.right-wind.left;
 
@@ -6778,18 +7086,18 @@ void RegionThresh(CHC*PHC,float thresh,CRect wind,IplImage*cpy)
 	vector<exRegion>::iterator xiter;
 
 	cvZero(cpy);
-	if(PHC->typeProp<10)//use S.addition
+	if(myHC.typeProp<10)//use S.addition
 	{
-		if(PHC->typeProp>PHC->d_-1)
-			PHC->typeProp=PHC->d_-1;
-		sernum=wind.top*PHC->Width+wind.left;
+		if(myHC.typeProp>myHC.d_-1)
+			myHC.typeProp=myHC.d_-1;
+		sernum=wind.top*myHC.Width+wind.left;
 		for(i=0;i<mH;++i)
 		{
 			for(j=0;j<mW;++j)
 			{			
-				chariot=&PHC->S[PHC->tag[sernum]];
-				assert(chariot->p==PHC->tag[sernum]);
-				if((chariot->addition[PHC->typeProp]/(chariot->size)*Range)>=thresh)
+				chariot=&myHC.S[myHC.tag[sernum]];
+				assert(chariot->p==myHC.tag[sernum]);
+				if((chariot->addition[myHC.typeProp]/(chariot->size)*Range)>=thresh)
 				{
 				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
 				temp_ptr[0]=0;
@@ -6798,140 +7106,212 @@ void RegionThresh(CHC*PHC,float thresh,CRect wind,IplImage*cpy)
 				}			
 				++sernum;
 			}
-			sernum+=(PHC->Width-mW);
+			sernum+=(myHC.Width-mW);
 		}
 	}
 	else
 	{
-		switch(PHC->typeProp)
+		switch(myHC.typeProp)
 		{
 		case REGSIZE:
-		sernum=wind.top*PHC->Width+wind.left;
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
 			{
-				chariot=&PHC->S[PHC->tag[sernum]];
-				assert(chariot->p==PHC->tag[sernum]);
-				if(chariot->size>=thresh)
+				for(j=0;j<mW;++j)
 				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
-				}			
-				++sernum;
+					chariot=&myHC.S[myHC.tag[sernum]];
+					assert(chariot->p==myHC.tag[sernum]);
+					if(chariot->size>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}			
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
+			break;
 		case PERIM:
-		sernum=wind.top*PHC->Width+wind.left;
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
 			{
-				chariot=&PHC->S[PHC->tag[sernum]];
-				assert(chariot->p==PHC->tag[sernum]);
-				if(chariot->perim>=thresh)
+				for(j=0;j<mW;++j)
 				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
-				}			
-				++sernum;
+					chariot=&myHC.S[myHC.tag[sernum]];
+					assert(chariot->p==myHC.tag[sernum]);
+					if(chariot->perim>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}			
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
+			break;
 		case CMPCT:
-		sernum=wind.top*PHC->Width+wind.left;
-		
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
+			sernum=wind.top*myHC.Width+wind.left;
+			
+			for(i=0;i<mH;++i)
 			{
-				label=PHC->tag[sernum];
-				assert(PHC->S[label].p==label);
-				temp=sqrt(PHC->S[label].size*4/3.1416)/PHC->S[label].perim;
-				
-				if(temp>=thresh)
+				for(j=0;j<mW;++j)
 				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
-				}			
-				++sernum;
+					label=myHC.tag[sernum];
+					assert(myHC.S[label].p==label);
+					
+					turg.label=label;
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					temp=myHC.S[label].size/(xiter->attList[minRectHeg]*xiter->attList[minRectWid]);
+					
+					if(temp>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}			
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
+			break;
 		case MAXAL:
-		sernum=wind.top*PHC->Width+wind.left;
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
-			{				
-				turg.label=PHC->tag[sernum];
-				xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
-				
-				if(__max(xiter->attList[minRectHeg],xiter->attList[minRectWid])>=thresh)
-				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
+			{
+				for(j=0;j<mW;++j)
+				{				
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					
+					if(__max(xiter->attList[minRectHeg],xiter->attList[minRectWid])>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
 				}
-				++sernum;
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
+			break;
 		case MEANW:
-		sernum=wind.top*PHC->Width+wind.left;
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
 			{
-				turg.label=PHC->tag[sernum];
-				xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
-				if(xiter->attList[meanThick]>=thresh)
+				for(j=0;j<mW;++j)
 				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					if(xiter->attList[meanThick]>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
 				}
-				++sernum;
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
-		case COVLWR:
-		sernum=wind.top*PHC->Width+wind.left;
-		for(i=0;i<mH;++i)
-		{
-			for(j=0;j<mW;++j)
+			break;
+		case ELONG:
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
 			{
-				turg.label=PHC->tag[sernum];
-				xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
-				if(xiter->attList[eigRatio]>=thresh)
+				for(j=0;j<mW;++j)
 				{
-				uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
-				temp_ptr[0]=0;
-				temp_ptr[1]=255;
-				temp_ptr[2]=0;
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					temp=__max(xiter->attList[minRectHeg],xiter->attList[minRectWid])/__min(xiter->attList[minRectHeg],xiter->attList[minRectWid]);
+					temp=__min(xiter->attList[eigRatio],temp);
+					
+					if(temp>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
 				}
-				++sernum;
+				sernum+=(myHC.Width-mW);
 			}
-			sernum+=(PHC->Width-mW);
-		}
-		break;
+			break;
+		case SHADERATIO:
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
+			{
+				for(j=0;j<mW;++j)
+				{
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					temp=xiter->attList[shadeRatio];
+					
+					if(temp>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
+			}
+			break;
+		case NEISHADERATIO:
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
+			{
+				for(j=0;j<mW;++j)
+				{
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					temp=xiter->attList[neiShadeRatio];
+					
+					if(temp>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
+			}
+			break;
+		case CHANGERATIO:
+			sernum=wind.top*myHC.Width+wind.left;
+			for(i=0;i<mH;++i)
+			{
+				for(j=0;j<mW;++j)
+				{
+					turg.label=myHC.tag[sernum];
+					xiter=lower_bound(myHC.exS.begin(),myHC.exS.end(),turg);
+					temp=xiter->attList[changeRatio];
+					
+					if(temp>=thresh)
+					{
+						uchar* temp_ptr = &((uchar*)(cpy->imageData + cpy->widthStep*i))[j*3];
+						temp_ptr[0]=0;
+						temp_ptr[1]=255;
+						temp_ptr[2]=0;
+					}
+					++sernum;
+				}
+				sernum+=(myHC.Width-mW);
+			}
+			break;
 		default:
 			AfxMessageBox("this type information not available!");
-			break; return;
+			return;
 		}
 	}
 
@@ -6949,13 +7329,14 @@ void RegionThresh(CHC*PHC,float thresh,CRect wind,IplImage*cpy)
 //if bwarray[i]==0 which means band i+1 in gdaldataset is not processed in S,save operation will be ignored
 //11- corresponds to features such as perimeter, bn==-1 to save all the processed mean object layers
 //pathname is the full path for the original image data
-void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
+void SaveSeg2(CHC&sHC,const CString&pathname,const int bn)
 {
 	if(bn<-1)
 	{
 		AfxMessageBox("Bad Band Number!");
 		return;
 	}
+	GDALDataset *m_pDataset=(GDALDataset*) GDALOpen(pathname,GA_ReadOnly);
 	exRegion turg;//temp exregion
 	vector<exRegion>::iterator xiter;
 	GDALRasterBand  *poBand=NULL;
@@ -6969,7 +7350,7 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 	
 	poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
 	int pos=pathname.ReverseFind('\\');
-	pathname=pathname.Left(pos+1);
+	CString dir=pathname.Left(pos+1);
 	if( poDriver == NULL)
 	{
 		AfxMessageBox("This format is not able to be created!");
@@ -6982,12 +7363,12 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
     OGRSpatialReference oSRS;
  
 	double adfGeoTransform[6],backup[6] = { 444720, 30, 0, 3751320, 0, -30 };
-	float* buf =new float[PHC->Width*PHC->Height];
+	float* buf =new float[sHC.Width*sHC.Height];
 	if(bn==-1)
 	{
-		CString name=pathname+"panbands.tif";
+		CString name=dir+"panbands.tif";
 		pszDstFilename=(const char*)name;
-		poDstDS = poDriver->Create( pszDstFilename,PHC->Width,PHC->Height, PHC->d_,dataType, 
+		poDstDS = poDriver->Create( pszDstFilename,sHC.Width,sHC.Height, sHC.d_,dataType, 
 			papszOptions );
 		
 		if(CE_None==m_pDataset->GetGeoTransform( adfGeoTransform ))	
@@ -7004,7 +7385,7 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 		const char*pszSRS_WKT=m_pDataset->GetProjectionRef();
 		poDstDS->SetProjection( pszSRS_WKT );
 
-		for(d=1;d<PHC->d_+1;++d)
+		for(d=1;d<sHC.d_+1;++d)
 		{
 			
 			poBand = poDstDS->GetRasterBand(d);	
@@ -7012,18 +7393,18 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{	
 				sernum=0;
 				
-				for(y=0;y<PHC->Height;++y)
+				for(y=0;y<sHC.Height;++y)
 				{
-					for (x = 0; x < PHC->Width; ++x) 
+					for (x = 0; x < sHC.Width; ++x) 
 					{
-						label=PHC->tag[sernum];
-						buf[sernum]=(PHC->S[label].addition[d-1])/(PHC->S[label].size)*Range;							
+						label=sHC.tag[sernum];
+						buf[sernum]=(sHC.S[label].addition[d-1])/(sHC.S[label].size)*Range;							
 						
 						++sernum;
 					}
 					
 				}
-				if (CE_None!=poBand->RasterIO( GF_Write,0,0, PHC->Width, PHC->Height, buf, PHC->Width,PHC->Height,GDT_Float32, 0, 0 ))
+				if (CE_None!=poBand->RasterIO( GF_Write,0,0, sHC.Width, sHC.Height, buf, sHC.Width,sHC.Height,GDT_Float32, 0, 0 ))
 				{
 					AfxMessageBox("error write mpdataset!");
 				}
@@ -7036,9 +7417,9 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 	
 	CString name;
 	name.Format("Band%d.tif",bn);
-	name=pathname+name;
+	name=dir+name;
 	pszDstFilename=(const char*)name;
-    poDstDS = poDriver->Create( pszDstFilename,PHC->Width,PHC->Height, 1,dataType, 
+    poDstDS = poDriver->Create( pszDstFilename,sHC.Width,sHC.Height, 1,dataType, 
 		papszOptions );
 
 	if(CE_None==m_pDataset->GetGeoTransform( adfGeoTransform ))	
@@ -7048,7 +7429,7 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 	
 	const char*pszSRS_WKT=m_pDataset->GetProjectionRef();
     poDstDS->SetProjection( pszSRS_WKT );
- 
+	GDALClose((GDALDatasetH)m_pDataset);
 	poBand = poDstDS->GetRasterBand(1);	
 	if(!poBand)
 	{
@@ -7059,37 +7440,37 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 	{		
 		sernum=0;
 		
-		for(y=0;y<PHC->Height;++y)
+		for(y=0;y<sHC.Height;++y)
 		{
-			for (x = 0; x <PHC->Width; ++x) 
+			for (x = 0; x <sHC.Width; ++x) 
 			{
-				label=PHC->tag[sernum];
-				buf[sernum]=(PHC->S[label].addition[bn])/(PHC->S[label].size)*Range;							
+				label=sHC.tag[sernum];
+				buf[sernum]=(sHC.S[label].addition[bn])/(sHC.S[label].size)*Range;							
 				
 				++sernum;
 			}
 			
 		}
-		if (CE_None!=poBand->RasterIO( GF_Write,0,0, PHC->Width, PHC->Height, buf, PHC->Width,PHC->Height,GDT_Float32, 0, 0 ))
+		if (CE_None!=poBand->RasterIO( GF_Write,0,0, sHC.Width, sHC.Height, buf, sHC.Width,sHC.Height,GDT_Float32, 0, 0 ))
 		{
 			AfxMessageBox("error write mpdataset!");
 		}		
 	}
 	else
 	{
-		if(PHC->S.size()==0)
+		if(sHC.S.size()==0)
 		{		
 			AfxMessageBox("partition image before saving!");
 			return;		
 		}
-		if(PHC->exS.size()==0&&(bn>13))
+		if(sHC.exS.size()==0&&(bn>13))
 		{		
 			AfxMessageBox("Compute region attributes before saving!");
 			return;		
 		}
-		turg.label=PHC->tag[0];
-		xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
-		int mH=PHC->Height,mW=PHC->Width;
+		turg.label=sHC.tag[0];
+		xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
+		int mH=sHC.Height,mW=sHC.Width;
 		
 		sernum=0;
 		switch(bn)
@@ -7101,9 +7482,9 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 				for(j=0;j<mW;++j)
 				{	
 					
-					label=PHC->tag[sernum];
-					assert(PHC->S[label].p==label);
-					buf[sernum]=PHC->S[label].size;	
+					label=sHC.tag[sernum];
+					assert(sHC.S[label].p==label);
+					buf[sernum]=sHC.S[label].size;	
 					++sernum;
 				}
 				
@@ -7115,9 +7496,9 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-					label=PHC->tag[sernum];
-					assert(PHC->S[label].p==label);
-					buf[sernum]=PHC->S[label].perim;	
+					label=sHC.tag[sernum];
+					assert(sHC.S[label].p==label);
+					buf[sernum]=sHC.S[label].perim;	
 					++sernum;
 				}
 				
@@ -7129,9 +7510,9 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-					label=PHC->tag[sernum];
-					assert(PHC->S[label].p==label);
-					buf[sernum]=sqrt(PHC->S[label].size*4/3.1416)/PHC->S[label].perim;			
+					label=sHC.tag[sernum];
+					assert(sHC.S[label].p==label);
+					buf[sernum]=sqrt(sHC.S[label].size*4/3.1416)/sHC.S[label].perim;			
 					++sernum;
 				}
 			}
@@ -7142,8 +7523,8 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 				for(j=0;j<mW;++j)
 				{
 				
-					turg.label=PHC->tag[sernum];
-					xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+					turg.label=sHC.tag[sernum];
+					xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
 				
 					buf[sernum]=__max(xiter->attList[minRectWid],xiter->attList[minRectHeg]);	
 					++sernum;
@@ -7155,8 +7536,8 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-					turg.label=PHC->tag[sernum];
-					xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+					turg.label=sHC.tag[sernum];
+					xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
 				
 					buf[sernum]=xiter->attList[meanThick];	
 					++sernum;
@@ -7168,8 +7549,8 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-				turg.label=PHC->tag[sernum];
-					xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+				turg.label=sHC.tag[sernum];
+					xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
 				
 					buf[sernum]=__min(xiter->attList[minRectWid],xiter->attList[minRectHeg]);	
 					++sernum;
@@ -7181,8 +7562,8 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-					turg.label=PHC->tag[sernum];
-					xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+					turg.label=sHC.tag[sernum];
+					xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
 				
 					buf[sernum]=xiter->attList[eigRatio];	
 					++sernum;
@@ -7194,8 +7575,8 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			{
 				for(j=0;j<mW;++j)
 				{
-				turg.label=PHC->tag[sernum];
-					xiter=lower_bound(PHC->exS.begin(),PHC->exS.end(),turg);
+				turg.label=sHC.tag[sernum];
+					xiter=lower_bound(sHC.exS.begin(),sHC.exS.end(),turg);
 				
 					buf[sernum]=xiter->attList[minRectHeg]/xiter->attList[minRectWid];
 					if(buf[sernum]<1)
@@ -7213,7 +7594,7 @@ void SaveSeg2(CHC*PHC,GDALDataset *m_pDataset,CString pathname,int bn)
 			}
 		}
 		
-		if (CE_None!=poBand->RasterIO( GF_Write,0,0, PHC->Width, PHC->Height, buf, PHC->Width,PHC->Height,GDT_Float32, 0, 0 ))
+		if (CE_None!=poBand->RasterIO( GF_Write,0,0, sHC.Width, sHC.Height, buf, sHC.Width,sHC.Height,GDT_Float32, 0, 0 ))
 		{
 			AfxMessageBox("error write mpdataset!");
 		}
@@ -7321,7 +7702,7 @@ void CHC::Polygonize(CString path)
 
 	OGRLayer* poLayer = ds->CreateLayer("polygon",&oSRS,wkbMultiPolygon,NULL);
 	
-	CPLErr er =	GDALPolygonize(poBand , NULL, poLayer ,1,NULL,NULL,NULL);
+	CPLErr er =	GDALPolygonize(poBand , NULL, (OGRLayerH)poLayer ,1,NULL,NULL,NULL);
 	if( er!=CE_None)
 		AfxMessageBox("error write vector layer!");
 	poLayer->SyncToDisk();
@@ -7360,89 +7741,7 @@ void CHC::VisitSeq( int*tagBe,int L)
 	assert(tagp==L);
 }
 
-//read seg result text file 
-//fn1 composed of width, height, reg count, region number regsize and rectangle
-//fn2 made up of pixel label matrix 
-int ReadSeg(LPCTSTR fn1,LPCTSTR fn2,vector<int>&index,vector<CRect>&grid,int*tagArray)
-{
-	ifstream inp(fn1);
-	if(!inp.is_open())
-	{
-		AfxMessageBox("Read fn1 error in readseg");
-		return 0;
-	}
-	int w,h,len;
-	int i,j,k,tp,bt,lf,rt;
-	inp>>w>>h>>len;
 
-	for(i=0;i<len;++i)
-	{
-		inp>>j>>k>>lf>>tp>>rt>>bt;
-		index[i]=j;
-		grid[i].left=lf;
-		grid[i].top=tp;
-		grid[i].right=rt;
-		grid[i].bottom=bt;
-	}
-	inp.close();
-
-	if(!ImportData(fn2,tagArray,w*h))
-	{
-		AfxMessageBox("error reading tagmat.txt");
-		return 0;
-	}
-	for(i=0;i<len;++i)
-	{
-		assert(tagArray[index[i]]==i);
-	}
-	return 1;
-}
-//read in segmentation, corresponding to storeseg,
-//the condition (tag(exS[i].p)==i) is met for qthc and mrs
-int CHC::ReadSeg(LPCTSTR fn1,LPCTSTR fn2)
-{
-	ifstream inp(fn1);
-	if(!inp.is_open())
-	{
-		AfxMessageBox("Read fn1 error in readseg");
-		return 0;
-	}
-	int w,h,len;
-	int i,j,k,tp,bt,lf,rt;
-	inp>>w>>h>>len;
-	Width=w; Height=h;
-	comps=len;
-	exS=vector<exRegion>(len);
-	grid=vector<CRect>(len);
-	tag=new int[w*h];
-
-	for(i=0;i<len;++i)
-	{
-		inp>>j>>k>>lf>>tp>>rt>>bt;
-		exS[i].label=j;
-		grid[i].left=lf;
-		grid[i].top=tp;
-		grid[i].right=rt;
-		grid[i].bottom=bt;
-	}
-	inp.close();
-	if(propDim)
-	{
-		propData=new float[propDim*len];
-		for(i=0;i<len;++i)
-		exS[i].attList=propData+i*propDim;
-	}
-	if(!ImportData(fn2,tag,w*h))
-	{
-		AfxMessageBox("error reading tagmat.txt");
-		return 0;
-	}
-//	for(i=0;i<len;++i)
-//	{
-//		assert(tag[exS[i].label]==i);//VALID only for qthc and MRS 
-//	}
-	return 1;
-}
 //change v to intensity, namely avg of RGB
 void RGB2HSV_Cylinder(int r, int g, int b, float &h, float &s, float &v)
 {
@@ -7476,8 +7775,10 @@ void RGB2HSV_Cylinder(int r, int g, int b, float &h, float &s, float &v)
 //transform R,G,B into average hue, saturation, and intensity as defined in Vincent Tao's integrating intensity, texture and color
 //input: pDataset contains all the bands, options of size 3 are RGB index in pDataset, bandPtr pointer to 
 //3 matrice, hue, saturation, and intensity in order.
-void ColorTransform(GDALDataset*pDataset,int*options,CString dir,int number)
+void ColorTransform(int*options,CString dir,int number)
 {
+	GDALDataset*pDataset=(GDALDataset*)GDALOpen(dir,GA_ReadOnly);
+	assure(pDataset,dir);
 	GDALRasterBand  *m_pBand=NULL;
 	float max=0, min=0;	
 	char fname[100];
@@ -7528,11 +7829,12 @@ void ColorTransform(GDALDataset*pDataset,int*options,CString dir,int number)
 		delete []orig[d];
 		delete []proj[d];
 	}
+	GDALClose((GDALDatasetH)pDataset);
 }
 //import one dimensional matrix data into memory in img
 void ImportImg(const char*fn,IplImage*img)
 {
-	ifstream inp(fn);
+	std::ifstream inp(fn);
 	int i,j;
 	float dest=0;
 	inp>>i>>j;
@@ -7660,98 +7962,7 @@ float DeduceMean(IplImage*src,int label, int*tagArray,CRect box)
 	}
 	return numerator/area;
 }
-//compute region similarity based on Vincent tao's integrating intensity,texture,color paper
-void LBPCRegSimi(CHC*PHC,IplImage**bandPtr1,IplImage**bandPtr2,float* perct,float* roulbp,float varThresh,int lbpRad,int varRad)
-{
-	int lbp_bins = 10, var_bins = 10;
-	CvHistogram* histlbpc1;
-	{
-		int hist_size[] = { lbp_bins, var_bins };
-		float lbp_ranges[] = { 0,1,2,3,4,5,6,7,8,9,10 }; // hue is [0,180]
-		float* ranges[] = { lbp_ranges, perct};
-		histlbpc1 = cvCreateHist(
-			2,
-			hist_size,
-			CV_HIST_ARRAY,
-			ranges,
-			0
-			);
-	}
-	CvHistogram* histlbpc2;
-	{
-		int hist_size[] = { lbp_bins, var_bins };
-		float lbp_ranges[] = { 0,1,2,3,4,5,6,7,8,9,10 }; // hue is [0,180]
-	
-		float* ranges[] = { lbp_ranges, perct };
-		histlbpc2 = cvCreateHist(
-			2,
-			hist_size,
-			CV_HIST_ARRAY,
-			ranges,
-			0
-			);
-	}
-	int len=PHC->comps;
-	int i,rad,total=0,area;
-	int w=bandPtr1[0]->width;
-	int h=bandPtr1[0]->height;
-	CRect bound;
-	CvSize sz;
-	rad=__max(lbpRad,varRad);
-	IplImage*roi1,*roi2;
-	for(i=0;i<len;++i)
-	{	
-		bound.top=__max(PHC->grid[i].top,rad);
-		bound.bottom=__min(PHC->grid[i].bottom,h-rad);
-		bound.left=__max(PHC->grid[i].left,rad);
-		bound.right=__min(PHC->grid[i].right,w-rad);
-		if((bound.right<=bound.left)||(bound.bottom<=bound.top))
-		{
-//			exS[i].attList[PT1]=0;
-//			exS[i].attList[PT2]=0;
-			roulbp[i]=0;
-			continue;
-		}
-	
-		sz=cvSize(bound.Width(),bound.Height());
-		
-		roi1=cvCreateImage(sz,IPL_DEPTH_32F,1);
-		area=CreateSub(bandPtr1[0],roi1,i,PHC->tag,bound);
-		assert(area>0);
-	//	{
-		//	exS[i].attList[PT1]=0;
-		//	exS[i].attList[PT2]=0;
-	//		roulbp[i]=0;
-	//		continue;
-	//	}
 
-//		exS[i].attList[PT1]=DeducePCT(bandPtr1[1],i, tag,bound,varThresh);
-//		exS[i].attList[PT2]=DeducePCT(bandPtr2[1],i, tag,bound,varThresh);
-		
-		roi2=cvCreateImage(sz,IPL_DEPTH_32F,1);
-		CreateSub(bandPtr1[1],roi2,i,PHC->tag,bound);
-
-		total+=area;
-		IplImage*planes[2]={roi1,roi2};
-		cvCalcHist( planes, histlbpc1, 0, 0 ); //Compute histogram
-		assert(TestHist(histlbpc1,area));
-	
-		cvNormalizeHist( histlbpc1, 1.0 ); //Normalize it
-		
-		CreateSub(bandPtr2[0],roi1,i,PHC->tag,bound);
-		CreateSub(bandPtr2[1],roi2,i,PHC->tag,bound);
-		
-		cvCalcHist( planes, histlbpc2, 0, 0 ); //Compute histogram
-		cvNormalizeHist( histlbpc2, 1.0 ); //Normalize it
-		roulbp[i]=cvCompareHist(histlbpc1,histlbpc2,CV_COMP_CORREL);
-		cvReleaseImage(&roi1);
-		cvReleaseImage(&roi2);		
-	}
-	assert(total==((w-2*rad)*(h-2*rad)));
-	cvReleaseHist(&histlbpc1);
-	cvReleaseHist(&histlbpc2);
-	
-}
 //convert Byte 1 channel image to float type
 void ConvertImg(IplImage*src,IplImage*dst)
 {
@@ -7971,140 +8182,6 @@ void CHC::CompRegSimi(float*storage)
 			cc*exS[i].attList[ROUC];
 	}	
 }
-//threshold pixels using regin similarity threshold
-void CHC::RegSimiThresh(float*storage,float thresh)
-{
-	int w=Width,h=Height;
-	CvSize sz = cvSize(w,h);
-	IplImage* cpy = cvCreateImage(sz, 8,1); 
-	cvZero(cpy);
-	int i,len=exS.size();
-	int tp,bt,lf,rt,j,k,sernum,area;
-	int w1,h1;
-	for(i=0;i<len;++i)
-	{
-		if(storage[i]>thresh)
-		{
-			tp=grid[i].top;
-			bt=grid[i].bottom;
-			lf=grid[i].left;
-			rt=grid[i].right;
-			w1=rt-lf;
-			h1=bt-tp;
-			
-			sernum=tp*w+lf;
-			area=0;
-			for(k=0;k<h1;++k)//each row
-			{
-				for(j=0;j<w1;++j)//each column
-				{
-					if(tag[sernum]==i)
-					{
-						((uchar*)(cpy->imageData + cpy->widthStep*(k+tp)))[j+lf]=255;
-					}
-					++sernum;
-				}
-				sernum+=(w-w1);
-			}
-			assert(sernum==(bt*w+lf));
-		}
-	}
-	
-	cvNamedWindow("Change Map", 1 );
-	
-	cvShowImage( "Change Map", cpy );
-	cvWaitKey(0);
-    cvReleaseImage( &cpy );
-	cvDestroyWindow( "Change Map");	
-}
-//create change mask label is the label of value change or unchanged for each region 
-//in SF0, produced by exterior classifier, tagC0 is the tag array for each pixel with value of range [0,S0.size-1]
-//label is array of change indicator 0 for change, count is size of label array
-void CreateChangeMask(CHC*pHC,GDALDataset*m_pDataset,int*label)
-{
-	int L=pHC->grid.size();
-	if(L==0)
-	{
-		AfxMessageBox("There is no data in function CreateChangeMask!");
-		return;
-	}
-
-	int i=0,j=0,k=0,x0,y0,sernum,ink=0;
-	int w=m_pDataset->GetRasterXSize(), h=m_pDataset->GetRasterYSize();
-	sernum=w*h;
-	BYTE*buf=new BYTE[sernum];
-	for(i=0;i<sernum;++i)
-		buf[i]=255;	
-	for(i=0;i<L;++i)
-	{
-	//	if(SF0[i].isChecked==false)
-	//		continue;
-		x0=pHC->grid[i].right-pHC->grid[i].left;
-		y0=pHC->grid[i].bottom-pHC->grid[i].top;
-		sernum=pHC->grid[i].top*w+pHC->grid[i].left;
-		for(j=0;j<y0;++j)
-		{
-			for(k=0;k<x0;++k)
-			{
-				if(pHC->tag[sernum]==i)
-				{				
-					buf[sernum]=label[i]?255:0;
-					++ink;
-				}
-				++sernum;
-			}
-			sernum+=(w-x0);
-		}
-
-	}
-	assert(ink==w*h);
-	GDALRasterBand  *poBand=NULL;
-	GDALDataType dataType=GDT_Byte;
-
-	const char *pszFormat = "GTiff";
-	GDALDriver *poDriver;
-	
-	poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-	
-	if( poDriver == NULL)
-	{
-		AfxMessageBox("This format is not able to be created!");
-		return;
-	}
-	//using create
-	GDALDataset *poDstDS;       
-    char **papszOptions = NULL;
-	const char*pszDstFilename;
- //   OGRSpatialReference oSRS;
-	double adfGeoTransform[6]= { 444720, 30, 0, 3751320, 0, -30 };
-	
-	
-	pszDstFilename="changemap.tif";
-	poDstDS = poDriver->Create( pszDstFilename,w,h, 1,dataType, 
-		papszOptions );
-	if(CE_None==m_pDataset->GetGeoTransform( adfGeoTransform ))	
-			poDstDS->SetGeoTransform( adfGeoTransform );
-
-	
-	const char *pszSRS_WKT=m_pDataset->GetProjectionRef();
-	poDstDS->SetProjection( pszSRS_WKT );
-	CPLFree( (void*)pszSRS_WKT );
-
-	
-	poBand = poDstDS->GetRasterBand(1);	
-	if (poBand)
-	{		
-		if (CE_None!=poBand->RasterIO( GF_Write,0,0, w, h, buf, w,h,GDT_Byte, 0, 0 ))
-		{
-			AfxMessageBox("error write mpdataset!");
-		}
-	}	
-	
-	GDALClose( (GDALDatasetH) poDstDS );	
-	delete[]buf;
-
-}
-
 void CHC::SaveTags(int*tagC)
 {
 	int L=Height*Width;
@@ -8244,98 +8321,6 @@ void CHC::SaveTags(int*tagC)
 
 
 
-//compute feature vector for one level of an image including mean and stddev
-//bwArray decides whether a band is considered
-void CompFeat(CHC*PHC,GDALDataset *pSet, vector<float>&bWArray,float*storage,int storey, int curLev, vector<int>&index0)
-{
-	if(PHC->exS.size()==0)
-	{
-		AfxMessageBox("The ground level region set has not been initiated!");
-		return;
-	}
-	int spp=pSet->GetRasterCount();
-	
-	int i,j,k,L=PHC->exS.size(),regNum0=index0.size();
-	int s,t,x0,y0,sernum1,sernum2;
-	
-	if(bWArray.size()==0)
-		for(i=0;i<spp;++i)
-			bWArray.push_back(1);
-	int bandNum=0,curIndex;
-	for(i=0;i<spp;++i)
-		bandNum+=bWArray[i]>0?1:0;
-	
-	float*buf=new float[PHC->Height*PHC->Width];
-	float*storagek=new float[L*2*bandNum];
-	
-	float diff=0,temp=0; 
-	float sigma=0;
-	int area=0,total=0;
-	GDALRasterBand  *m_pBand=NULL;	
-	
-	for(j=1,curIndex=0;j<=spp;++j)
-	{
-		if(bWArray[j-1]==0)
-			continue;
-		m_pBand= pSet->GetRasterBand(j);
-		m_pBand->RasterIO( GF_Read,0,0, PHC->Width,PHC->Height, buf, PHC->Width,PHC->Height, GDT_Float32, 0, 0 );
-		total=0;
-		for(i=0;i<L;++i)
-		{		
-			y0=PHC->grid[i].bottom-PHC->grid[i].top;
-			x0=PHC->grid[i].right-PHC->grid[i].left;
-			sernum1=PHC->grid[i].top*PHC->Width+PHC->grid[i].left;
-			diff=0;
-			sigma=0;
-			area=0;
-			for(s=0;s<y0;++s)
-			{
-				for(t=0;t<x0;++t)
-				{
-					if(PHC->tag[sernum1]==i)
-					{
-						temp=buf[sernum1]/PHC->Delta;
-						diff+=temp;
-						sigma+=(temp*temp);
-						++area;
-					}
-					++sernum1;
-				}
-				sernum1+=(PHC->Width-x0);
-			}
-			assert(sernum1==(PHC->grid[i].bottom*PHC->Width+PHC->grid[i].left));
-			if(area==1)
-				sigma=0;
-			else
-			{
-				sigma=(sigma-diff*diff/area)/(area-1);
-				sigma=sqrt(abs(sigma));
-			}
-			total+=area;
-			diff/=area;
-			area=(i*bandNum+curIndex)*2;
-			storagek[area]=diff;
-			storagek[area+1]=sigma;
-		}
-		assert(total==PHC->Width*PHC->Height);
-		++curIndex;
-	}
-	assert(curIndex==bandNum);
-	for(j=0;j<regNum0;++j)
-	{
-		for(k=0;k<bandNum;++k)
-		{
-			sernum1=((j*storey+curLev)*bandNum+k)*2;
-			sernum2=PHC->tag[index0[j]];//this line works out right with MRS and QTHC but not GSHC
-			sernum2=(sernum2*bandNum+k)*2;
-			storage[sernum1]=storagek[sernum2];
-			storage[sernum1+1]=storagek[sernum2+1];
-		}
-	}
-	delete[]buf;
-	delete[]storagek;
-}
-
 //save segmentation in txt file as following
 //in fn1
 //Width,height,count, dimension count*2, exS properties dimension
@@ -8352,26 +8337,46 @@ int CHC::StoreSeg(LPCTSTR fn1,LPCTSTR fn2)
 	int sernum,area,total=0;
 	int*tagMat=new int[Width*Height];
 	memset(tagMat,-1,sizeof(int)*Width*Height);
-	FILE *fp1=fopen(fn1,"w");
+	ofstream outlet(fn1,ios::out|ios::trunc);
 
 	//write header of fn1
-	fprintf(fp1,"%d\t%d\t%d\n",Width,Height,comps);
-	assert(comps<L);
+	outlet<<Width<<"\t"<<Height<<"\t"<<comps<<"\t"<<d_<<endl;
+
 	regCount=0;
+
 	for(i=0;i<L;++i)
 	{
-		if(S[i].p!=i)
+		if(comps<L)//segmentation produced by MRS, QT, GS, HC 
+			//maintains that S[i].p==i means i is a region. 
+			//But for segmentation produced by merging, comps==L holds as regions are push_back into S
+			if(S[i].p!=i)
 			continue;	
 		tp=grid[i].top;
 		bt=grid[i].bottom;
 		lf=grid[i].left;
 		rt=grid[i].right;
-		area=0;
-		fprintf(fp1,"%d\t%d\t%d\t%d\t%d\t%d\n",S[i].p,S[i].size,lf,tp,rt,bt);
-	
+		area=S[i].size;
+		outlet<<S[i].p<<"\t"<<S[i].size<<"\t"<<lf<<"\t"<<tp<<"\t"<<rt<<"\t"<<bt;
+		
+		for(j=0;j<d_;++j){
+			float mean=S[i].addition[j],sigma;
+
+			if(area==1)
+				sigma=0;
+			else
+			{
+				sigma=(S[i].sSum[j]-mean*mean/area)/(area-1);
+				sigma=sqrt(abs(sigma));
+			}
+			mean=mean/area;
+			outlet<<"\t"<<mean<<"\t"<<sigma;
+		}
+		
+		outlet<<endl;
 		x0=rt-lf;
 		y0=bt-tp;
 		sernum=tp*Width+lf;
+		area=0;
 	//	assert(S[i].p>=sernum);	
 		for(j=0;j<y0;++j)//each row
 		{
@@ -8394,242 +8399,14 @@ int CHC::StoreSeg(LPCTSTR fn1,LPCTSTR fn2)
 	}
 	assert(regCount==comps);
 	assert(total==Width*Height);
-	fclose(fp1);
+	outlet.close();
 	Export(tagMat,Width,Height,fn2);
 	delete []tagMat;
 	return regCount;
 }
-//find the connected area (decided by flags) in pImage of value the same as location seed and store the area marked with newval
-//in pMask, the two image both of size roi and one channel
-template<class T>
-int Immerse(T* pImage1,T* pImage2, T*pMask, CvSize roi, CvPoint seed,
-                      T newVal, CvConnectedComp* region, int flags,
-                      CvFFillSegment* buffer, int buffer_size)
-{
-	int step=roi.width;
-    T* img1 = pImage1 + step * seed.y;
-	T* img2 = pImage2 + step * seed.y;
-	T* msk= pMask+ step * seed.y;
-    int i, L, R; 
-    int area = 0;
-    int val0[2]={0,0};
-
-    int XMin, XMax, YMin = seed.y, YMax = seed.y;
-    int _8_connectivity = (flags & 255) == 8;
-    CvFFillSegment* buffer_end = buffer + buffer_size, *head = buffer, *tail = buffer;
-	
-    L = R = XMin = XMax = seed.x;
-	
-	
-	val0[0] = img1[L];
-	val0[1] = img2[L];
-
-	msk[L] = newVal;
-	
-	while( ++R < roi.width && img1[R] == val0[0]&& img2[R] == val0[1]&& msk[R]== -1 )
-		
-		msk[R] = newVal;
-	
-	
-	while( --L >= 0 && img1[L] == val0[0]&& img2[L] == val0[1]&& msk[L]== -1 )
-	
-	
-		msk[L] = newVal;
-	 
-	
-    XMax = --R;
-    XMin = ++L;
-    ICV_PUSH( seed.y, L, R, R + 1, R, UP );
-	
-    while( head != tail )
-    {
-        int k, YC, PL, PR, dir;
-        ICV_POP( YC, L, R, PL, PR, dir );
-		
-        int data[][3] =
-        {
-            {-dir, L - _8_connectivity, R + _8_connectivity},
-            {dir, L - _8_connectivity, PL - 1},
-            {dir, PR + 1, R + _8_connectivity}
-        };
-		
-        if( region )
-        {
-            area += R - L + 1;
-			
-            if( XMax < R ) XMax = R;
-            if( XMin > L ) XMin = L;
-            if( YMax < YC ) YMax = YC;
-            if( YMin > YC ) YMin = YC;
-        }
-		
-        for( k = 0/*(unsigned)(YC - dir) >= (unsigned)roi.height*/; k < 3; k++ )
-        {
-            dir = data[k][0];
-            img1 = pImage1 + (YC + dir) * step;
-            img2 = pImage2 + (YC + dir) * step;
-			msk = pMask + (YC + dir) * step;
-            int left = data[k][1];
-            int right = data[k][2];
-			
-            if( (unsigned)(YC + dir) >= (unsigned)roi.height )
-                continue;
-			
-            
-			for( i = left; i <= right; i++ )
-			{
-				if( (unsigned)i < (unsigned)roi.width &&img1[i] == val0[0]&& img2[i] == val0[1]&& msk[i]== -1 )
-				{
-					int j = i;
-			
-					msk[i] = newVal;
-					while( --j >= 0 && img1[j] == val0[0]&& img2[j] == val0[1]&& msk[j]== -1 )
-					
-						msk[j] = newVal;
-										
-					while( ++i < roi.width && img1[i] == val0[0]&& img2[i] == val0[1]&& msk[i]== -1 )
-				
-						msk[i] = newVal;
-					
-					
-					ICV_PUSH( YC + dir, j+1, i-1, L, R, -dir );
-				}
-			}
-			
-        }
-    }
-	
-    if( region )
-    {
-        region->area = area;
-        region->rect.x = XMin;
-        region->rect.y = YMin;
-        region->rect.width = XMax - XMin + 1;
-        region->rect.height = YMax - YMin + 1;
-     //   region->value = newVal;
-    }
-	
-    return 1;
-}
 
 
-//merge two segmentations, and store the label of pixels in tag[], bounding box in grid, parent index in S
-//index1[i] denotes the father pixel index for region i, thus, tagArray1[index[i]]==i, 
-//grid1[i] corresponds to index1[i], regCount is the number of regions in index1
-//note this method creates intersection partition that may not be connected and it cause error when use this 
-//method with mahalkmeans change detection
-int CHC::MergeSeg(vector<int>index1,int*tagArray1,vector<CRect>&grid1,vector<int>index2,int*tagArray2,vector<CRect>&grid2)
-{
-	int i=0,j=0,k=0,s=0,t=0,x0,y0,tp,bt,lf,rt,dx;
-	int regNum=0,area=0,total=0;
-	int sernum, sernum2,dice;
-	tag=new int[Width*Height];
-	int regCount=index1.size();
-	memset(tag,-1,sizeof(int)*Width*Height);
-	CRect camp;
-	Region ball;
-	//check out
-	for(i=0;i<regCount;++i)//for each region indicated by index1, 
-	{
-		dice=index1[i];
-		assert(tagArray1[dice]==i);
-	
-		tp=grid1[i].top;
-		bt=grid1[i].bottom;
-		lf=grid1[i].left;
-		rt=grid1[i].right;
-		x0=rt-lf;
-		y0=bt-tp;
-		sernum=tp*Width+lf;
-		//for each pixel in region Ai
-		for(j=0;j<y0;++j)//each row
-		{
-			for(k=0;k<x0;++k)//each column
-			{
-				if((tagArray1[sernum]==i)&&(tag[sernum]==-1))
-				{
-					//create a region 				
-					camp.IntersectRect(grid1[i],grid2[tagArray2[sernum]]);
-					grid.push_back(camp);					
-					ball.p=sernum;									
-					
-					sernum2=camp.top*Width+camp.left;
-					dx=camp.right-camp.left;
-					area=0;
-					assert(sernum<(camp.bottom*Width-Width+camp.right));
-					assert(sernum>=(camp.top*Width+camp.left));
-				
-					//label area of intersection
-					for(s=camp.top;s<camp.bottom;++s)
-					{
-						for(t=0;t<dx;++t)
-						{
-							if((tagArray1[sernum2]==i)&&(tagArray2[sernum2]==tagArray2[sernum]))
-							{
-								assert(tag[sernum2]==-1);
-								tag[sernum2]=regNum;
-								++area;
-							}
-							++sernum2;
-						}
-						sernum2+=(Width-dx);
-					}
-					assert(sernum2==(camp.bottom*Width+camp.left));
-					ball.size=area;
-					total+=area;
-					S.push_back(ball);	
-				//	SF[regNum].norbox=&gridF[regNum];
-					++regNum;				
-				}
-				++sernum;				
-			}
-			sernum+=(Width-x0);
-		}
-		assert(sernum==(bt*Width+lf));
-	}
-	comps=regNum;
-	assert(total==Width*Height);
-	return regNum;
-}
-int CHC::MergeSeg(int *tagArray1,int *tagArray2)
-{
-	int i;
-	int regNum,total;
-	int w=Width,h=Height;
-	int L=w*h;
-	tag=new int[L];
 
-	memset(tag,-1,sizeof(int)*Width*Height);
-	CRect camp;
-	Region ball;
-	
-	CvFFillSegment* buffer = 0;	
-	int buffersize = __max( Width, Height )*2;
-	buffer = (CvFFillSegment*)cvAlloc( buffersize*sizeof(buffer[0]));
-	CvConnectedComp parcel;
-	
-	//check out
-	for(i=0,total=0,regNum=0;i<L;++i)//for each region indicated by index1, 
-	{
-		if(tag[i]!=-1)			
-			continue;
-		
-		Immerse(tagArray1,tagArray2,tag,cvSize(w,h),cvPoint(i%w,i/w),regNum,&parcel,4,buffer,buffersize);
-		++regNum;
-		camp.SetRect(parcel.rect.x,parcel.rect.y,parcel.rect.x+parcel.rect.width,parcel.rect.y+parcel.rect.height);
-		grid.push_back(camp);					
-		ball.p=i;	
-		ball.size=parcel.area;
-		S.push_back(ball);	
-		total+=parcel.area;					
-		
-	}
-	comps=regNum;	
-	assert(total==Width*Height);
-
-	cvFree( (void**)&buffer );
-	return regNum;
-}
 
 int CHC::GetWidth()
 {
@@ -8646,10 +8423,14 @@ int CHC::GetNPLSize(int sernum)
 	return S[sernum].NPList.size();
 }
 
-int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector<float>&bWArray)
+int BuildData(CHC&sHC,const CString& fn1,const CString&fn2, vector<float>&bWArray)
 {
-	int spp1=m_pDataset1->GetRasterCount();//波段的数目
-	int spp2=m_pDataset2->GetRasterCount();//波段的数目
+	GDALDataset* pDataset1=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
+	assure(pDataset1,fn1);
+	GDALDataset* pDataset2=(GDALDataset *) GDALOpen(fn2,GA_ReadOnly);
+	assure(pDataset2,fn2);
+	int spp1=pDataset1->GetRasterCount();//波段的数目
+	int spp2=pDataset2->GetRasterCount();//波段的数目
 	int d;
 	if(bWArray.size()>0)
 	{
@@ -8658,9 +8439,9 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 			AfxMessageBox("weight of band size incompatible with band number in Dataset!");
 			return 0;
 		}
-		for(d=0,PHC->d_=0;d<spp1;++d)
-			PHC->d_+=(bWArray[d]>0?1:0);
-		PHC->d_*=2;
+		for(d=0,sHC.d_=0;d<spp1;++d)
+			sHC.d_+=(bWArray[d]>0?1:0);
+		sHC.d_*=2;
 	}
 	else
 	{
@@ -8671,33 +8452,32 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 		}
 		for(d=0;d<spp1;++d)
 			bWArray.push_back(1.f);
-		PHC->d_=spp1*2;
+		sHC.d_=spp1*2;
 	}
-	
-	PHC->Width=m_pDataset1->GetRasterXSize();
-	PHC->Height=m_pDataset1->GetRasterYSize();
-	assert(PHC->Width==m_pDataset2->GetRasterXSize());
-	assert(	PHC->Height==m_pDataset2->GetRasterYSize());
-	int L=PHC->Height*PHC->Width;
-	PHC->comps=L;
-	if(PHC->tag)
-		delete[]PHC->tag;
-	PHC->tag=new int[L];	
-	if (PHC->data_)
+	sHC.Width=pDataset1->GetRasterXSize();
+	sHC.Height=pDataset1->GetRasterYSize();
+	assert(sHC.Width==pDataset2->GetRasterXSize());
+	assert(	sHC.Height==pDataset2->GetRasterYSize());
+	int L=sHC.Height*sHC.Width;
+	sHC.comps=L;
+	if(sHC.tag)
+		delete[]sHC.tag;
+	sHC.tag=new int[L];	
+	if (sHC.data_)
 	{
-		delete []PHC->data_;
-		delete []PHC->sData_;
+		delete []sHC.data_;
+		delete []sHC.sData_;
 	}	
-	PHC->data_=new float[L*PHC->d_];
-	PHC->sData_=new float[L*PHC->d_];
-	if(PHC->A.size())
+	sHC.data_=new float[L*sHC.d_];
+	sHC.sData_=new float[L*sHC.d_];
+	if(sHC.A.size())
 	{
-		PHC->A.clear();
-		PHC->S.clear();
+		sHC.A.clear();
+		sHC.S.clear();
 	}
 	int x,y,sernum,temp,cur;//cur for current band index
 //	int nByteWidth=d_*Width;
-	float* buf =new float[PHC->Width*PHC->Height];
+	float* buf =new float[sHC.Width*sHC.Height];
 
 	GDALRasterBand  *m_pBand=NULL;
 	float max=0, min=0;		
@@ -8706,17 +8486,17 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 		if(bWArray[d]==0)
 			continue;	
 	
-		m_pBand= m_pDataset1->GetRasterBand(d+1);
+		m_pBand= pDataset1->GetRasterBand(d+1);
 	
 //		m_pBand->GetStatistics( 0,  1,&min, &max,0,0);
 
 		if (m_pBand)
 		{	
-			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, PHC->Width,PHC->Height, buf, PHC->Width,PHC->Height, GDT_Float32, 0, 0 ))
+			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, sHC.Width,sHC.Height, buf, sHC.Width,sHC.Height, GDT_Float32, 0, 0 ))
 			{
-				if(PHC->Delta==0)
+				if(sHC.Delta==0)
 				{
-					temp=PHC->Height*PHC->Width;
+					temp=sHC.Height*sHC.Width;
 					for(y=0;y<temp;++y)
 					{
 						max=max>buf[y]?max:buf[y];
@@ -8728,18 +8508,18 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 						++x;
 						sernum>>=1;
 					}
-					PHC->Delta=(float)(1<<x);
+					sHC.Delta=(float)(1<<x);
 				}
 				
 				sernum=cur;
 				temp=0;
-				for(y=0;y<PHC->Height;++y)
+				for(y=0;y<sHC.Height;++y)
 				{
-					for (x = 0; x < PHC->Width; ++x) 
+					for (x = 0; x < sHC.Width; ++x) 
 					{
-						PHC->data_[sernum]=buf[temp]/PHC->Delta;							
-						PHC->sData_[sernum]=PHC->data_[sernum]*PHC->data_[sernum];
-						sernum+=PHC->d_;
+						sHC.data_[sernum]=buf[temp]/sHC.Delta;							
+						sHC.sData_[sernum]=sHC.data_[sernum]*sHC.data_[sernum];
+						sernum+=sHC.d_;
 						++temp;
 					}				
 				}
@@ -8747,23 +8527,24 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 		}
 		++cur;
 	}
+
 	for(d=0;d<spp1;++d)
 	{
 		if(bWArray[d]==0)
 		{
 			continue;
 		}
-		m_pBand= m_pDataset2->GetRasterBand(d+1);
+		m_pBand= pDataset2->GetRasterBand(d+1);
 	
 //		m_pBand->GetStatistics( 0,  1,&min, &max,0,0);
 
 		if (m_pBand)
 		{	
-			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, PHC->Width, PHC->Height, buf, PHC->Width,PHC->Height, GDT_Float32, 0, 0 ))
+			if (CE_None==m_pBand->RasterIO( GF_Read,0,0, sHC.Width, sHC.Height, buf, sHC.Width,sHC.Height, GDT_Float32, 0, 0 ))
 			{
-				if(PHC->Delta==0)
+				if(sHC.Delta==0)
 				{
-					temp=PHC->Height*PHC->Width;
+					temp=sHC.Height*sHC.Width;
 					for(y=0;y<temp;++y)
 					{
 						max=max>buf[y]?max:buf[y];
@@ -8775,18 +8556,18 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 						++x;
 						sernum>>=1;
 					}
-					PHC->Delta=(float)(1<<x);
+					sHC.Delta=(float)(1<<x);
 				}
 				
 				sernum=cur;
 				temp=0;
-				for(y=0;y<PHC->Height;++y)
+				for(y=0;y<sHC.Height;++y)
 				{
-					for (x = 0; x <PHC-> Width; ++x) 
+					for (x = 0; x <sHC. Width; ++x) 
 					{
-						PHC->data_[sernum]=buf[temp]/PHC->Delta;							
-					    PHC->sData_[sernum]=PHC->data_[sernum]*PHC->data_[sernum];
-						sernum+=PHC->d_;
+						sHC.data_[sernum]=buf[temp]/sHC.Delta;							
+					    sHC.sData_[sernum]=sHC.data_[sernum]*sHC.data_[sernum];
+						sernum+=sHC.d_;
 						++temp;
 					}				
 				}
@@ -8794,8 +8575,10 @@ int BuildData(CHC*PHC,GDALDataset *m_pDataset1, GDALDataset *m_pDataset2, vector
 		}
 		++cur;
 	}
-	assert(cur==PHC->d_);
+	assert(cur==sHC.d_);
 	delete[]buf;
+	GDALClose( (GDALDatasetH) pDataset1);
+	GDALClose( (GDALDatasetH) pDataset2);
 	return 1;
 }
 //set tag in CHC
@@ -8901,7 +8684,144 @@ int CHC::CDThresh(float *src,float lim,BYTE*lpBits,int spp)
 	return 1;
 }
 
-int BuildingCand(CHC*PHC,HCParams *params,IplImage*portal, IplImage*mask)
+int BuildingCand2(CHC&myHC,HCParams *params,IplImage*portal)
+{
+	int i,j,angle;
+	exRegion turg;//temp exregion
+	vector<exRegion>::iterator xiter;
+//	int ratlen;
+	assert(myHC.comps==myHC.exS.size());
+	float temp1,temp2,cosine,sine,prob;
+	CvPoint pts[4];
+//	CvBox2D box2;
+	CvScalar color={0,255,0};
+
+	//thresholding
+	xiter=myHC.exS.begin();
+	while(xiter!=myHC.exS.end())
+	{
+		i=xiter->label;
+
+		temp1=xiter->attList[minRectWid]/xiter->attList[minRectHeg];
+		if(temp1<1.f)
+			temp1=1.f/temp1;
+		temp1=__min(temp1,xiter->attList[eigRatio]);
+		temp2=xiter->attList[minRectWid]*xiter->attList[minRectHeg];
+		temp2=myHC.S[i].size/temp2;
+	
+		prob=LinearIB(100,150,200,2000,2300,2500,myHC.S[i].size);
+		prob=__min(LinearLT(5,5.5,6,temp1),prob);
+
+		prob=__min(LinearGT(0.5,0.6,0.65,temp2),prob);
+
+		prob=__min(LinearGT(3,5,7,xiter->attList[meanThick]),prob);
+	
+		prob=__min(LinearLT(0.1,0.2,0.3,xiter->attList[shadeRatio]),prob);
+		prob=__min(LinearGT(0.6,0.7,0.8,xiter->attList[neiShadeRatio]),prob);
+		prob=__min(LinearGT(0.55,0.6,0.7,xiter->attList[changeRatio]),prob);
+
+		if(prob>0.8f)
+		{
+			angle=cvRound(xiter->attList[boxAngle]);
+			while( angle < 0 )
+				angle += 360;
+			while( angle > 360 )
+				angle -= 360;
+			icvSinCos( angle, &cosine, &sine);
+			temp1=xiter->attList[minRectHeg]*cosine-xiter->attList[minRectWid]*sine;
+			temp1/=2;
+			temp2=-xiter->attList[minRectHeg]*sine-xiter->attList[minRectWid]*cosine;
+			temp2/=2;
+			pts[0]=cvPointFrom32f(cvPoint2D32f((xiter->attList[centerX]+temp1),(xiter->attList[centerY]+temp2)));
+			pts[2]=cvPointFrom32f(cvPoint2D32f((xiter->attList[centerX]-temp1),(xiter->attList[centerY]-temp2)));
+			temp1=-xiter->attList[minRectHeg]*cosine-xiter->attList[minRectWid]*sine;
+			temp1/=2;
+			temp2=xiter->attList[minRectHeg]*sine-xiter->attList[minRectWid]*cosine;
+			temp2/=2;
+			pts[1]=cvPointFrom32f(cvPoint2D32f((xiter->attList[centerX]+temp1),(xiter->attList[centerY]+temp2)));
+			pts[3]=cvPointFrom32f(cvPoint2D32f((xiter->attList[centerX]-temp1),(xiter->attList[centerY]-temp2)));
+			for(j=0;j<3;++j)		
+				cvLine(portal, pts[j], pts[j+1], color,1, 8 );
+			cvLine(portal, pts[3], pts[0], color,1, 8 );
+		
+			int tp=myHC.grid[i].top;
+			
+		int bt=myHC.grid[i].bottom;
+		int lf=myHC.grid[i].left;
+		int rt=myHC.grid[i].right;
+		int area=0,k;	
+	
+		int sernum=tp*myHC.Width+lf;
+	
+		
+		for(j=tp;j<bt;++j)//each row
+		{
+			for(k=lf;k<rt;++k)//each column
+			{
+				if(myHC.tag[sernum]==i)
+				{
+					++area;
+					BYTE*temptr=((uchar*)(portal->imageData + portal->widthStep*j))+k*3;
+					*temptr=0;
+					*(temptr+1)=0;
+					*(temptr+2)=255;	
+				}
+				++sernum;
+			}
+			sernum+=(myHC.Width-rt+lf);
+		}
+		assert(sernum==(bt*myHC.Width+lf));
+		assert(area==myHC.S[i].size);
+	/*		box2.angle=(xiter->attList[boxAngle]);
+			box2.center.x=(xiter->attList[centerX]);
+			box2.center.y=(xiter->attList[centerY]);
+			box2.size.width=(xiter->attList[minRectWid]);
+			box2.size.height=(xiter->attList[minRectHeg]);
+			
+			cvEllipseBox(portal,box2,color,1);*/
+		}
+		++xiter;
+	}
+	//display the result
+/*	ratlen=cand.size();
+
+	int k,tp,bt,lf,rt,area,sernum,s;
+	BYTE*temptr;
+	for(s=0;s<ratlen;++s)
+	{
+		i=cand[s];
+		tp=grid[i].top;
+		bt=grid[i].bottom;
+		lf=grid[i].left;
+		rt=grid[i].right;
+		area=0;	
+	
+		sernum=tp*Width+lf;
+	
+		
+		for(j=tp;j<bt;++j)//each row
+		{
+			for(k=lf;k<rt;++k)//each column
+			{
+				if(tag[sernum]==i)
+				{
+					++area;
+					temptr=((uchar*)(portal->imageData + portal->widthStep*j))+k*3;
+					*temptr=255;
+					*(temptr+1)=0;
+					*(temptr+2)=0;	
+				}
+				++sernum;
+			}
+			sernum+=(Width-rt+lf);
+		}
+		assert(sernum==(bt*Width+lf));
+		assert(area==S[i].size);
+
+	}*/
+	return 1;
+}
+int BuildingCand(CHC*PHC,HCParams *params,IplImage*portal)
 {
 	int i,j,angle;
 	exRegion turg;//temp exregion
@@ -8925,7 +8845,7 @@ int BuildingCand(CHC*PHC,HCParams *params,IplImage*portal, IplImage*mask)
 		temp2=xiter->attList[minRectWid]*xiter->attList[minRectHeg];
 		temp2=PHC->S[i].size/temp2;
 		//
-		if((xiter->attList[validRate]>0.85)&&(xiter->attList[meanThick]>params->minWid)&&(PHC->S[i].size>params->minArea)
+		if((xiter->attList[meanThick]>params->minWid)&&(PHC->S[i].size>params->minArea)
 			&&(temp1<params->maxLWR)&&(PHC->S[i].size<params->maxArea)&&(temp2>params->minCmpct))
 		{
 			angle=cvRound(xiter->attList[boxAngle]);
@@ -9081,3 +9001,146 @@ int CHC::StoreProp(const char*fn1,vector<int>&signal)
 	return regCount;
 }
 
+
+bool CHC::PrepPropMemo(int pDim)
+{
+
+	if(exS.size()==comps)
+	return false;
+	else
+	exS.clear();
+	
+	propDim=pDim;//add mask prop
+	propData=new float[propDim*comps];
+	memset(propData,0,sizeof(float)*propDim*comps);
+	exS=vector<exRegion>(comps);
+		//initialize region list storing features
+	int len=S.size(),i,x;
+	for (x = 0,i=0; x <len; ++x) 
+	{		
+		if(x!=S[x].p)			
+			continue;
+		exS[i].label=x;
+		exS[i].attList=propData+i*propDim;
+		++i;
+	}
+	return true;
+}
+
+//merge two segmentations, and store the label of pixels in tag[], bounding box in grid, parent index in S
+//index1[i] denotes the father pixel index for region i, thus, tagArray1[index[i]]==i, 
+//grid1[i] corresponds to index1[i], regCount is the number of regions in index1
+//note this method creates intersection partition that may not be connected and it cause error when use this 
+//method with mahalkmeans change detection
+int CHC::MergeSeg(vector<int>&index1,int*tagArray1,vector<CRect>&grid1,vector<int>&index2,int*tagArray2,vector<CRect>&grid2)
+{
+	int i=0,j=0,k=0,s=0,t=0,x0,y0,tp,bt,lf,rt,dx;
+	int regNum=0,area=0,total=0;
+	int sernum, sernum2,dice;
+	tag=new int[Width*Height];
+	int regCount=index1.size();
+	memset(tag,-1,sizeof(int)*Width*Height);
+	CRect camp;
+	Region ball;
+	//check out
+	for(i=0;i<regCount;++i)//for each region indicated by index1, 
+	{
+		dice=index1[i];
+		assert(tagArray1[dice]==i);
+	
+		tp=grid1[i].top;
+		bt=grid1[i].bottom;
+		lf=grid1[i].left;
+		rt=grid1[i].right;
+		x0=rt-lf;
+		y0=bt-tp;
+		sernum=tp*Width+lf;
+		//for each pixel in region Ai
+		for(j=0;j<y0;++j)//each row
+		{
+			for(k=0;k<x0;++k)//each column
+			{
+				if((tagArray1[sernum]==i)&&(tag[sernum]==-1))
+				{
+					//create a region 				
+					camp.IntersectRect(grid1[i],grid2[tagArray2[sernum]]);
+					grid.push_back(camp);					
+					ball.p=sernum;									
+					
+					sernum2=camp.top*Width+camp.left;
+					dx=camp.right-camp.left;
+					area=0;
+					assert(sernum<(camp.bottom*Width-Width+camp.right));
+					assert(sernum>=(camp.top*Width+camp.left));
+				
+					//label area of intersection
+					for(s=camp.top;s<camp.bottom;++s)
+					{
+						for(t=0;t<dx;++t)
+						{
+							if((tagArray1[sernum2]==i)&&(tagArray2[sernum2]==tagArray2[sernum]))
+							{
+								assert(tag[sernum2]==-1);
+								tag[sernum2]=regNum;
+								++area;
+							}
+							++sernum2;
+						}
+						sernum2+=(Width-dx);
+					}
+					assert(sernum2==(camp.bottom*Width+camp.left));
+					ball.size=area;
+					total+=area;
+					S.push_back(ball);	
+				//	SF[regNum].norbox=&gridF[regNum];
+					++regNum;				
+				}
+				++sernum;				
+			}
+			sernum+=(Width-x0);
+		}
+		assert(sernum==(bt*Width+lf));
+	}
+	comps=regNum;
+	assert(total==Width*Height);
+	return regNum;
+}
+int CHC::MergeSeg(int *tagArray1,int *tagArray2)
+{
+	int i;
+	int regNum,total;
+	int w=Width,h=Height;
+	int L=w*h;
+	tag=new int[L];
+
+	memset(tag,-1,sizeof(int)*Width*Height);
+	CRect camp;
+	Region ball;
+	
+	CvFFillSegment* buffer = 0;	
+	int buffersize = __max( Width, Height )*2;
+	buffer = (CvFFillSegment*)cvAlloc( buffersize*sizeof(buffer[0]));
+	CvConnectedComp parcel;
+	
+	//check out
+	for(i=0,total=0,regNum=0;i<L;++i)//for each region indicated by index1, 
+	{
+		if(tag[i]!=-1)			
+			continue;
+		
+		Immerse(tagArray1,tagArray2,tag,cvSize(w,h),cvPoint(i%w,i/w),regNum,&parcel,4,buffer,buffersize);
+		++regNum;
+		camp.SetRect(parcel.rect.x,parcel.rect.y,parcel.rect.x+parcel.rect.width,parcel.rect.y+parcel.rect.height);
+		grid.push_back(camp);					
+		ball.p=i;	
+		ball.size=parcel.area;
+		assert(parcel.area>0);
+		S.push_back(ball);	
+		total+=parcel.area;						
+	}
+	comps=regNum;	
+	assert(total==Width*Height);
+
+	cvFree( (void**)&buffer );
+	return regNum;
+}

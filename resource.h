@@ -26,6 +26,7 @@
 #define IDD_DIALOG_SETTHRESH            158
 #define IDD_DIALOG_RESULTIMAGE          159
 #define IDD_DIALOG_MRFOPTIM             160
+#define IDI_ICON_ORIGIN                 168
 #define IDC_EDIT_K                      1009
 #define IDC_EDIT_MS                     1010
 #define IDC_STATIC_K                    1011
@@ -274,6 +275,9 @@
 #define ID_PREP_OPENING                 32863
 #define ID_TEXTURE_HISTOSTATCD          32864
 #define ID_CLASS_BUILDINGISODATA        32865
+#define ID_CLASS_STICKCHAIN             32866
+#define ID_CLASS_MULTIBUILD             32870
+#define ID_TEXTURE_GEOMETRICCD          32871
 #define ID_INDICATOR_MPOS               59142
 
 // Next default values for new objects
@@ -281,8 +285,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        163
-#define _APS_NEXT_COMMAND_VALUE         32866
+#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_COMMAND_VALUE         32872
 #define _APS_NEXT_CONTROL_VALUE         1198
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

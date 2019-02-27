@@ -1,9 +1,43 @@
 #include "stdafx.h"
 #include "DIB.h"
+#include "..\\include\\gdal.h"
+#include "..\\include\\gdal_priv.h"
 #include "..\\include\\ogrsf_frmts.h"
 #include "..\\include\\cpl_string.h"
 #include <assert.h>
+//retrieve bandcount and datatype of a gdaldataset in file named fn
+void ImageProps(int&count, CString&dataType, const CString&fn){
+	GDALDataset*pDataset=(GDALDataset*)GDALOpen(fn,GA_ReadOnly);
+	count=pDataset->GetRasterCount();
+	GDALRasterBand  *m_pBand= pDataset->GetRasterBand(1);
+	//	CPLAssert( m_pBand->GetRasterDataType() == GDT_Byte );
+	dataType=GDALGetDataTypeName(m_pBand->GetRasterDataType());//数据类型
+	GDALClose((GDALDatasetH)pDataset);
+}
+//input:allocated EM 
+//output: EM initiated with data for edge detection
+BYTE* GetEM(const CString&fn, BYTE *EM,int eB)
+{
+	GDALDataset*pDataset=(GDALDataset*)GDALOpen(fn, GA_ReadOnly);
+	int m_CurrentBand=1;
+	if (eB<= 0 || eB>pDataset->GetRasterCount())
+		eB = m_CurrentBand;
+	int w=pDataset->GetRasterXSize(); //影响的高度，宽度
+	int	h=pDataset->GetRasterYSize();
 
+	BYTE* buf =	EM;
+	GDALRasterBand  *m_pBand=NULL;
+	m_pBand = pDataset->GetRasterBand(eB);
+	if (m_pBand)
+	{
+		if (CE_None!=m_pBand->RasterIO( GF_Read, 0,0, w, h, buf, w,h, GDT_Byte, 0, 0 ))
+		{
+			AfxMessageBox("Error getting edge data!");
+		}
+	}
+	GDALClose((GDALDatasetH)pDataset);
+	return EM;
+}
 // 构造函数，初始化CDIB对象的数据
 CDIB::CDIB():m_lpBits(NULL),m_lpPalette(NULL),m_nBitCount(0),
 m_nWidth(0),m_nHeight(0),m_nColors(0),m_nPlanes(0)
@@ -16,6 +50,12 @@ CDIB::CDIB( const char *pszFileName):m_lpBits(NULL),m_lpPalette(NULL),m_nBitCoun
 
 	LoadFromFile( pszFileName);
 }
+/*CDIB::CDIB(const CDIB&cpy){
+m_lpBits(cpy.m_lpBits),m_lpPalette(NULL),m_nBitCount(0),m_nPlanes(cpy)
+
+	m_nWidth = m_nHeight = m_nBitCount = m_nColors = 0;
+}*/
+
 // 析构函数
 CDIB::~CDIB()
 {
@@ -1036,14 +1076,15 @@ void CDIB::LookRegions(int *tag,int option)
 	}
 }
 
-BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
+BOOL CDIB::CreateDIB(int r, int g, int b,const CString&fn)
 {
 	int spp;
-	if (m_pDataset)
+	GDALDataset* pDataset=(GDALDataset*)GDALOpen(fn,GA_ReadOnly);
+	if (pDataset)
 	{
-		m_nWidth=m_pDataset->GetRasterXSize(); //影响的高度，宽度
-		m_nHeight=m_pDataset->GetRasterYSize();
-		spp=m_pDataset->GetRasterCount();//波段的数目
+		m_nWidth=pDataset->GetRasterXSize(); //影响的高度，宽度
+		m_nHeight=pDataset->GetRasterYSize();
+		spp=pDataset->GetRasterCount();//波段的数目
 	}
 	int m_CurrentBand=1;
 	if (r <= 0 || r>spp)
@@ -1066,7 +1107,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 	
 		GDALRasterBand  *m_pBand=NULL;
 		GDALColorTable*m_pCT=NULL;
-		m_pBand = m_pDataset->GetRasterBand(1);
+		m_pBand = pDataset->GetRasterBand(1);
 		m_pCT=m_pBand->GetColorTable();
 		if(m_pCT!=NULL)
 		{			
@@ -1128,7 +1169,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 	m_lpBits= new BYTE[nByteWidth*height];
 	bpBits=new BYTE[nByteWidth*height];
 	GDALRasterBand  *m_pBand=NULL;
-	m_pBand = m_pDataset->GetRasterBand(r);
+	m_pBand = pDataset->GetRasterBand(r);
 	//	CPLAssert( m_pBand->GetRasterDataType() == GDT_Byte );
 
 	int dataType=0;
@@ -1175,7 +1216,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 					}
 				}
 			}	
-			m_pBand = m_pDataset->GetRasterBand(g);
+			m_pBand = pDataset->GetRasterBand(g);
 			if (m_pBand)
 			{	
 				if (CE_None==m_pBand->RasterIO( GF_Read,0,0, width, height, buf, width,height, GDT_Byte, 0, 0 ))
@@ -1198,7 +1239,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 				}
 			}
 			
-			m_pBand = m_pDataset->GetRasterBand(b);
+			m_pBand = pDataset->GetRasterBand(b);
 			if (m_pBand)
 			{	
 				if (CE_None==m_pBand->RasterIO( GF_Read,0,0,width,height, buf, width,height, GDT_Byte, 	0, 0 ))
@@ -1250,7 +1291,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 					}
 				}
 			}	
-			m_pBand = m_pDataset->GetRasterBand(g);
+			m_pBand = pDataset->GetRasterBand(g);
 		
 			if (m_pBand)
 			{	
@@ -1276,7 +1317,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 				}
 			}
 			
-			m_pBand = m_pDataset->GetRasterBand(b);
+			m_pBand = pDataset->GetRasterBand(b);
 	
 			if (m_pBand)
 			{	
@@ -1307,6 +1348,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 	}
 	m_nBitCount=nBitCount;
 	memcpy(bpBits,m_lpBits,sizeof(BYTE)*nByteWidth*height);
+	GDALClose((GDALDatasetH) pDataset);
 	return TRUE;
 }
 //function: save edge raster file into bmp file 24bit
@@ -1501,10 +1543,11 @@ int CDIB::lookregion(int label,int*tag, CRect rect,int area)
 	return 1;
 }
 
-//save cdib m_lpbits to file pathname and the spatial info stored in pdataset,
+//save cdib m_lpbits to file pathname and the spatial info stored in pdataset from file named path
 //when this function put into serialize of CDoc, it does not work out fine.
-bool CDIB::SaveToFile(GDALDataset *pDataset, CString pathName)
+bool CDIB::SaveToFile(const CString&path,CString &pathName)
 {
+	GDALDataset*pDataset=(GDALDataset*)GDALOpen(path,GA_ReadOnly);
 	int period = pathName.ReverseFind('.');
 	int temp;
 	CString suffix;
@@ -1611,18 +1654,12 @@ bool CDIB::SaveToFile(GDALDataset *pDataset, CString pathName)
 	}
 	delete[]buf; 
 	GDALClose( (GDALDatasetH) poDstDS );
+	GDALClose((GDALDatasetH)pDataset);
 	return true;
 	
 }
 
-CString CDIB::GetDataType(GDALDataset *m_pDataset)
-{
-	GDALRasterBand  *m_pBand= m_pDataset->GetRasterBand(1);
-	//	CPLAssert( m_pBand->GetRasterDataType() == GDT_Byte );
-	
-	CString m_DataType=GDALGetDataTypeName(m_pBand->GetRasterDataType());//数据类型
-	return m_DataType;
-}
+
 int CDIB::GetWidthInBytes( int nBits, int nWidth )
 {
 	int nWidthBytes;
@@ -2022,8 +2059,8 @@ bool CDIB::CreateDIBFromBits(int nWidth,int nHeight,BYTE * buf,int nBits)
 	else
 	{
 		
-		nWidth=nWidth;
-		nHeight=nHeight;
+		m_nWidth=nWidth;
+		m_nHeight=nHeight;
 		m_nBitCount=24;
 		int byteLine=BYTE_PER_LINE(nWidth, 24);
 		m_lpBits=new BYTE[byteLine*nHeight];
@@ -2034,15 +2071,11 @@ bool CDIB::CreateDIBFromBits(int nWidth,int nHeight,BYTE * buf,int nBits)
 			for( int i=0; i<nWidth; i++)
 			{   
 				unsigned long temp=(long)j*(long)nWidth*tick+(long)i*tick;				
-				BYTE r,g,b;
-				b=*(buf+temp);
-				g=*(buf+temp+(1>=tick?0:1));
-				r=*(buf+temp+(2>=tick?0:2));
 				
-				color.rgbRed   = r;
-				color.rgbGreen = g;
-				color.rgbBlue  = b;
-				SetPixelColor( i, j, color ) ;
+				BYTE* iDst = pBits + (nHeight -1 - j)*byteLine + i*3;
+				*iDst++ =*(buf+temp);//blue
+				*iDst++ =*(buf+temp+(1>=tick?0:1));//green
+				*iDst   =*(buf+temp+(2>=tick?0:2));//red
 			} 		
 		return(true);
 	}

@@ -307,7 +307,7 @@ void CPreviewDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 
 	CvSize sz = cvSize(mask.Width(),mask.Height());
 	IplImage* img = cvCreateImage( sz, 8,3 ); 
-	RegionThresh(&(((CImageDoc*)(pView->GetDocument()))->m_HC),curMin,mask,img);
+	RegionThresh((((CImageDoc*)(pView->GetDocument()))->m_HC),curMin,mask,img);
 
 	CRect rect;
 	pPic->GetClientRect(&rect);

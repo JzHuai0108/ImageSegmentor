@@ -20,36 +20,36 @@ Class8=CInitiateDlg
 Class9=CMainFrame
 Class10=CMFeatDlg
 Class11=CMorphDlg
-Class12=CMyImageDBApp
-Class13=CPreviewDlg
-Class14=CResultDlg
-Class15=CResultImageDlg
-Class16=CSegmentPara
-Class17=CSegParaPopDlg
-Class18=CSelPropDlg
-Class19=CSetPropDlg
-Class20=CSUSANDlg
-Class21=CTHRESHDlg
+Class12=CMRFOptimDlg
+Class13=CMyImageDBApp
+Class14=CPreviewDlg
+Class15=CResultDlg
+Class16=CResultImageDlg
+Class17=CSegmentPara
+Class18=CSegParaPopDlg
+Class19=CSelPropDlg
+Class20=CSetPropDlg
+Class21=CSUSANDlg
+Class22=CTHRESHDlg
 
 ResourceCount=18
-Resource1=IDR_MAINFRAME (English (U.S.))
-Resource2=IDD_DIALOG_SEGOUT
-Resource3=IDD_DIALOG_PREVIEW
-Resource4=IDD_DIALOG_MRFOPTIM
-Resource5=IDD_DIALOG_SETTHRESH
-Resource6=IDD_DIALOG_RESULTIMAGE
-Resource7=IDD_DIALOG_CDTHRESH
-Resource8=IDD_ABOUTBOX
-Resource9=IDD_DIALOG_MORPH
-Resource10=IDD_DIALOG_BANDSEL
-Resource11=IDR_MAINFRAME
-Resource12=IDD_DIALOG_INITIATE
-Resource13=IDD_DIALOG_IMAGEPROP
-Resource14=IDD_DIALOG_SUSAN
-Resource15=IDD_DIALOG_SELPROP
-Resource16=IDD_DIALOG_FEATUREEXTR
-Resource17=IDD_DIALOG_CANNY
-Class22=CMRFOptimDlg
+Resource1=IDD_DIALOG_BANDSEL
+Resource2=IDD_DIALOG_CANNY
+Resource3=IDD_DIALOG_SUSAN
+Resource4=IDD_DIALOG_MORPH
+Resource5=IDD_DIALOG_PREVIEW
+Resource6=IDD_DIALOG_SELPROP
+Resource7=IDD_DIALOG_FEATUREEXTR
+Resource8=IDD_DIALOG_CDTHRESH
+Resource9=IDD_DIALOG_SETTHRESH
+Resource10=IDD_DIALOG_RESULTIMAGE
+Resource11=IDD_DIALOG_MRFOPTIM
+Resource12=IDR_MAINFRAME (English (U.S.))
+Resource13=IDR_MAINFRAME
+Resource14=IDD_ABOUTBOX
+Resource15=IDD_DIALOG_INITIATE
+Resource16=IDD_DIALOG_SEGOUT
+Resource17=IDD_DIALOG_IMAGEPROP
 Resource18=IDR_IMAGETYPE (English (U.S.))
 
 [CLS:CBandSelDlg]
@@ -63,9 +63,6 @@ Type=0
 BaseClass=CDialog
 HeaderFile=CannyPara.h
 ImplementationFile=CannyPara.cpp
-Filter=D
-VirtualFilter=dWC
-LastObject=CCannyPara
 
 [CLS:CChildFrame]
 Type=0
@@ -84,18 +81,16 @@ Type=0
 BaseClass=CDialog
 HeaderFile=image.cpp
 ImplementationFile=image.cpp
-LastObject=ID_SEG_PYRMEANSHIFT
-Filter=D
-VirtualFilter=dWC
+LastObject=ID_CLASS_MULTIFEATURE
 
 [CLS:CImageDoc]
 Type=0
 BaseClass=CDocument
 HeaderFile=imageDoc.h
 ImplementationFile=imageDoc.cpp
+LastObject=ID_CLASS_STICKCHAIN
 Filter=N
 VirtualFilter=DC
-LastObject=CImageDoc
 
 [CLS:CImageView]
 Type=0
@@ -108,32 +103,30 @@ Type=0
 BaseClass=CDialog
 HeaderFile=InitiateDlg.h
 ImplementationFile=InitiateDlg.cpp
-LastObject=IDC_COMBO_METRIC
-Filter=D
-VirtualFilter=dWC
 
 [CLS:CMainFrame]
 Type=0
 BaseClass=CMDIFrameWnd
 HeaderFile=MainFrm.h
 ImplementationFile=MainFrm.cpp
-LastObject=ID_SEG_PYRMEANSHIFT
 
 [CLS:CMFeatDlg]
 Type=0
 BaseClass=CDialog
 HeaderFile=MFeatDlg.h
 ImplementationFile=MFeatDlg.cpp
-LastObject=CMFeatDlg
-Filter=D
-VirtualFilter=dWC
 
 [CLS:CMorphDlg]
 Type=0
 BaseClass=CDialog
 HeaderFile=MorphDlg.h
 ImplementationFile=MorphDlg.cpp
-LastObject=CMorphDlg
+
+[CLS:CMRFOptimDlg]
+Type=0
+BaseClass=CDialog
+HeaderFile=MRFOptimDlg.h
+ImplementationFile=MRFOptimDlg.cpp
 
 [CLS:CMyImageDBApp]
 Type=0
@@ -152,9 +145,6 @@ Type=0
 BaseClass=CDialog
 HeaderFile=ResultDlg.h
 ImplementationFile=ResultDlg.cpp
-Filter=D
-VirtualFilter=dWC
-LastObject=IDC_EDIT_COMPS
 
 [CLS:CResultImageDlg]
 Type=0
@@ -179,18 +169,12 @@ Type=0
 BaseClass=CDialog
 HeaderFile=SelPropDlg.h
 ImplementationFile=SelPropDlg.cpp
-Filter=D
-VirtualFilter=dWC
-LastObject=CSelPropDlg
 
 [CLS:CSetPropDlg]
 Type=0
 BaseClass=CDialog
 HeaderFile=SetPropDlg.h
 ImplementationFile=SetPropDlg.cpp
-Filter=D
-VirtualFilter=dWC
-LastObject=CSetPropDlg
 
 [CLS:CSUSANDlg]
 Type=0
@@ -302,6 +286,27 @@ Control4=IDC_EDIT_EBAND,edit,1350631552
 Control5=IDC_COMBO_MORPH,combobox,1344340995
 Control6=IDC_STATIC_MT,static,1342308352
 
+[DLG:IDD_DIALOG_MRFOPTIM]
+Type=1
+Class=CMRFOptimDlg
+ControlCount=16
+Control1=IDOK,button,1342242817
+Control2=IDCANCEL,button,1342242816
+Control3=IDC_STATIC_MRFCD,static,1342308352
+Control4=IDC_COMBO_MRF,combobox,1344339970
+Control5=IDC_STATIC_NUMCLS,static,1342308352
+Control6=IDC_EDIT_NC,edit,1350631552
+Control7=IDC_STATIC_BETA,static,1342308352
+Control8=IDC_EDIT_BETA,edit,1350631552
+Control9=IDC_STATIC_T,static,1342308352
+Control10=IDC_EDIT_T,edit,1350631552
+Control11=IDC_STATIC_T0,static,1342308352
+Control12=IDC_EDIT_T0,edit,1350631552
+Control13=IDC_STATIC_C,static,1342308352
+Control14=IDC_EDIT_C,edit,1350631552
+Control15=IDC_STATIC_ALPHA,static,1342308352
+Control16=IDC_EDIT_ALPHA,edit,1350631552
+
 [DLG:IDD_DIALOG_PREVIEW]
 Type=1
 Class=CPreviewDlg
@@ -403,7 +408,7 @@ Control7=IDC_STATIC_COUNT,static,1342308352
 
 [MNU:IDR_IMAGETYPE (English (U.S.))]
 Type=1
-Class=CMainFrame
+Class=CImageDoc
 Command1=ID_FILE_NEW
 Command2=ID_FILE_OPEN
 Command3=ID_FILE_CLOSE
@@ -455,24 +460,25 @@ Command48=ID_CLASS_KMEANS
 Command49=ID_CLASS_BUILDINGISODATA
 Command50=ID_CLASS_BUILDING
 Command51=ID_CLASS_ROADCLUMP
-Command52=ID_TEXTURE_ROSINCD
-Command53=ID_CLASS_MULTI_FEAT
+Command52=ID_CLASS_MULTIBUILD
+Command53=ID_TEXTURE_ROSINCD
 Command54=ID_TEXTURE_CORRBINARY
 Command55=ID_TEXTURE_GRADCORR
 Command56=ID_TEXTURE_HISTOSTATCD
 Command57=ID_CLASS_MULTIFEATURE
-Command58=ID_VIEW_TOOLBAR
-Command59=ID_VIEW_STATUS_BAR
-Command60=ID_VIEW_ZOOMIN
-Command61=ID_VIEW_ZOOMOUT
-Command62=ID_VIEW_ORIGIN
-Command63=ID_VIEW_OUTCOME
-Command64=ID_WINDOW_NEW
-Command65=ID_WINDOW_CASCADE
-Command66=ID_WINDOW_TILE_HORZ
-Command67=ID_WINDOW_ARRANGE
-Command68=ID_APP_ABOUT
-CommandCount=68
+Command58=ID_TEXTURE_GEOMETRICCD
+Command59=ID_VIEW_TOOLBAR
+Command60=ID_VIEW_STATUS_BAR
+Command61=ID_VIEW_ZOOMIN
+Command62=ID_VIEW_ZOOMOUT
+Command63=ID_VIEW_ORIGIN
+Command64=ID_VIEW_OUTCOME
+Command65=ID_WINDOW_NEW
+Command66=ID_WINDOW_CASCADE
+Command67=ID_WINDOW_TILE_HORZ
+Command68=ID_WINDOW_ARRANGE
+Command69=ID_APP_ABOUT
+CommandCount=69
 
 [TB:IDR_MAINFRAME]
 Type=1
@@ -485,7 +491,8 @@ Command5=ID_EDIT_COPY
 Command6=ID_EDIT_PASTE
 Command7=ID_FILE_PRINT
 Command8=ID_APP_ABOUT
-CommandCount=8
+Command9=ID_VIEW_ORIGIN
+CommandCount=9
 
 [ACL:IDR_MAINFRAME]
 Type=1
@@ -537,34 +544,4 @@ Command6=ID_VIEW_TOOLBAR
 Command7=ID_VIEW_STATUS_BAR
 Command8=ID_APP_ABOUT
 CommandCount=8
-
-[DLG:IDD_DIALOG_MRFOPTIM]
-Type=1
-Class=CMRFOptimDlg
-ControlCount=16
-Control1=IDOK,button,1342242817
-Control2=IDCANCEL,button,1342242816
-Control3=IDC_STATIC_MRFCD,static,1342308352
-Control4=IDC_COMBO_MRF,combobox,1344339970
-Control5=IDC_STATIC_NUMCLS,static,1342308352
-Control6=IDC_EDIT_NC,edit,1350631552
-Control7=IDC_STATIC_BETA,static,1342308352
-Control8=IDC_EDIT_BETA,edit,1350631552
-Control9=IDC_STATIC_T,static,1342308352
-Control10=IDC_EDIT_T,edit,1350631552
-Control11=IDC_STATIC_T0,static,1342308352
-Control12=IDC_EDIT_T0,edit,1350631552
-Control13=IDC_STATIC_C,static,1342308352
-Control14=IDC_EDIT_C,edit,1350631552
-Control15=IDC_STATIC_ALPHA,static,1342308352
-Control16=IDC_EDIT_ALPHA,edit,1350631552
-
-[CLS:CMRFOptimDlg]
-Type=0
-HeaderFile=MRFOptimDlg.h
-ImplementationFile=MRFOptimDlg.cpp
-BaseClass=CDialog
-Filter=D
-VirtualFilter=dWC
-LastObject=CMRFOptimDlg
 

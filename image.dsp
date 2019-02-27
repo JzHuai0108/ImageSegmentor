@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 gdal_i.lib cxcore.lib cv.lib highgui.lib /nologo /subsystem:windows /machine:I386 /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
+# ADD LINK32 gdal_i.lib cxcorel.lib cvl.lib highguil.lib /nologo /subsystem:windows /machine:I386 /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
 # SUBTRACT LINK32 /debug
 
 !ELSEIF  "$(CFG)" == "image - Win32 Debug"
@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 gdal_i.lib ogr.lib ogrsf_frmts.lib cpl.lib ogrsf_frmts_sup.lib cxcore.lib cv.lib ml.lib cvaux.lib highgui.lib cvcam.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
+# ADD LINK32 gdal_i.lib cxcorel.lib cvl.lib highguil.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib" /libpath:"E:\landcruiser\stickseg\Debug"
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -95,15 +95,15 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\_MC.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\BandSelDlg.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\CannyPara.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\ChangeDetector.cpp
 # End Source File
 # Begin Source File
 
@@ -124,6 +124,10 @@ SOURCE=.\colormrf.cpp
 # Begin Source File
 
 SOURCE=.\DIB.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\fuzzylogic.cpp
 # End Source File
 # Begin Source File
 
@@ -179,6 +183,10 @@ SOURCE=.\MRFOptimDlg.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\MultiDiff.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\MyColorSpace.cpp
 # End Source File
 # Begin Source File
@@ -192,10 +200,6 @@ SOURCE=.\MyMath.cpp
 # Begin Source File
 
 SOURCE=.\MyTexture.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\NP.cpp
 # End Source File
 # Begin Source File
 
@@ -268,6 +272,10 @@ SOURCE=.\CannyPara.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\ChangeDetector.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\ChildFrm.h
 # End Source File
 # Begin Source File
@@ -289,6 +297,10 @@ SOURCE=.\DIB.h
 # Begin Source File
 
 SOURCE=.\filter.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\fuzzylogic.h
 # End Source File
 # Begin Source File
 
@@ -317,6 +329,10 @@ SOURCE=.\imageinclude\Imageload.h
 # Begin Source File
 
 SOURCE=.\imageView.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ImpExpData.h
 # End Source File
 # Begin Source File
 
@@ -349,6 +365,10 @@ SOURCE=.\mrf_1.h
 # Begin Source File
 
 SOURCE=.\MRFOptimDlg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MultiDiff.h
 # End Source File
 # Begin Source File
 
@@ -385,6 +405,10 @@ SOURCE=.\randomc.h
 # Begin Source File
 
 SOURCE=.\Region.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\require.h
 # End Source File
 # Begin Source File
 
@@ -457,6 +481,10 @@ SOURCE=.\res\imageDoc.ico
 # Begin Source File
 
 SOURCE=.\res\LENA.BMP
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\OriginIcon.ico
 # End Source File
 # Begin Source File
 

@@ -14,20 +14,26 @@
 #include "ResultDlg.h"
 //#include "Shlwapi.h"
 #include "PreviewDlg.h"
-#include "THRESHDlg.h"
 #include "SelPropDlg.h"
 #include "MFeatDlg.h"
 #include "MorphDlg.h"
 #include "SetPropDlg.h"
 #include "mygabor.h"
+#include "stickgrow.h"
+#include "THRESHDlg.h"
 
 #include "mytexture.h"
-
+#include "MultiDiff.h"
+#include "ChangeDetector.h"
 #include "GlobalApi.h"
 #include "mrf_1.h"
 #include "ColorMRF.h"
-#include "MRFOptimDlg.h"//mean shift算法结果图像；
-//#include "major.h"
+#include "MRFOptimDlg.h"//mean shift算法结果图像
+#include "ImpExpData.h"
+#include "..\\include\\gdal.h"
+#include "..\\include\\gdal_priv.h"//
+#include "..\\include\\ogrsf_frmts.h"//ogrregisterall()
+using namespace std;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -50,7 +56,6 @@ BEGIN_MESSAGE_MAP(CImageDoc, CDocument)
 	ON_COMMAND(ID_VIEW_ZOOMOUT, OnViewZoomout)
 	ON_COMMAND(ID_EVAL_QS, OnEvalQs)
 	ON_COMMAND(ID_SEG_QTHC, OnSegQthc)
-	ON_COMMAND(ID_CLASS_REGPROP, OnClassRegprop)
 	ON_COMMAND(ID_SEG_GSHC, OnSegGshc)
 	ON_COMMAND(ID_SEG_GS, OnSegGraph)
 	ON_COMMAND(ID_CLASS_ROADCLUMP, OnClassRoadclump)
@@ -68,7 +73,6 @@ BEGIN_MESSAGE_MAP(CImageDoc, CDocument)
 	ON_COMMAND(ID_SEG_SAVETOUR, OnSegSavetour)
 	ON_COMMAND(ID_SEG_EXPORTSHP, OnSegExportshp)
 	ON_COMMAND(ID_CLASS_MULTIFEATURE, OnMultiFeatureDiff)
-	ON_COMMAND(ID_CLASS_MULTI_FEAT, OnClassMultiFeat)
 	ON_COMMAND(ID_PREP_TEXTIMG, OnPrepTextimg)
 	ON_COMMAND(ID_SEG_RANDINDEX, OnSegRandIndex)
 	ON_COMMAND(ID_PREP_SATHUE, OnPrepSatHue)
@@ -89,6 +93,8 @@ BEGIN_MESSAGE_MAP(CImageDoc, CDocument)
 	ON_COMMAND(ID_PREP_OPENING, OnPrepOpening)
 	ON_COMMAND(ID_TEXTURE_HISTOSTATCD, OnTextureHistoStatCD)
 	ON_COMMAND(ID_CLASS_BUILDINGISODATA, OnClassBuildingIsodata)
+	ON_COMMAND(ID_CLASS_MULTIBUILD, OnClassMultiBuild)
+	ON_COMMAND(ID_TEXTURE_GEOMETRICCD, OnTextureGeometricCD)
 	//}}AFX_MSG_MAP
 
 END_MESSAGE_MAP()
@@ -97,7 +103,7 @@ END_MESSAGE_MAP()
 // CImageDoc construction/destruction
 
 CImageDoc::CImageDoc():m_dRoom(1),quantum(0),
-m_pDataset(NULL),curRegion(-1),edgeMap(NULL),storey(0)
+curRegion(-1),edgeMap(NULL),storey(0)
 {
 	// TODO: add one-time construction code here
 /*	while(!m_strokeList.IsEmpty())
@@ -118,7 +124,6 @@ CImageDoc::~CImageDoc()
 {
 //	AfxMessageBox("IN imagedoc!");
 
-	GDALClose((GDALDatasetH)m_pDataset);
 	if(edgeMap)
 	{
 		delete []edgeMap;
@@ -147,29 +152,26 @@ void CImageDoc::Serialize(CArchive& ar)
 		CString FileName=cfptr->GetFilePath();
 		BeginWaitCursor();
 		BOOL res=false;
-		m_pDataset = (GDALDataset *) GDALOpen(FileName,GA_ReadOnly);
-		if (m_pDataset)	
-		{
-			int r=1,g=2,b=3,v=-1;
+		
+			int r=1,g=2,b=3;
 			CBandSelDlg IDlg; 
-			IDlg.m_Band=m_pDataset->GetRasterCount();
-			IDlg.m_DataType=m_DIB.GetDataType(m_pDataset);
+			ImageProps(IDlg.m_Band,IDlg.m_DataType,FileName);
 			IDlg.m_R=1;
 			IDlg.m_G=2;
 			IDlg.m_B=3;
-			IDlg.m_NDVI=4;
-			IDlg.m_EB=4;
+	//		IDlg.m_NDVI=4;
+	//		IDlg.m_EB=4;
 			if(IDlg.DoModal()==IDOK) 
 			{	
 				r=IDlg.m_R;
 				g=IDlg.m_G;
 				b=IDlg.m_B;
-				v=IDlg.m_NDVI;
+			//	v=IDlg.m_NDVI;
 				edgeBand=IDlg.m_EB;
 			}
 			else return;
-			res=m_DIB.CreateDIB(r,g,b,m_pDataset);
-		}
+			res=m_DIB.CreateDIB(r,g,b,FileName);
+		
 		EndWaitCursor();
 	}
 }
@@ -247,7 +249,7 @@ void CImageDoc::OnViewOutcome()
 	outDlg.m_nComps=m_HC.GetRegCount();
 	outDlg.m_nTime=quantum;
 //	uint32 en=m_HC.countedge();
-	outDlg.m_nQS=m_HC.eval;
+	outDlg.m_nQS=eval;
 	outDlg.DoModal();	 
 }
 
@@ -258,7 +260,7 @@ void CImageDoc::OnProcessGuass()
 	StartTimer(); 
 	int L=m_DIB.GetLength();
 	BYTE*EM=new BYTE[L];
-	GetEM(EM,1);
+	GetEM(GetPathName(),EM,1);
 	int w=m_DIB.GetWidth(),h=m_DIB.GetHeight();
 //	m_HC.SetWH(w,h);
 
@@ -305,7 +307,7 @@ void CImageDoc::OnViewZoomout()
 void CImageDoc::OnEvalQs() 
 {
 	// TODO: Add your command handler code here
-	EvalQs(&m_HC,m_pDataset,bWArray);
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 }
 
 void CImageDoc::OnSegRegMeg() 
@@ -318,7 +320,7 @@ void CImageDoc::OnSegRegMeg()
 		AfxMessageBox("sucks!");*/
 	StartTimer(); 	
 	SetEM();//add edge map
-	BuildData(&m_HC,m_pDataset,bWArray);
+	BuildData(m_HC,GetPathName(),bWArray);
 	m_HC.InitiateRegionSet();
 
 	if(m_HC.sortDM)
@@ -329,7 +331,8 @@ void CImageDoc::OnSegRegMeg()
 	m_HC.HierClust();
 	quantum=ElapsedTime();  	
 	m_HC.RegionLabel();
-	EvalQs(&m_HC,m_pDataset,bWArray);
+
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 
 	int len=m_HC.GetWidth()*m_HC.GetHeight();
 	int*tagArr=new int[len];
@@ -346,7 +349,8 @@ void CImageDoc::OnSegQthc()
 	// TODO: Add your command handler code here
 	StartTimer(); 
 	SetEM();//add edge map
-	BuildData(&m_HC,m_pDataset,bWArray);
+
+	BuildData(m_HC,GetPathName(),bWArray);
 	m_HC.QTMerge();
 
 	if(m_HC.sortDM)
@@ -358,7 +362,7 @@ void CImageDoc::OnSegQthc()
 
 	quantum=ElapsedTime();  
 	m_HC.RegionLabel();
-	EvalQs(&m_HC,m_pDataset,bWArray);
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 
 	int len=m_HC.GetWidth()*m_HC.GetHeight();
 	int*tagArr=new int[len];
@@ -369,28 +373,7 @@ void CImageDoc::OnSegQthc()
 	UpdateAllViews(NULL);
 	delete[] tagArr;
 }
-//input:allocated EM 
-//output: EM initiated with data for edge detection
-BYTE* CImageDoc::GetEM(BYTE *EM,int eB)
-{
-	int m_CurrentBand=1;
-	if (eB<= 0 || eB>m_pDataset->GetRasterCount())
-		eB = m_CurrentBand;
-	int w=m_pDataset->GetRasterXSize(); //影响的高度，宽度
-	int	h=m_pDataset->GetRasterYSize();
 
-	BYTE* buf =	EM;
-	GDALRasterBand  *m_pBand=NULL;
-	m_pBand = m_pDataset->GetRasterBand(eB);
-	if (m_pBand)
-	{
-		if (CE_None!=m_pBand->RasterIO( GF_Read, 0,0, w, h, buf, w,h, GDT_Byte, 0, 0 ))
-		{
-			AfxMessageBox("Error getting edge data!");
-		}
-	}
-	return EM;
-}
 void CImageDoc::SetEM()
 {
 	POSITION p=m_pDocTemplate->GetFirstDocPosition();
@@ -413,20 +396,12 @@ void CImageDoc::SetEM()
 	pD->edgeMap=NULL;
 }
 
-
-void CImageDoc::OnClassRegprop() 
-{
-	// TODO: Add your command handler code here
-
-	//m_HC.LenWidR();
-}
-
 void CImageDoc::OnSegGshc() 
 {
 	// TODO: Add your command handler code here
 	StartTimer(); 
 	SetEM();//add edge map
-	BuildData(&m_HC,m_pDataset,bWArray);
+	BuildData(m_HC,GetPathName(),bWArray);
 
 	int cur=m_HC.SegGraph4();
 	m_HC.InitiateRegions();
@@ -438,7 +413,7 @@ void CImageDoc::OnSegGshc()
 		m_HC.HierClust();
 	quantum=ElapsedTime();  
 	m_HC.RegionLabel();
-	EvalQs(&m_HC,m_pDataset,bWArray);
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 
 	int len=m_HC.GetWidth()*m_HC.GetHeight();
 	int*tagArr=new int[len];
@@ -457,14 +432,14 @@ void CImageDoc::OnSegGraph()
 	// TODO: Add your command handler code here
 	StartTimer(); 
 	SetEM();//add edge map
-	BuildData(&m_HC,m_pDataset,bWArray);
+	BuildData(m_HC,GetPathName(),bWArray);
 
 	int cur=m_HC.SegGraph4();
 	m_HC.InitiateRegions();
 
 	quantum=ElapsedTime();  
 	m_HC.RegionLabel();
-	EvalQs(&m_HC,m_pDataset,bWArray);
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 	int len=m_HC.GetWidth()*m_HC.GetHeight();
 	int*tagArr=new int[len];
 	m_HC.GetTag(tagArr);
@@ -479,7 +454,8 @@ void CImageDoc::OnSegGraph()
 
 void CImageDoc::OnClassRoadclump() 
 {
-	RegionProps(&m_HC);
+	if(m_HC.PrepPropMemo(7))
+	m_HC.RegionProps();
 	// TODO: Add your command handler code here
 	BYTE*roadseed=new BYTE[m_DIB.m_nHeight*m_DIB.m_nWidth];
 	m_HC.SetWH(m_DIB.m_nWidth,m_DIB.m_nHeight);
@@ -488,7 +464,7 @@ void CImageDoc::OnClassRoadclump()
 //	m_HC.RoadSeed(roadseed,"F:\\landcruiser\\TIFFIMAGE\\roads.bmp");
 //	m_HC.RoadThin(roadseed,endpixel);
 //	m_HC.RoadLink(roads,endpixel);
-//	m_HC.RoadExpo(roadseed,endpixel,m_pDataset);
+//	m_HC.RoadExpo(roadseed,endpixel,GetPathName());
 	delete[]roadseed;
 //	m_DIB.LookRegions(m_HC.tag,1);
 }
@@ -497,7 +473,7 @@ void CImageDoc::OnPrepSr()
 {
 	// TODO: Add your command handler code here
 
-		BuildData(&m_HC,m_pDataset,bWArray);
+	BuildData(m_HC,GetPathName(),bWArray);
 
 	int temp=32;
 	m_HC.qttest(temp*2);
@@ -571,9 +547,8 @@ int CImageDoc::lookregion(int cx,int cy,int option)
 void CImageDoc::OnSegSave() 
 {
 	CSelPropDlg SDlg;
-
 	SDlg.DoModal();
-	SaveSeg2(&m_HC,m_pDataset,GetPathName(),SDlg.numb);
+	SaveSeg2(m_HC,GetPathName(),SDlg.numb);
 }
 
 void CImageDoc::OnFileSaveAs() 
@@ -614,7 +589,7 @@ void CImageDoc::OnFileSaveAs()
 		}
 		else
 			real=fileName+".tif";
-		bool res=m_DIB.SaveToFile(m_pDataset,real);	
+		bool res=m_DIB.SaveToFile(GetPathName(),real);	
 		if (res==false)
 		remove((const char*)real);
 		
@@ -628,13 +603,13 @@ void CImageDoc::OnSegQuadTree()
 		// TODO: Add your command handler code here
 	StartTimer(); 
 	SetEM();//add edge map
-	BuildData(&m_HC,m_pDataset,bWArray);
+	BuildData(m_HC,GetPathName(),bWArray);
 
 	m_HC.QTMerge();
 
 	quantum=ElapsedTime();  
 	m_HC.RegionLabel();
-	EvalQs(&m_HC,m_pDataset,bWArray);
+	eval=EvalQs(m_HC,GetPathName(),bWArray);
 
 	int len=m_HC.GetWidth()*m_HC.GetHeight();
 	int*tagArr=new int[len];
@@ -654,7 +629,7 @@ void CImageDoc::OnPrepSobel()
 	BeginWaitCursor(); 
 	int L=m_DIB.GetLength();
 	BYTE*EM=new BYTE[L];
-	GetEM(EM,edgeBand);
+	GetEM(GetPathName(),EM,edgeBand);
 	int w=m_DIB.GetWidth(), h=m_DIB.GetHeight();
 	EdgeMag(EM,w,h);
 	m_DIB.CreateDIBFromBits(w,h,EM,8);
@@ -683,7 +658,22 @@ void CImageDoc::OnPrepCanny()
 	IplImage *edgeMap= cvCreateImage(size, 8, 1);
 	
 	m_DIB.LoadDIBToIPL(img->imageData,8);
-	cvCanny( img, edgeMap, edgeDlg.m_low, edgeDlg.m_low, 3);
+	int aperture_size=3;
+	if(edgeDlg.m_low==-1&&edgeDlg.m_high==-1)
+	{
+		CvMat *dx = 0, *dy = 0; 
+		double low_thresh, high_thresh;
+		dx = cvCreateMat( size.height, size.width, CV_16SC1 );
+		dy = cvCreateMat( size.height, size.width, CV_16SC1 );
+		cvSobel( img, dx, 1, 0, aperture_size );
+		cvSobel( img, dy, 0, 1, aperture_size );
+		AdaptiveFindThreshold(dx, dy, low_thresh, high_thresh,0.7);
+		cvCanny( img, edgeMap, low_thresh, high_thresh, aperture_size);
+		cvReleaseMat( &dx );
+		cvReleaseMat( &dy );
+	}
+	else
+	cvCanny( img, edgeMap, edgeDlg.m_low, edgeDlg.m_high, aperture_size);
 
 	m_DIB.CreateDIBFromIPL(w,h,edgeMap->imageData,8);
 	CMainFrame* pFrame = (CMainFrame*) AfxGetApp()->GetMainWnd();
@@ -703,7 +693,7 @@ void CImageDoc::OnPrepSusan()
 	BeginWaitCursor(); 
 	int L=m_DIB.GetLength();
 	BYTE*EM=new BYTE[L];
-	GetEM(EM,edgeBand);
+	GetEM(GetPathName(),EM,edgeBand);
 	int w=m_DIB.GetWidth(),h=m_DIB.GetHeight();
 	if(edgeDlg.m_Radio==0)
 	EdgeSusan(EM,w,h,edgeDlg.m_BT,false);
@@ -727,7 +717,7 @@ void CImageDoc::OnPrepMorph()
 		return;
 	int L=m_DIB.GetLength();
 	BYTE*EM=new BYTE[L];
-	GetEM(EM,md.m_EB);
+	GetEM(GetPathName(),EM,md.m_EB);
 	m_HC.SetWH(m_DIB.m_nWidth,m_DIB.m_nHeight);
 	Morph(EM,m_DIB.GetWidth(),m_DIB.GetHeight(),md.iPos+1);
 	m_DIB.SaveEdge("SKELETON.bmp",EM);
@@ -736,10 +726,27 @@ void CImageDoc::OnPrepMorph()
 
 void CImageDoc::OnClassPreview() 
 {
-	RegionProps(&m_HC);
+/*
+	//for building change detection
+//open shade mask
+	CString fn1="E:\\landcruiser\\TIFFIMAGE\\1001SHADE.tif";
+
+	IplImage*shadeImg=LoadGDALToIPL(fn1,1,8);
+//load nochange mask
+	fn1="E:\\landcruiser\\TIFFIMAGE\\nochange.tif";
+
+	IplImage*changeImg=LoadGDALToIPL(fn1,1,8);
+	if(m_HC.PrepPropMemo(10))
+	{
+		m_HC.RegionProps();
+	ShadeRatio(m_HC,changeImg,false);
+	ShadeRatio(m_HC,shadeImg,true);
+	}*/
 	// TODO: Add your command handler code here
 	CSelPropDlg SDlg;
 	CPreviewDlg IDlg;
+	if(m_HC.PrepPropMemo(7))
+	m_HC.RegionProps();
 
 	m_HC.GetPreviewMask(IDlg.mask);
 	SDlg.m_top=IDlg.mask.top;
@@ -778,7 +785,7 @@ void CImageDoc::OnSegSavetour()
 		{
 			PathName+=".tif";
 		}
-		SaveSeg(&m_HC,m_pDataset,PathName);
+		SaveSeg(m_HC,PathName,GetPathName());
 	}
 }
 
@@ -795,8 +802,7 @@ void CImageDoc::OnSegExportshp()
 void CImageDoc::OnMultiFeatureDiff() 
 {
 	// TODO: Add your command handler code here
-
-	//when processing i channel images, if set isGray, make sure that the image is 32 float depth
+//when processing i channel images, if set isGray, make sure that the image is 32 float depth
 	// TODO: Add your command handler code here
 	CString dirName="F:\\landcruiser\\TIFFIMAGE\\testsite\\";
 	CString fn1=dirName+"spotp87.tif";
@@ -831,152 +837,46 @@ void CImageDoc::OnMultiFeatureDiff()
 	else
 		return;
 	dirName=pathName.Left(pathName.ReverseFind('\\')+1);
-	float mindiff,maxdiff,curdiff;
-
 	CMFeatDlg setDlg;
-	setDlg.m_level=5;
-	setDlg.m_maxDiff=100;
+	setDlg.m_level=2;
+	setDlg.m_maxDiff=40;
 	setDlg.m_minDiff=20;
 //	setDlg.GetDlgItem(IDC_STATIC_LEVELUSE)->ShowWindow(SW_HIDE);
 //	setDlg.GetDlgItem(IDC_EDIT_LEVELUSE)->ShowWindow(SW_HIDE);
 	setDlg.m_bandUse="";
+	MultiDiff detector(dirName,ConnectedMerge);
 	if( setDlg.DoModal() == IDOK)
 	{
-		storey=setDlg.m_level;
-		maxdiff=setDlg.m_maxDiff;
-		mindiff=setDlg.m_minDiff;
-	
+		detector.Init(setDlg.m_level,setDlg.m_minDiff,setDlg.m_maxDiff);
 		GetBWArray(setDlg.m_bandUse,bWArray);
 		GetLevelArray(setDlg.m_levelUse,levelUse);
 	}
 	else return;
-	if(maxdiff==mindiff) storey=1;
-	int *regCount=new int[storey*3];//for 3 seg hierarchy, first, second, merged
+
+
 	char bale[100]={0};
 	char bulk[100]={0};
-	int i,j;
 	BeginWaitCursor();
 	//segment and fuse
-	SynMultiSeg(fn1,fn2,mindiff,maxdiff,storey,regCount,2);
+	
+	detector.SynMultiSeg(fn1,fn2,bWArray);
 
 //compute region signitures and similarity 
 	//COMPUTE features for dataset1
-	//for the first level
-
-	GDALDataset*pDataset=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
-	if(!pDataset)
-		AfxMessageBox("cannot open image for m_HC!");
-	j=pDataset->GetRasterCount();
-	if(bWArray.size()==0)
-		for(i=0;i<j;++i)
-		bWArray.push_back(1.f);
-	assert(bWArray.size()==j);
-	int bandCount=0;
-	for(i=0;i<j;++i)
-		bandCount+=bWArray[i]>0?1:0;
-	int wid,heg;
-	wid=pDataset->GetRasterXSize();
-	heg=pDataset->GetRasterYSize();
-	int regNum0=regCount[2*storey];
-
-	vector<int> index0=vector<int>(regNum0);
-	float*storage=new float[regNum0*storey*bandCount*2];
-
-	for(i=0;i<storey;++i)
-	{	
-		if(storey<=1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		sprintf(bale,"%smerge-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,curdiff);
-		m_HC.Clear();
-		m_HC.ReadSeg(bale,bulk);
-		if(i==0)
-			m_HC.GetEXSLabel(index0);
-		CompFeat(&m_HC,pDataset,bWArray,storage,storey,i,index0);
-	}
 
 	sprintf(bale,"%sfeat1.txt",dirName);
-	Export(storage,storey*bandCount*2,regNum0,bale);
-
-	memset(storage,0,sizeof(float)*regNum0*storey*bandCount*2);
-	//COMPUTE features for dataset2
-
-	pDataset=(GDALDataset *) GDALOpen(fn2,GA_ReadOnly);
-	if(!pDataset)
-		AfxMessageBox("cannot open image for m_HC!");
-
-	for(i=0;i<storey;++i)
-	{
-	
-		if(storey<=1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		sprintf(bale,"%smerge-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,curdiff);
-		m_HC.Clear();
-		m_HC.ReadSeg(bale,bulk);
-		if(i==0)
-			m_HC.GetEXSLabel(index0);
-		CompFeat(&m_HC,pDataset,bWArray,storage,storey,i,index0);
-
-	}
+	detector.EvalFeat(fn1,bale,bWArray);
 
 	sprintf(bale,"%sfeat2.txt",dirName);
-	Export(storage,storey*bandCount*2,regNum0,bale);
-
-	index0.clear();
-	delete[]storage;
-	for(i=1;i<storey;++i)
-	{	
-		if(storey<=1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		sprintf(bale,"%smerge-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,curdiff);
-		remove(bale);
-		remove(bulk);
-	}
-//	sprintf(bale,"%sfeat1.txt",dirName);
-//	sprintf(bulk,"%sfeat2.txt",dirName);
-//	MahalKmeans(bale,bulk);
+	detector.EvalFeat(fn2,bale,bWArray);
 
 
-	sprintf(bale,"%s\\merge-rect-%.0f.txt",dirName,mindiff);
-	sprintf(bulk,"%s\\merge-tagmat-%.0f.txt",dirName,mindiff);
-	m_HC.Clear();
-	m_HC.ReadSeg(bale,bulk);
-	int count=m_HC.GetRegCount();
+	int count=detector.GetComps();
+	float *pts=new float[count];//store segments distance at two times
+	detector.CalcDist(levelUse,pts);
 	int*label=new int[count];
-	int method=1;
-
-
-	int dim0=storey*bandCount*2;
-	assert(regNum0==count);
-
-	if(levelUse.size()==0)
-	{
-		for(int i=0;i<storey;++i)
-			levelUse.push_back(i);
-	}
-
-	int dim=bandCount*levelUse.size();
-	vector<int> dimUse;
-	for(i=0;i<levelUse.size();++i)
-		for(j=0;j<bandCount;++j)
-		{
-			if(levelUse[i]<storey)
-			dimUse.push_back(levelUse[i]*bandCount*2+j*2);
-		}
-	sprintf(bale,"%sfeat1.txt",dirName);
-	sprintf(bulk,"%sfeat2.txt",dirName);
-	float*	feat1=new float[dim*count*2];
-	float*	feat2=&feat1[dim*count];
-	float*pts=new float[count];
-
-	ReadFeat(bale,bulk,feat1,feat2,count,dim0,dimUse);
-	if(method==2)
-		m_HC.MahalDist(feat1,feat2,count,dim,pts,1);
-	else
-		m_HC.EuclidDist(feat1,feat2,count,dim,pts);
-	if(method!=0)
+	int jack=0;
+	if(jack!=0)
 	{
 		float stat[4];
 		float*est[1]={stat};
@@ -986,154 +886,24 @@ void CImageDoc::OnMultiFeatureDiff()
 	{
 		//method manual
 		CTHRESHDlg thug;
-		thug.CreateHist(pts,count);
-		thug.DoModal();
+		float*vecs=pts;
+		thug.CreateHist(vecs,count);
+		thug.DoModal();//note the CDThresh is called when scrolling bars, so bug occurs 
+		//if other operations initializing m_HC are performed, assert(ink==w*h) may fail!
 		float thresh=thug.curMin;
+		
 		for(int i=0;i<count;++i)
-			label[i]=thresh>pts[i]?1:0;
+			label[i]=thresh>vecs[i]?1:0;
 	}
-	delete []feat1;
-	delete []pts;
-	dimUse.clear();
 
-   	CreateChangeMask(&m_HC,m_pDataset,label);
+	detector.CreateChangeMask(label);
+	resultDlg.ShowWindow(SW_SHOW);
+	resultDlg.SetImage(detector.buf,detector.width,detector.height,8);
+	detector.SaveChange(fn1,dirName+"changemap.tif");
+	delete[]pts;
 	delete[]label;
-
-	sprintf(bale,"%smerge-rect-%.0f.txt",dirName,mindiff);
-	sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,mindiff);
-	remove(bale);
-	remove(bulk);
-	sprintf(bale,"%sfeat1.txt",dirName);
-	sprintf(bulk,"%sfeat2.txt",dirName);
-	remove(bale);
-	remove(bulk);
 	EndWaitCursor();
 }
-
-//MODIFIED onMultifeatDiff()
-//for single band change detection, hue and saturation is ignored, otehrwise worse performance
-//Note opencv cnanot load tiff Image
-//note tag[exS[i].p]==i for each level
-void CImageDoc::OnClassMultiFeat() 
-{
-	//when processing i channel images, if set isGray, make sure that the image is 32 float depth
-	// TODO: Add your command handler code here
-	CString dirName="F:\\landcruiser\\TIFFIMAGE\\testsite\\";
-	CString fn1=dirName+"spotp87.tif";
-	CString fn2=dirName+"spotp92.tif";
-//open image at epochs 1 and 2 
-	CFileDialog FileDlg( TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,szFilter);
-	FileDlg.m_ofn.lpstrInitialDir=dirName;
-	FileDlg.m_ofn.nFilterIndex=2; 
-	FileDlg.m_ofn.lpstrTitle="Select image at time 1 for change detection";
-	CString pathName;
-	if( FileDlg.DoModal() == IDOK)
-	{	
-		pathName =FileDlg.GetPathName();
-		if(pathName=="")
-		{
-			pathName=fn1;
-		}
-		else fn1=pathName;
-	}
-	else
-		return;
-	FileDlg.m_ofn.lpstrTitle="Select image at time 2 for change detection";
-	if( FileDlg.DoModal() == IDOK)
-	{	
-		pathName =FileDlg.GetPathName();
-		if(pathName=="")
-		{
-			pathName=fn2;
-		}
-		else fn2=pathName;
-	}
-	else
-		return;
-	dirName=pathName.Left(pathName.ReverseFind('\\')+1);
-	float mindiff,maxdiff;
-
-	CMFeatDlg setDlg;
-	setDlg.m_level=1;
-	setDlg.m_maxDiff=20;
-	setDlg.m_minDiff=20;
-//	setDlg.GetDlgItem(IDC_STATIC_LEVELUSE)->ShowWindow(SW_HIDE);
-//	setDlg.GetDlgItem(IDC_EDIT_LEVELUSE)->ShowWindow(SW_HIDE);
-	setDlg.m_bandUse="";
-	if( setDlg.DoModal() == IDOK)
-	{
-		storey=setDlg.m_level;
-		maxdiff=setDlg.m_maxDiff;
-		mindiff=setDlg.m_minDiff;
-	}
-	else return;
-	if(maxdiff!=mindiff) 
-	{
-		storey=1;
-		mindiff=maxdiff;
-	}
-	int *regCount=new int[storey*3];//for 3 seg hierarchy, first, second, merged
-	char bale[100]={0};
-	char bulk[100]={0};
-	int i;
-
-	//segment and fuse
-	SynMultiSeg(fn1,fn2,mindiff,maxdiff,storey,regCount,2);
-
-
-//compute region signitures and similarity
-
-	int regNum0=regCount[2*storey];
-	const int bandNum=2;
-	float*storage0=new float[regNum0];
-	sprintf(bale,"%smerge-rect-%.0f.txt",dirName,mindiff);
-	sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,mindiff);
-	m_HC.Clear();
-	m_HC.ReadSeg(bale,bulk);
-
-	IplImage*bandPtr1[bandNum],*bandPtr2[bandNum];
-	int wid=m_HC.GetWidth(), heg=m_HC.GetHeight();
-	CvSize sz=cvSize(wid,heg);
-	for(i=0;i<bandNum;++i)
-	{
-		bandPtr1[i]=cvCreateImage(sz,IPL_DEPTH_32F,1);
-		bandPtr2[i]=cvCreateImage(sz,IPL_DEPTH_32F,1);
-	}
-
-	sprintf(bale,"%slbp1.txt",dirName);
-	sprintf(bulk,"%svar1.txt",dirName);
-	ImportImg((const char*)bale,bandPtr1[0]);
-	ImportImg((const char*)bulk,bandPtr1[1]);
-	sprintf(bale,"%slbp2.txt",dirName);
-	sprintf(bulk,"%svar2.txt",dirName);
-	ImportImg((const char*)bale,bandPtr2[0]);
-	ImportImg((const char*)bulk,bandPtr2[1]);
-	float perct[11];
-	sprintf(bale,"%spercentile.txt",dirName);
-	if(!ImportData((const char*)bale,perct,11))
-	{
-		AfxMessageBox("error reading percentile.txt");
-		return;
-	}
-	perct[0]=0.f;
-	perct[10]=1e20f;
-LBPCRegSimi(&m_HC,bandPtr1,bandPtr2,perct,storage0);
-
-	delete[]regCount;
-	for(i=0;i<bandNum;++i)
-	{
-		cvReleaseImage(&bandPtr1[i]);
-		cvReleaseImage(&bandPtr2[i]);
-	}
-	for(i=0;i<5;++i)
-	{
-		float mark=i/10.f;
-
-		m_HC.RegSimiThresh(storage0,mark);
-	}
-	delete[]storage0;
-}
-
 
 
 void CImageDoc::OnPrepTextimg() 
@@ -1164,146 +934,7 @@ void CImageDoc::OnPrepTextimg()
 	fn1=pathName.Left(pos1)+fn1;
 //	Text2Image((const char*)pathName,(const char*)fn1);
 }
-//synchronic multilevel image segmnetation, method=0 for intersection merge with connected region mergeseg with tagArray
-//method=1 for intersection merge with not connected region by mergeseg(index)
-//method=2 for simutaneously segmentation
-int CImageDoc::SynMultiSeg(CString fn1, CString fn2, float mindiff, float maxdiff, int storey,int*regCount,int method)
-{
 
-	char bale[100]={0};
-	char bulk[100]={0};
-	int i;
-	int wid,heg;
-	float curdiff;
-
-	i=fn1.ReverseFind('\\');
-	CString dirName=fn1.Left(i+1);
-
-	if(method==2)
-	{
-		GDALDataset* pDataset1=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
-		if(!pDataset1)
-			AfxMessageBox("cannot open image for m_HC!");
-		GDALDataset* pDataset2=(GDALDataset *) GDALOpen(fn2,GA_ReadOnly);
-		if(!pDataset2)
-			AfxMessageBox("cannot open image for m_HC!");
-			BuildData(&m_HC,m_pDataset,bWArray);
-
-		wid=m_HC.GetWidth();
-		heg=m_HC.GetHeight();
-		m_HC.InitiateRegionSet();
-		for(i=0;i<storey;++i)
-		{
-			if(storey==1) curdiff=mindiff;
-			else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-			m_HC.MRS(curdiff);
-			m_HC.RegionLabel();
-			sprintf(bale,"%smerge-rect-%.0f.txt",dirName,curdiff);
-			sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,curdiff);
-			regCount[i]= m_HC.StoreSeg(bale,bulk);
-			regCount[i+storey]=regCount[i];
-			regCount[i+storey*2]=regCount[i];
-		}
-		m_HC.Clear();
-		GDALClose((GDALDatasetH)pDataset1);
-		GDALClose((GDALDatasetH)pDataset2);
-		return 1;
-	}
-	GDALDataset* pDataset=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
-	if(!pDataset)
-		AfxMessageBox("cannot open image for m_HC!");
-	BuildData(&m_HC,m_pDataset,bWArray);
-
-	wid=m_HC.GetWidth();
-	heg=m_HC.GetHeight();
-	m_HC.InitiateRegionSet();
-
-	for(i=0;i<storey;++i)
-	{
-		if(storey==1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		m_HC.MRS(curdiff);
-		m_HC.RegionLabel();
-		sprintf(bale,"%st1-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%st1-tagmat-%.0f.txt",dirName,curdiff);
-		regCount[i]= m_HC.StoreSeg(bale,bulk);
-	}
-	m_HC.Clear();
-	GDALClose((GDALDatasetH)pDataset);
-//segment image t2
-	pDataset=(GDALDataset *) GDALOpen(fn2,GA_ReadOnly);
-	if(!pDataset)
-		AfxMessageBox("cannot open image for m_HC!");
-	BuildData(&m_HC,m_pDataset,bWArray);
-
-	assert(	wid==m_HC.GetWidth()&&heg==m_HC.GetHeight());
-	m_HC.InitiateRegionSet();
-
-	for(i=0;i<storey;++i)
-	{
-		if(storey==1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		m_HC.MRS(curdiff);
-		m_HC.RegionLabel();
-	
-		sprintf(bale,"%st2-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%st2-tagmat-%.0f.txt",dirName,curdiff);
-		regCount[i+storey]= m_HC.StoreSeg(bale,bulk);
-	}
-	m_HC.Clear();
-	GDALClose((GDALDatasetH)pDataset);
-//merge segmenation
-	int* tagArray1=new int[wid*heg];
-	int* tagArray2=new int[wid*heg];
-	vector<int> index1,index2;
-	vector<CRect>grid1,grid2;
-	for(i=0;i<storey;++i)
-	{		
-		if(index1.size())
-		{
-			grid1.clear();
-			index1.clear();
-		}
-		if(storey<=1) curdiff=mindiff;
-		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*i;
-		grid1=vector<CRect>(regCount[i]);	
-		index1=vector<int>(regCount[i]);
-		sprintf(bale,"%st1-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%st1-tagmat-%.0f.txt",dirName,curdiff);
-		ReadSeg(bale,bulk,index1,grid1,tagArray1);
-
-		if(index2.size())
-		{
-			grid2.clear();
-			index2.clear();
-		}
-		grid2=vector<CRect>(regCount[i+storey]);
-		index2=vector<int>(regCount[i+storey]);
-		sprintf(bale,"%st2-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%st2-tagmat-%.0f.txt",dirName,curdiff);
-		ReadSeg(bale,bulk,index2,grid2,tagArray2);
-	
-		sprintf(bale,"%smerge-rect-%.0f.txt",dirName,curdiff);
-		sprintf(bulk,"%smerge-tagmat-%.0f.txt",dirName,curdiff);
-		m_HC.Clear();
-		m_HC.SetWH(wid,heg);
-		if(method==1)
-			m_HC.MergeSeg(index1,tagArray1,grid1,index2,tagArray2,grid2);
-		else
-			m_HC.MergeSeg(tagArray1,tagArray2);
-		regCount[i+2*storey]=m_HC.StoreSeg(bale,bulk);
-	}
-	grid1.clear();
-	grid2.clear();
-	index1.clear();
-	index2.clear();
-	m_HC.Clear();
-	delete []tagArray1;
-	tagArray1=NULL;
-	delete []tagArray2;
-	tagArray2=NULL;
-	return 1;
-}
 
 
 void CImageDoc::OnSegRandIndex() 
@@ -1343,9 +974,10 @@ void CImageDoc::OnPrepSatHue()
 	// TODO: Add your command handler code here
 	int bandInd[3]={1,2,3};
 	CBandSelDlg IDlg; 
-	int rasCount=m_pDataset->GetRasterCount();
+	CString fn=GetPathName();
+	int rasCount;
+	ImageProps(rasCount,IDlg.m_DataType,fn);
 	IDlg.m_Band=rasCount;
-	IDlg.m_DataType=m_DIB.GetDataType(m_pDataset);
 	IDlg.m_R=1;
 	IDlg.m_G=2;
 	IDlg.m_B=3;
@@ -1362,7 +994,7 @@ void CImageDoc::OnPrepSatHue()
 		if(bandInd[i]>rasCount)
 			bandInd[i]=1;
 
-	ColorTransform(m_pDataset,bandInd,GetPathName());
+	ColorTransform(bandInd,fn);
 
 }
 
@@ -1386,7 +1018,7 @@ void CImageDoc::OnClassBuilding()
 		opts.maxArea=build.m_MaxArea;
 		opts.minWid=build.m_MinWid;
 	}
-	CString fn1=GetPathName();
+
 //	CString dirName="F:\\landcruiser\\TIFFIMAGE\\testsite\\";
 //	CString fn1=dirName+"spotp87.tif";
 //	CString fn2=dirName+"spotp92.tif";
@@ -1422,16 +1054,15 @@ void CImageDoc::OnClassBuilding()
 	dirName=pathName.Left(pathName.ReverseFind('\\')+1);
 	CString fmask=dirName+"Mask.tif";*/
 	float curdiff=30.f;
-	GDALDataset* pDataset1=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
-	if(!pDataset1)
-		AfxMessageBox("cannot open image for m_HC!");
+
 //	GDALDataset* pDataset2=(GDALDataset *) GDALOpen(fn1,GA_ReadOnly);
 //			if(!pDataset2)
 //				AfxMessageBox("cannot open image for m_HC!");
 	//	IplImage*mask=LoadGDALToIPL(fmask,1,8);
 //	m_DIB.CreateDIBFromIPL(wid,heg,mask->imageData,8);
 	//GDALClose((GDALDatasetH)pDataset1);
-	BuildData(&m_HC,pDataset1,bWArray);
+	CString fn1=GetPathName();
+	BuildData(m_HC,fn1,bWArray);
 
 	int wid=m_HC.GetWidth();
 	int heg=m_HC.GetHeight();
@@ -1439,14 +1070,13 @@ void CImageDoc::OnClassBuilding()
 	m_HC.MRS(curdiff);
 	m_HC.RegionLabel();	
 
-	RegionProps(&m_HC);//mask
-
+	if(m_HC.PrepPropMemo(7))
+	m_HC.RegionProps();
 	IplImage*result=LoadGDALToIPL(fn1,3,8);
 	BuildingCand(&m_HC,&opts,result);
 
 	m_DIB.Clear();
 	m_DIB.CreateDIBFromIPL(wid,heg,result->imageData,24);
-	GDALClose((GDALDatasetH)pDataset1);
 //	m_DIB.SaveToFile("Buildingxx.bmp");
 	cvReleaseImage(&result);
 
@@ -1617,8 +1247,8 @@ void CImageDoc::OnSegMeanShiftDzj()
 		}
 	}
 	//debugging is needed for the following 2 lines to work out
-//	resultDlg.ShowWindow(SW_SHOW);
-//	resultDlg.SetImage(contourdata, m_DIB.GetWidth(),m_DIB.GetHeight());
+	resultDlg.ShowWindow(SW_SHOW);
+	resultDlg.SetImage(contourdata,width,height,24);
 	delete [] contourdata; contourdata = NULL;
 
 	//在VIEW中显示分割结果图像；
@@ -1766,7 +1396,7 @@ void CImageDoc::OnSegWatershedVincent()
 
 	memset( gradientfre, 0, 256*sizeof(INT));//清零，下面用作某梯度内的指针；
 	//自左上至右下sorting....
-	for (y=0; y<imageHeight; y++)
+	for ( y=0; y<imageHeight; y++)
 	{
 		xstart = y*imageWidth;
 		for (INT x=0; x<imageWidth; x++)
@@ -1880,7 +1510,7 @@ void CImageDoc::OnSegWatershedVincent()
 	int width = imageWidth;
 	int height = imageHeight;
 	BYTE* contourdata = new BYTE[imageWidth*imageHeight*3];
-	for (y=1; y<height-1; y++)
+	for ( y=1; y<height-1; y++)
 	{
 		int lstart = y * width;
 		for (int x=1; x<width-1; x++)
@@ -1906,8 +1536,8 @@ void CImageDoc::OnSegWatershedVincent()
 		}
 	}
 	//debugging need to make the 3 lines work out right
-//	resultDlg.ShowWindow(SW_SHOW);
-//	resultDlg.SetImage(contourdata, imageWidth, imageHeight);
+	resultDlg.ShowWindow(SW_SHOW);
+	resultDlg.SetImage(contourdata, imageWidth, imageHeight,24);
 	delete [] contourdata; contourdata = NULL;
 //*/
 
@@ -2144,7 +1774,7 @@ void CImageDoc::OnSegWatershedInver()
 
 	memset( gradientfre, 0, 256*sizeof(INT));//清零，下面用作某梯度内的指针；
 	//自左上至右下sorting....
-	for (y=0; y<imageHeight; y++)
+	for ( y=0; y<imageHeight; y++)
 	{
 		xstart = y*imageWidth;
 		for (INT x=0; x<imageWidth; x++)
@@ -2822,7 +2452,7 @@ void CImageDoc::OnTextureCorrBinary()
 
 
 //255 denote change 0 for no change
-	cvThreshold(corr,binary,0.5f,255,CV_THRESH_BINARY_INV);
+	cvThreshold(corr,binary,0.6f,255,CV_THRESH_BINARY_INV);
 	cvReleaseImage(&intens1);
 	cvReleaseImage(&intens2);
 	cvReleaseImage(&corr);
@@ -2855,7 +2485,7 @@ void CImageDoc::OnTextureCorrBinary()
 	m_DIB.CreateDIBFromIPL(w,h,dst->imageData,8);
 	pFrame->pImageView->Invalidate(FALSE);
 	fn2=dirName+"Mask.tif";
-	m_DIB.SaveToFile(m_pDataset,fn2);
+	m_DIB.SaveToFile(GetPathName(),fn2);
 
 	IplImage*mat1=LoadGDALToIPL((const char*)fn1,1,8);
 	for(int j=0;j<h;++j)
@@ -2967,7 +2597,10 @@ void CImageDoc::OnTextureGradCorr()
 				denom=((float*)(dfx1->imageData + wS*bt))[rt]+
 				((float*)(dfx2->imageData + wS*bt))[rt];
 				numer=	((float*)(c12->imageData + wS*bt))[rt];
-				((float*)(rtp->imageData + wS*j))[i]=numer*2/denom;
+					if(abs(denom)<1e-2)
+				((float*)(rtp->imageData + wS*j))[i]=0;
+				else
+				((float*)(rtp->imageData + wS*j))[i]=1-numer*2/denom;
 			}
 			else if(tp==0&&lf>0)
 			{
@@ -2978,8 +2611,10 @@ void CImageDoc::OnTextureGradCorr()
 			
 				numer=	((float*)(c12->imageData + wS*bt))[rt]-
 				((float*)(c12->imageData + wS*bt))[lf-1];
-				((float*)(rtp->imageData + wS*j))[i]=numer*2/denom;
-							
+					if(abs(denom)<1e-2)
+				((float*)(rtp->imageData + wS*j))[i]=0;
+				else
+				((float*)(rtp->imageData + wS*j))[i]=1-numer*2/denom;
 			}
 			else if(lf==0&&tp>0)
 			{
@@ -2990,8 +2625,10 @@ void CImageDoc::OnTextureGradCorr()
 			
 				numer=	((float*)(c12->imageData + wS*bt))[rt]-
 				((float*)(c12->imageData + wS*(tp-1)))[rt];
-				((float*)(rtp->imageData + wS*j))[i]=numer*2/denom;
-			
+					if(abs(denom)<1e-2)
+				((float*)(rtp->imageData + wS*j))[i]=0;
+				else
+				((float*)(rtp->imageData + wS*j))[i]=1-numer*2/denom;
 			
 			}
 			else
@@ -3009,14 +2646,14 @@ void CImageDoc::OnTextureGradCorr()
 					((float*)(c12->imageData + wS*(tp-1)))[lf-1]-
 					((float*)(c12->imageData + wS*(tp-1)))[rt]-
 					((float*)(c12->imageData + wS*bt))[lf-1];
-				((float*)(rtp->imageData + wS*j))[i]=numer*2/denom;
-			
+					
+					if(abs(denom)<1e-2)
+				((float*)(rtp->imageData + wS*j))[i]=0;
+				else
+				((float*)(rtp->imageData + wS*j))[i]=1-numer*2/denom;
 			}
 		}
 	}
-	
-	
-
 
 //compute gip and store it in c12
 	for(j=0;j<h;++j)
@@ -3032,6 +2669,10 @@ void CImageDoc::OnTextureGradCorr()
 			{
 				denom=((float*)(dfx1->imageData + wS*bt))[rt];
 				numer=((float*)(dfx2->imageData + wS*bt))[rt];
+
+				if(__max(numer,denom)==0)
+					((float*)(c12->imageData + wS*j))[i]=0;
+				else
 				((float*)(c12->imageData + wS*j))[i]=sqrt(__max(numer,denom)/sz);
 			}
 			else if(tp==0&&lf>0)
@@ -3039,7 +2680,11 @@ void CImageDoc::OnTextureGradCorr()
 				denom=((float*)(dfx1->imageData + wS*bt))[rt]-
 					((float*)(dfx1->imageData + wS*bt))[lf-1];
 				numer=((float*)(dfx2->imageData + wS*bt))[rt]-
-					((float*)(dfx2->imageData + wS*bt))[lf-1];			
+					((float*)(dfx2->imageData + wS*bt))[lf-1];	
+
+				if(__max(numer,denom)==0)
+					((float*)(c12->imageData + wS*j))[i]=0;
+				else
 				((float*)(c12->imageData + wS*j))[i]=sqrt(__max(numer,denom)/sz);
 							
 			}
@@ -3049,6 +2694,10 @@ void CImageDoc::OnTextureGradCorr()
 					((float*)(dfx1->imageData + wS*(tp-1)))[rt];
 				numer=((float*)(dfx2->imageData + wS*bt))[rt]-
 					((float*)(dfx2->imageData + wS*(tp-1)))[rt];
+
+				if(__max(numer,denom)==0)
+					((float*)(c12->imageData + wS*j))[i]=0;
+				else
 				((float*)(c12->imageData + wS*j))[i]=sqrt(__max(numer,denom)/sz);
 
 			
@@ -3064,8 +2713,10 @@ void CImageDoc::OnTextureGradCorr()
 					((float*)(dfx2->imageData + wS*(tp-1)))[lf-1]-
 					((float*)(dfx2->imageData + wS*(tp-1)))[rt]-
 					((float*)(dfx2->imageData + wS*bt))[lf-1];
-			
-					((float*)(c12->imageData + wS*j))[i]=sqrt(__max(numer,denom)/sz);
+					if(__max(numer,denom)==0)
+					((float*)(c12->imageData + wS*j))[i]=0;
+				else
+				((float*)(c12->imageData + wS*j))[i]=sqrt(__max(numer,denom)/sz);
 			
 			}
 		}
@@ -3085,7 +2736,8 @@ void CImageDoc::OnTextureGradCorr()
 	cvNamedWindow(out_win_name, CV_WINDOW_AUTOSIZE);
 	CMainFrame* pFrame = (CMainFrame*) AfxGetApp()->GetMainWnd();
 
-		cvThreshold(dfx1,binary,0.2f,200,CV_THRESH_BINARY);
+		cvThreshold(dfx1,binary,0.4f,200,CV_THRESH_BINARY);//binary and dfx1 should be of same type, correction needed
+
 		m_DIB.CreateDIBFromIPL(w,h,binary->imageData,8);
 		pFrame->pImageView->Invalidate(FALSE);	
 		cvShowImage(out_win_name, binary);
@@ -3349,7 +3001,9 @@ void CImageDoc::OnClassBuildingIsodata()
 	//	assert(count==comps);
 	m_HC.DefReg(label,count);
 	m_HC.SetTag(label);
-	RegionProps(&m_HC);//mask
+	if(m_HC.PrepPropMemo(7))
+	m_HC.RegionProps();
+
 	//GDALClose((GDALDatasetH)pDataset1);
 	
 	IplImage*result=cvCreateImage(bound, IPL_DEPTH_8U,3);
@@ -3371,4 +3025,271 @@ void CImageDoc::OnClassBuildingIsodata()
 	m_HC.Clear();
 	CMainFrame* pFrame = (CMainFrame*) AfxGetApp()->GetMainWnd();
 	pFrame->pImageView->Invalidate(FALSE);	
+}
+
+void CImageDoc::OnClassMultiBuild() 
+{
+	// TODO: Add your command handler code here
+	HCParams opts;
+	float mindiff,maxdiff,curdiff;
+	int k;
+	CMFeatDlg setDlg;
+	setDlg.m_level=2;
+	setDlg.m_maxDiff=40;
+	setDlg.m_minDiff=20;
+//	setDlg.GetDlgItem(IDC_STATIC_LEVELUSE)->ShowWindow(SW_HIDE);
+//	setDlg.GetDlgItem(IDC_EDIT_LEVELUSE)->ShowWindow(SW_HIDE);
+	setDlg.m_bandUse="";
+	if( setDlg.DoModal() == IDOK)
+	{
+		storey=setDlg.m_level;
+		maxdiff=setDlg.m_maxDiff;
+		mindiff=setDlg.m_minDiff;
+	
+		GetBWArray(setDlg.m_bandUse,bWArray);
+		GetLevelArray(setDlg.m_levelUse,levelUse);
+	}
+	else return;
+	if(maxdiff==mindiff) storey=1;
+
+	CString fn1=GetPathName();
+
+	IplImage*t1=LoadGDALToIPL(fn1,1,8);
+
+
+
+	
+	BuildData(m_HC,fn1,bWArray);
+	int wid=m_HC.GetWidth(),heg=m_HC.GetHeight();
+	m_HC.InitiateRegionSet();
+
+	IplImage*result=LoadGDALToIPL(fn1,3,8);
+//open shade mask
+	fn1="E:\\landcruiser\\TIFFIMAGE\\1103SHADE.tif";
+
+	IplImage*shadeImg=LoadGDALToIPL(fn1,1,8);
+//load nochange mask
+	fn1="E:\\landcruiser\\TIFFIMAGE\\Mask.tif";
+
+	IplImage*changeImg=LoadGDALToIPL(fn1,1,8);
+
+	for(k=0;k<storey;++k)
+	{
+		if(storey==1) curdiff=mindiff;
+		else	curdiff=mindiff+(maxdiff-mindiff)/(storey-1)*k;
+		m_HC.MRS(curdiff);
+		m_HC.RegionLabel();
+		if(m_HC.PrepPropMemo(10))
+		{
+			m_HC.RegionProps();
+			ShadeRatio(m_HC,changeImg,false);
+			ShadeRatio(m_HC,shadeImg,true);
+		}
+		
+		BuildingCand2(m_HC,&opts,result);
+	/*	int count;
+		count=wid*heg;
+
+		int *label=new int[count];
+		float*est[1];
+		float *mustard=new float[k*2];
+		est[0]=mustard;
+		float *array=new float[count];
+		for(j=0;j<heg;++j){
+			for(i=0;i<wid;++i)
+			{
+				array[j*wid+i]=((BYTE*)(t1->imageData + t1->widthStep*j))[i];
+			}
+		}
+		MyKmeans(array,1,label,count,est,k);
+		delete[] array;
+		delete[]mustard;
+		//kmeans end
+		
+		
+		//morphology operations to fill holes and prune branches
+		int n = 1;
+		int an = n > 0 ? n : -n;
+		IplConvKernel* element = 0;
+		int element_shape = CV_SHAPE_RECT;
+		
+		element = cvCreateStructuringElementEx( an*2+1, an*2+1, an, an, element_shape, 0 );
+		
+		
+		
+		IplImage *dst=cvCreateImage(cvSize(wid,heg),IPL_DEPTH_8U,1);
+		count=0;
+		for(j=0; j<heg; ++j)
+		{	
+			for(i=0; i<wid; ++i) 
+			{
+				((BYTE*)(dst->imageData + dst->widthStep*j))[i]=(int)label[count];				
+				++count;
+			}
+		}
+		
+		for(i=0;i<2;++i) 
+		{
+			cvDilate(dst,dst,element,1);
+			
+			cvErode(dst,dst,element,1);
+			//opening black area with value 0  
+			cvErode(dst,dst,element,1);
+			
+			cvDilate(dst,dst,element,1);
+			
+		}
+		
+		
+		count=0;
+		for(j=0; j<heg; ++j)
+		{
+			for(i=0; i<wid; ++i) 
+			{
+				label[count]=((BYTE*)(dst->imageData + dst->widthStep*j))[i];				
+				++count;
+			}
+		}
+		cvReleaseImage(&dst);
+		cvReleaseStructuringElement(&element);
+		
+		m_HC.Clear();
+		m_HC.SetWH(wid,heg);
+		
+		count=m_HC.MiniTag(label);
+		//test 
+		int mintemp=1e6,maxtemp=0;
+		for(i=0;i<wid*heg;++i)
+		{
+			mintemp=__min(label[i],mintemp);
+			maxtemp=__max(label[i],maxtemp);
+		}
+		assert(mintemp==0&&maxtemp==count-1);
+		
+		//	assert(count==comps);
+		m_HC.DefReg(label,count);
+		m_HC.SetTag(label);
+		delete[]label;
+		if(m_HC.PrepPropMemo(10))
+		{
+			m_HC.RegionProps();
+			ShadeRatio(m_HC,changeImg,false);
+			ShadeRatio(m_HC,shadeImg,true);
+		}
+		BuildingCand2(m_HC,&opts,result);*/
+		
+	}
+	m_DIB.Clear();
+	m_DIB.CreateDIBFromIPL(wid,heg,result->imageData,24);
+	//	m_DIB.SaveToFile("Buildingxx.bmp");
+	cvReleaseImage(&result);
+	
+	m_HC.Clear();
+	CMainFrame* pFrame = (CMainFrame*) AfxGetApp()->GetMainWnd();
+	pFrame->pImageView->Invalidate(FALSE);
+
+}
+
+void CImageDoc::OnTextureGeometricCD() 
+{
+	// TODO: Add your command handler code here
+	CString dirName="F:\\landcruiser\\TIFFIMAGE\\testsite\\";
+	CString fn1=dirName+"spotp87.tif";
+	CString fn2=dirName+"spotp92.tif";
+//open image at epochs 1 and 2 
+	CFileDialog FileDlg( TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,szFilter);
+	FileDlg.m_ofn.lpstrInitialDir=dirName;
+	FileDlg.m_ofn.nFilterIndex=2; 
+	FileDlg.m_ofn.lpstrTitle="Select image at time 1 for change detection";
+	CString pathName;
+	if( FileDlg.DoModal() == IDOK)
+	{	
+		pathName =FileDlg.GetPathName();
+		if(pathName=="")
+		{
+			pathName=fn1;
+		}
+		else fn1=pathName;
+	}
+	else
+		return;
+	FileDlg.m_ofn.lpstrTitle="Select image at time 2 for change detection";
+	if( FileDlg.DoModal() == IDOK)
+	{	
+		pathName =FileDlg.GetPathName();
+		if(pathName=="")
+		{
+			pathName=fn2;
+		}
+		else fn2=pathName;
+	}
+	else
+		return;
+	dirName=pathName.Left(pathName.ReverseFind('\\')+1);
+	CMFeatDlg setDlg;
+	setDlg.m_level=2;
+	setDlg.m_maxDiff=40;
+	setDlg.m_minDiff=20;
+//	setDlg.GetDlgItem(IDC_STATIC_LEVELUSE)->ShowWindow(SW_HIDE);
+//	setDlg.GetDlgItem(IDC_EDIT_LEVELUSE)->ShowWindow(SW_HIDE);
+	setDlg.m_bandUse="";
+
+	if( setDlg.DoModal() == IDOK)
+	{
+//		detector.Init(setDlg.m_level,setDlg.m_minDiff,setDlg.m_maxDiff);
+		GetBWArray(setDlg.m_bandUse,bWArray);
+		GetLevelArray(setDlg.m_levelUse,levelUse);
+	}
+	else return;
+
+	float curdiff=setDlg.m_minDiff;
+
+	char bale[100]={0};
+	char bulk[100]={0};
+	BeginWaitCursor();
+	//segment and fuse
+	CHC m_HC;
+	BuildData(m_HC,fn1,bWArray);//builddata can affect the values of bwarray
+	
+	m_HC.InitiateRegionSet();
+	m_HC.MRS(curdiff);
+	m_HC.RegionLabel();
+	sprintf(bale,"%st1-rect-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st1-tagmat-%.0f.txt",dirName,curdiff);
+	m_HC.StoreSeg(bale,bulk);
+	m_HC.Clear();
+	BuildData(m_HC,fn2,bWArray);//builddata can affect the values of bwarray
+	
+	m_HC.InitiateRegionSet();
+	
+	m_HC.MRS(curdiff);
+	m_HC.RegionLabel();
+	sprintf(bale,"%st2-rect-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st2-tagmat-%.0f.txt",dirName,curdiff);
+	m_HC.StoreSeg(bale,bulk);
+	m_HC.Clear();
+	//	detector.CreateChangeMask(label);
+	ChangeDetector alpha;
+	sprintf(bale,"%st1-rect-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st2-rect-%.0f.txt",dirName,curdiff);
+	alpha.PrepRegList(bale,bulk);
+	sprintf(bale,"%st1-tagmat-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st2-tagmat-%.0f.txt",dirName,curdiff);
+	alpha.PrepLabel(bale,bulk);
+	alpha.InitPairs();
+	alpha.MorphDiff(0.0,1.5);
+	alpha.Detect(0.0,0.7);
+	resultDlg.ShowWindow(SW_SHOW);
+	resultDlg.SetImage(alpha.buf,alpha.width,alpha.height,8);
+	alpha.SaveChange(fn1,dirName+"changemap.tif");
+
+	EndWaitCursor();
+	sprintf(bale,"%st1-rect-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st2-rect-%.0f.txt",dirName,curdiff);
+	remove(bale);
+	remove(bulk);
+		sprintf(bale,"%st1-tagmat-%.0f.txt",dirName,curdiff);
+	sprintf(bulk,"%st2-tagmat-%.0f.txt",dirName,curdiff);
+		remove(bale);
+	remove(bulk);
 }

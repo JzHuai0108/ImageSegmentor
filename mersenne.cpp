@@ -10,7 +10,7 @@
 *                                                                            *
 *  Experts consider this an excellent random number generator.               *
 *                                                                            *
-*  © 2001 - 2004 A. Fog.                                                     *
+*  ?2001 - 2004 A. Fog.                                                     *
 *  GNU General Public License www.gnu.org/copyleft/gpl.html                  *
 *****************************************************************************/
 #include "stdafx.h"
@@ -29,9 +29,9 @@ void TRandomMersenne::RandomInit(uint32 seed) {
   convert.f = 1.0;
   // Note: Old versions of the Gnu g++ compiler may make an error here,
   // compile with the option  -fenum-int-equiv  to fix the problem
-  if (convert.i[1] == 0x3FF00000) Architecture = LITTLEENDIAN;
-  else if (convert.i[0] == 0x3FF00000) Architecture = BIGENDIAN;
-  else Architecture = NONIEEE;}
+  if (convert.i[1] == 0x3FF00000) Architecture = LittleEndian;
+  else if (convert.i[0] == 0x3FF00000) Architecture = BigEndian;
+  else Architecture = NonIEEE;}
 
   
 void TRandomMersenne::RandomInitByArray(uint32 seeds[], int length) {
@@ -97,17 +97,17 @@ double TRandomMersenne::Random() {
   // are stored. The storing method is tested in function RandomInit and saved 
   // in the variable Architecture. The following switch statement can be
   // omitted if the architecture is known. (A PC running Windows or Linux uses
-  // LITTLEENDIAN architecture):
+  // LittleEndian architecture):
   switch (Architecture) {
-  case LITTLEENDIAN:
+  case LittleEndian:
     convert.i[0] =  r << 20;
     convert.i[1] = (r >> 12) | 0x3FF00000;
     return convert.f - 1.0;
-  case BIGENDIAN:
+  case BigEndian:
     convert.i[1] =  r << 20;
     convert.i[0] = (r >> 12) | 0x3FF00000;
     return convert.f - 1.0;
-  case NONIEEE: default:
+  case NonIEEE: default:
   ;} 
   // This somewhat slower method works for all architectures, including 
   // non-IEEE floating point representation:

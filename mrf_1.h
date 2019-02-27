@@ -12,8 +12,6 @@
 #include "cv.h"
 #include "highgui.h"
 
-using namespace std;
-
 // Ö÷ÒªÀà
 class ImageOperations
 {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg.h 18227 2009-12-09 13:08:16Z chaitanya $
+ * $Id: gdal_alg.h 22655 2011-07-06 18:29:28Z rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes, and definitions for various GDAL based algorithms.
@@ -90,6 +90,14 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
                 void * pProgressArg );
 
 CPLErr CPL_DLL CPL_STDCALL
+GDALFPolygonize( GDALRasterBandH hSrcBand,
+                GDALRasterBandH hMaskBand,
+                OGRLayerH hOutLayer, int iPixValField,
+                char **papszOptions,
+                GDALProgressFunc pfnProgress,
+                void * pProgressArg );
+
+CPLErr CPL_DLL CPL_STDCALL
 GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
                  GDALRasterBandH hDstBand,
                  int nSizeThreshold, int nConnectedness,
@@ -157,6 +165,12 @@ int CPL_DLL GDALReprojectionTransform(
 void CPL_DLL *
 GDALCreateGCPTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
                           int nReqOrder, int bReversed );
+			  
+/* GCP based transformer with refinement of the GCPs ... forward is to georef coordinates */
+void CPL_DLL *
+GDALCreateGCPRefineTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
+                                int nReqOrder, int bReversed, double tolerance, int minimumGcps);
+			  
 void CPL_DLL GDALDestroyGCPTransformer( void *pTransformArg );
 int CPL_DLL GDALGCPTransform( 
     void *pTransformArg, int bDstToSrc, int nPointCount,

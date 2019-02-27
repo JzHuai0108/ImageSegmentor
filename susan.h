@@ -199,7 +199,7 @@ void setup_brightness_lut(
 		temp=temp*temp;
 		if (form==6)
 			temp=temp*temp*temp;
-		temp=100.0*exp(-temp);
+		temp=100.f*exp(-temp);
 		*(*bp+k)= (uchar)temp;
 	}
 }

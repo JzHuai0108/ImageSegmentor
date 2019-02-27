@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
 #include "mrf_1.h"
-
+using namespace std;
 
 
 /* --------------------------------------------------------- */

@@ -182,7 +182,7 @@ BOOL MyColorSpace::Rgb2Hsv2(FLOAT r, FLOAT g, FLOAT b, FLOAT& h, FLOAT& s, FLOAT
 		h = 0;
 	}else
 	{
-		h = (FLOAT) acos( (2*r-g-b) / ( 2.0 * sqrt( pow((r-g),2.0) + (r-b)*(g-b) ) ) );
+		h = (FLOAT) acos( (2*r-g-b) / ( 2.0 * sqrt( pow((r-g),2) + (r-b)*(g-b) ) ) );
 	}
 	if (b>g) 
 	{
@@ -373,10 +373,10 @@ BOOL MyColorSpace::Xyz2Luv(FLOAT x, FLOAT y, FLOAT z, FLOAT& l, FLOAT& u, FLOAT&
 //The white point is D65 and have coordinates fixed as (xn;yn)=(0.312713;0.329016). 
 //上面这句不懂意思。Xn、Yn和Zn的值来自D. Comaniciu, P. Meer，Robust Analysis of Feature Spaces: Color Image Segmentation 的相应代码
 {
-	DOUBLE tempb = pow((y/Yn), (1.0/3.0));
+	DOUBLE tempb = pow((y/Yn), (1.f/3.f));
 	if (y/Yn>0.008856)
 	{
-		l = (FLOAT) ( 116 * pow((y/Yn), (1.0/3.0)) );
+		l = (FLOAT) ( 116 * pow((y/Yn), (1.f/3.f)) );
 	}else
 	{
 		l = (FLOAT) ( 903.3 * y/Yn );
@@ -408,7 +408,7 @@ FLOAT MyColorSpace::Labf(FLOAT input, FLOAT Y_Yn)
 {
 	if (Y_Yn>0.008856)
 	{
-		return (FLOAT)pow(input, (1.0/3.0));		
+		return (FLOAT)pow(input, (1.f/3.f));		
 	}else
 	{
 		return (FLOAT) ( 7.787*input + 16./116. );
@@ -421,7 +421,7 @@ BOOL MyColorSpace::Xyz2Lab(FLOAT x, FLOAT y, FLOAT z, FLOAT& l, FLOAT& a, FLOAT&
 	FLOAT y_yn = y / Yn;
 	if (y_yn>0.008856)
 	{
-		l = (FLOAT) ( 116. * pow(y_yn, 1./3.) );
+		l = (FLOAT) ( 116. * pow(y_yn, 1.f/3.f) );
 	}else
 	{
 		l = (FLOAT) ( 903.3 * y_yn );
@@ -436,7 +436,7 @@ BOOL MyColorSpace::Lab2Lch(FLOAT li, FLOAT a, FLOAT b, FLOAT& lo, FLOAT& c, FLOA
 //CIE Lab to CIE LCH, 根据David Bourgin, Color space FAQ
 {
     lo = li;
-    c = (FLOAT) ( pow( (a*a+b*b), 0.5) );
+    c = (FLOAT) ( pow( (a*a+b*b), 0.5f) );
 
 	INT k= -1;
 	if (a>=0 && b>=0)

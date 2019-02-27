@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_api.h 17970 2009-11-06 20:00:29Z warmerdam $
+ * $Id: ogr_srs_api.h 22514 2011-06-08 12:57:26Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API and constant declarations for OGR Spatial References.
@@ -115,6 +115,7 @@ typedef enum {
 #define SRS_PT_GEOSTATIONARY_SATELLITE                                  \
                                 "Geostationary_Satellite"
 #define SRS_PT_GOODE_HOMOLOSINE "Goode_Homolosine"
+#define SRS_PT_IGH              "Interrupted_Goode_Homolosine"
 #define SRS_PT_GNOMONIC         "Gnomonic"
 #define SRS_PT_HOTINE_OBLIQUE_MERCATOR                                  \
                                 "Hotine_Oblique_Mercator"
@@ -223,6 +224,8 @@ typedef enum {
 #define SRS_UL_CHAIN_CONV                   "20.116684023368047"
 #define SRS_UL_ROD              "Rod"           /* based on US Foot */
 #define SRS_UL_ROD_CONV                     "5.02921005842012"
+#define SRS_UL_LINK_Clarke      "Link_Clarke"          
+#define SRS_UL_LINK_Clarke_CONV              "0.2011661949"
 
 #define SRS_UA_DEGREE           "degree"
 #define SRS_UA_DEGREE_CONV                  "0.0174532925199433"
@@ -285,9 +288,11 @@ OGRErr CPL_DLL OSRImportFromDict( OGRSpatialReferenceH, const char *,
                                   const char * );
 OGRErr CPL_DLL OSRImportFromPanorama( OGRSpatialReferenceH, long, long, long,
                                       double * );
-OGRErr OSRImportFromOzi( OGRSpatialReferenceH , const char *, const char *,
-                         const char * );
+OGRErr CPL_DLL OSRImportFromOzi( OGRSpatialReferenceH , const char *, const char *,
+                                 const char * );
 OGRErr CPL_DLL OSRImportFromMICoordSys( OGRSpatialReferenceH, const char *);
+OGRErr CPL_DLL OSRImportFromERM( OGRSpatialReferenceH,
+                                 const char *, const char *, const char * );
 OGRErr CPL_DLL OSRImportFromUrl( OGRSpatialReferenceH, const char * );
 
 OGRErr CPL_DLL CPL_STDCALL OSRExportToWkt( OGRSpatialReferenceH, char ** );
@@ -301,6 +306,7 @@ OGRErr CPL_DLL OSRExportToXML( OGRSpatialReferenceH, char **, const char * );
 OGRErr CPL_DLL OSRExportToPanorama( OGRSpatialReferenceH, long *, long *,
                                     long *, long *, double * );
 OGRErr CPL_DLL OSRExportToMICoordSys( OGRSpatialReferenceH, char ** );
+OGRErr CPL_DLL OSRExportToERM( OGRSpatialReferenceH, char *, char *, char * );
 
 OGRErr CPL_DLL OSRMorphToESRI( OGRSpatialReferenceH );
 OGRErr CPL_DLL OSRMorphFromESRI( OGRSpatialReferenceH );
@@ -314,20 +320,27 @@ const char CPL_DLL * CPL_STDCALL OSRGetAttrValue( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRSetAngularUnits( OGRSpatialReferenceH, const char *, double );
 double CPL_DLL OSRGetAngularUnits( OGRSpatialReferenceH, char ** );
 OGRErr CPL_DLL OSRSetLinearUnits( OGRSpatialReferenceH, const char *, double );
+OGRErr CPL_DLL OSRSetTargetLinearUnits( OGRSpatialReferenceH, const char *, const char *, double );
 OGRErr CPL_DLL OSRSetLinearUnitsAndUpdateParameters( 
     OGRSpatialReferenceH, const char *, double );
 double CPL_DLL OSRGetLinearUnits( OGRSpatialReferenceH, char ** );
+double CPL_DLL OSRGetTargetLinearUnits( OGRSpatialReferenceH, const char *, char ** );
 
 double CPL_DLL OSRGetPrimeMeridian( OGRSpatialReferenceH, char ** );
 
 int CPL_DLL OSRIsGeographic( OGRSpatialReferenceH );
 int CPL_DLL OSRIsLocal( OGRSpatialReferenceH );
 int CPL_DLL OSRIsProjected( OGRSpatialReferenceH );
+int CPL_DLL OSRIsCompound( OGRSpatialReferenceH );
+int CPL_DLL OSRIsGeocentric( OGRSpatialReferenceH );
+int CPL_DLL OSRIsVertical( OGRSpatialReferenceH );
 int CPL_DLL OSRIsSameGeogCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
+int CPL_DLL OSRIsSameVertCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
 int CPL_DLL OSRIsSame( OGRSpatialReferenceH, OGRSpatialReferenceH );
 
 OGRErr CPL_DLL OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char *pszName );
 OGRErr CPL_DLL OSRSetProjCS( OGRSpatialReferenceH hSRS, const char * pszName );
+OGRErr CPL_DLL OSRSetGeocCS( OGRSpatialReferenceH hSRS, const char * pszName );
 OGRErr CPL_DLL OSRSetWellKnownGeogCS( OGRSpatialReferenceH hSRS,
                                       const char * pszName );
 OGRErr CPL_DLL CPL_STDCALL OSRSetFromUserInput( OGRSpatialReferenceH hSRS, 
@@ -340,6 +353,10 @@ OGRErr CPL_DLL OSRSetTOWGS84( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRGetTOWGS84( OGRSpatialReferenceH hSRS, double *, int );
                         
 
+OGRErr CPL_DLL OSRSetCompoundCS( OGRSpatialReferenceH hSRS,
+                                 const char *pszName,
+                                 OGRSpatialReferenceH hHorizSRS,
+                                 OGRSpatialReferenceH hVertSRS );
 OGRErr CPL_DLL OSRSetGeogCS( OGRSpatialReferenceH hSRS,
                       const char * pszGeogName,
                       const char * pszDatumName,
@@ -349,6 +366,11 @@ OGRErr CPL_DLL OSRSetGeogCS( OGRSpatialReferenceH hSRS,
                       double dfPMOffset /* = 0.0 */,
                       const char * pszUnits /* = NULL */,
                       double dfConvertToRadians /* = 0.0 */ );
+
+OGRErr CPL_DLL OSRSetVertCS( OGRSpatialReferenceH hSRS,
+                      const char * pszVertCSName,
+                      const char * pszVertDatumName,
+                      int nVertDatumType );
 
 double CPL_DLL OSRGetSemiMajor( OGRSpatialReferenceH, OGRErr * /* = NULL */ );
 double CPL_DLL OSRGetSemiMinor( OGRSpatialReferenceH, OGRErr * /* = NULL */ );
@@ -452,6 +474,9 @@ OGRErr CPL_DLL OSRSetGS( OGRSpatialReferenceH hSRS, double dfCentralMeridian,
 /** Goode Homolosine */
 OGRErr CPL_DLL OSRSetGH( OGRSpatialReferenceH hSRS, double dfCentralMeridian,
                          double dfFalseEasting, double dfFalseNorthing );
+
+/** Interrupted Goode Homolosine */
+OGRErr CPL_DLL OSRSetIGH( OGRSpatialReferenceH hSRS );
     
 /** GEOS - Geostationary Satellite View */
 OGRErr CPL_DLL OSRSetGEOS( OGRSpatialReferenceH hSRS, 

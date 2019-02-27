@@ -5,13 +5,13 @@
 #if !defined(AFX_REGION_H__5C2B5D5D_02AB_4004_99C1_3F7AE3C28297__INCLUDED_)
 #define AFX_REGION_H__5C2B5D5D_02AB_4004_99C1_3F7AE3C28297__INCLUDED_
 //#pragma warning (disable:4786)
-#include<vector> 
+
 #include "NP.h"
-using namespace std;
+#include<vector> 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-typedef vector<NP> NPL;
+typedef std::vector<NP> NPL;
 
 typedef struct tPair
 {
@@ -22,30 +22,43 @@ typedef struct tPair
 	//then the edge strength of this pixel is added twice in the edge strength between region P and Q.
 	//since intuitively, the chance the pixel is an edge point is bigger.
 	tPair():t(0.f),bl(0){}
+	tPair(const tPair&pass):t(pass.t),bl(pass.bl){
+		r[0]=pass.r[0];
+		r[1]=pass.r[1];
+	}
+	tPair& operator=(const tPair&agn){
+		if(&agn==this) 
+			return*this;
+		r[0]=agn.r[0];
+		r[1]=agn.r[1];
+		t=agn.t;
+		bl=agn.bl;
+		return *this;
+	}
 } tPair;
 
-typedef struct tMergeNode
-{ 
-	float fc;//current minimum fusion cost 
-	float *gval;//array gray scale values for the image layers in the newly formed region*/
-	int plabel;/*label of first region in the merged pair*/
-	int qlabel;/*label of second region in the merged pair*/
-} tMergeNode;
 
 typedef struct exRegion
 {
+public:
 	int label;//indicate the father pixel index of this region in tagMatrix
 	float* attList;//attribute list according to prop
 	bool isVisited;
-	exRegion():label(-1),attList(NULL),isVisited(false)
-	{
-	
+	exRegion():label(-1),attList(NULL),isVisited(false){}
+	exRegion(const exRegion&cpy):label(cpy.label),attList(cpy.attList),isVisited(cpy.isVisited){}
+	exRegion&operator=(const exRegion&agn){
+		if(&agn==this)
+			return*this;
+		label=agn.label;
+		attList=agn.attList;
+		isVisited=agn.isVisited;
+		return *this;
 	}
-	bool operator<(exRegion b)
+	bool operator<(const exRegion&b) const
 	{
 		return label<b.label;
 	}
-	bool operator==(exRegion b)
+	bool operator==(const exRegion&b) const
 	{
 		return label==b.label;
 	}
@@ -60,7 +73,9 @@ enum PROP
 	boxAngle,//bounding box angle
 	eigRatio,//the major eigenvalue of the point coordinate covariance matrix to the minor one
 	meanThick,//the average width of a region computed from erosion
-	validRate,//the rate of valid pixels in one region
+	changeRatio,//the rate of changed pixels in one region
+	shadeRatio,//the ratio of shade pixels in one region
+	neiShadeRatio,//the maximum ratio of shade pixels in one regions' neighboring regions
 };
 //texture intensity color
 enum TIC//terms as defined in Vincent Tao's integrating intensity texture color
@@ -93,7 +108,25 @@ public:
 	CRect *norbox;//regular box bounding the region
 public:
 	float InterDiff(int d=1,float wc=0.9,float=0.5,float=256.f);
-	Region();
+	Region(unsigned int sz=0):size(sz),addition(NULL),sSum(NULL),perim(0),
+		bestp(-1),p(-1),interdif(0),isChecked(false),norbox(NULL){}
+	Region(const Region&cpy):size(cpy.size),addition(cpy.addition),sSum(cpy.sSum),perim(cpy.perim),
+		bestp(cpy.bestp),p(cpy.p),interdif(cpy.interdif),isChecked(cpy.isChecked),norbox(cpy.norbox){}
+	Region&operator=(const Region&cpy){
+		if(&cpy==this)
+			return *this;
+		size=cpy.size;
+		addition=cpy.addition;
+		sSum=cpy.sSum;
+		perim=cpy.perim;
+		bestp=cpy.bestp;
+		p=cpy.p;
+		interdif=cpy.interdif;
+		isChecked=cpy.isChecked;
+		norbox=cpy.norbox;
+		return *this;
+	}
+	
 	~Region();
 }; 
 //Actually,the result of compute dist is the internaldif(a&b)
