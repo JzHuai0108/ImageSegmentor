@@ -150,12 +150,12 @@ void CImageDoc::Serialize(CArchive& ar)
 		// TODO: add loading code here
 		CFile* cfptr=ar.GetFile();
 		CString FileName=cfptr->GetFilePath();
-		BeginWaitCursor();
 		BOOL res=false;
 		
 			int r=1,g=2,b=3;
 			CBandSelDlg IDlg; 
-			ImageProps(IDlg.m_Band,IDlg.m_DataType,FileName);
+			if(!ImageProps(IDlg.m_Band,IDlg.m_DataType,FileName))
+				return;
 			IDlg.m_R=1;
 			IDlg.m_G=2;
 			IDlg.m_B=3;
@@ -170,9 +170,7 @@ void CImageDoc::Serialize(CArchive& ar)
 				edgeBand=IDlg.m_EB;
 			}
 			else return;
-			res=m_DIB.CreateDIB(r,g,b,FileName);
-		
-		EndWaitCursor();
+			res=m_DIB.CreateDIB(r,g,b,FileName);		
 	}
 }
 

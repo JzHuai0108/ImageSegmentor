@@ -6,13 +6,18 @@
 #include "..\\include\\cpl_string.h"
 #include <assert.h>
 //retrieve bandcount and datatype of a gdaldataset in file named fn
-void ImageProps(int&count, CString&dataType, const CString&fn){
+int ImageProps(int&count, CString&dataType, const CString&fn){
 	GDALDataset*pDataset=(GDALDataset*)GDALOpen(fn,GA_ReadOnly);
+	if(pDataset==0){
+		 AfxMessageBox("Failed to open image!");
+		 return 0;
+	}
 	count=pDataset->GetRasterCount();
 	GDALRasterBand  *m_pBand= pDataset->GetRasterBand(1);
 	//	CPLAssert( m_pBand->GetRasterDataType() == GDT_Byte );
 	dataType=GDALGetDataTypeName(m_pBand->GetRasterDataType());//数据类型
 	GDALClose((GDALDatasetH)pDataset);
+	return 1;
 }
 //input:allocated EM 
 //output: EM initiated with data for edge detection

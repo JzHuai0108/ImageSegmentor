@@ -3,238 +3,118 @@
 <pre>
 <h1>Build Log</h1>
 <h3>
---------------------Configuration: image - Win32 Release--------------------
+--------------------Configuration: image - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating command line "rc.exe /l 0x804 /fo"Release/image.res" /d "NDEBUG" /d "_AFXDLL" "E:\landcruiser\HCE\image.rc"" 
-Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1F.tmp" with contents
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBB.tmp" with contents
 [
-/nologo /MD /W3 /GX /O2 /I "../HCE/gdaldll/include/" /I "C:/Program Files/OpenCV/cxcore/include" /I "C:/Program Files/OpenCV/cv/include" /I "C:/Program Files/OpenCV/otherlibs/highgui" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Release/" /Fp"Release/image.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
-"E:\landcruiser\HCE\BandSelDlg.cpp"
-"E:\landcruiser\HCE\CannyPara.cpp"
-"E:\landcruiser\HCE\ChangeDetector.cpp"
-"E:\landcruiser\HCE\ChildFrm.cpp"
-"E:\landcruiser\HCE\CIE.cpp"
-"E:\landcruiser\HCE\CKProcessTimeCounter.cpp"
-"E:\landcruiser\HCE\colormrf.cpp"
+/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../HCE/gdaldll/include/" /I "../HCE/OpenCV/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Debug/" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
 "E:\landcruiser\HCE\DIB.cpp"
-"E:\landcruiser\HCE\fuzzylogic.cpp"
-"E:\landcruiser\HCE\HC.cpp"
-"E:\landcruiser\HCE\image.cpp"
 "E:\landcruiser\HCE\imageDoc.cpp"
-"E:\landcruiser\HCE\imageView.cpp"
-"E:\landcruiser\HCE\InitiateDlg.cpp"
-"E:\landcruiser\HCE\MainFrm.cpp"
-"E:\landcruiser\HCE\mersenne.cpp"
-"E:\landcruiser\HCE\MFeatDlg.cpp"
-"E:\landcruiser\HCE\MMOFUNC.cpp"
-"E:\landcruiser\HCE\MorphDlg.cpp"
-"E:\landcruiser\HCE\mrf_1.cpp"
-"E:\landcruiser\HCE\MRFOptimDlg.cpp"
-"E:\landcruiser\HCE\MultiDiff.cpp"
-"E:\landcruiser\HCE\MyColorSpace.cpp"
-"E:\landcruiser\HCE\MyGabor.cpp"
-"E:\landcruiser\HCE\MyMath.cpp"
-"E:\landcruiser\HCE\MyTexture.cpp"
-"E:\landcruiser\HCE\PreviewDlg.cpp"
-"E:\landcruiser\HCE\QT.cpp"
-"E:\landcruiser\HCE\Region.cpp"
-"E:\landcruiser\HCE\ResultDlg.cpp"
-"E:\landcruiser\HCE\ResultImageDlg.cpp"
-"E:\landcruiser\HCE\SegApi.cpp"
-"E:\landcruiser\HCE\SegmenterMS.cpp"
-"E:\landcruiser\HCE\SelPropDlg.cpp"
-"E:\landcruiser\HCE\SetPropDlg.cpp"
-"E:\landcruiser\HCE\SUSANDlg.cpp"
-"E:\landcruiser\HCE\Thinner.cpp"
-"E:\landcruiser\HCE\THRESHDlg.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1F.tmp" 
-Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP20.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBB.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBC.tmp" with contents
 [
-/nologo /MD /W3 /GX /O2 /I "../HCE/gdaldll/include/" /I "C:/Program Files/OpenCV/cxcore/include" /I "C:/Program Files/OpenCV/cv/include" /I "C:/Program Files/OpenCV/otherlibs/highgui" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Release/" /Fp"Release/image.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
-"E:\landcruiser\HCE\StdAfx.cpp"
+gdal_i.lib cxcore.lib cv.lib highgui.lib /nologo /subsystem:windows /incremental:yes /pdb:"Debug/image.pdb" /debug /machine:I386 /out:"Debug/image.exe" /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"../HCE/OpenCV/lib" 
+.\Debug\BandSelDlg.obj
+.\Debug\CannyPara.obj
+.\Debug\ChangeDetector.obj
+.\Debug\ChildFrm.obj
+.\Debug\CIE.obj
+.\Debug\CKProcessTimeCounter.obj
+.\Debug\colormrf.obj
+.\Debug\DIB.obj
+.\Debug\fuzzylogic.obj
+.\Debug\HC.obj
+.\Debug\image.obj
+.\Debug\imageDoc.obj
+.\Debug\imageView.obj
+.\Debug\InitiateDlg.obj
+.\Debug\MainFrm.obj
+.\Debug\mersenne.obj
+.\Debug\MFeatDlg.obj
+.\Debug\MMOFUNC.obj
+.\Debug\MorphDlg.obj
+.\Debug\mrf_1.obj
+.\Debug\MRFOptimDlg.obj
+.\Debug\MultiDiff.obj
+.\Debug\MyColorSpace.obj
+.\Debug\MyGabor.obj
+.\Debug\MyMath.obj
+.\Debug\MyTexture.obj
+.\Debug\PreviewDlg.obj
+.\Debug\QT.obj
+.\Debug\Region.obj
+.\Debug\ResultDlg.obj
+.\Debug\ResultImageDlg.obj
+.\Debug\SegApi.obj
+.\Debug\SegmenterMS.obj
+.\Debug\SelPropDlg.obj
+.\Debug\SetPropDlg.obj
+.\Debug\StdAfx.obj
+.\Debug\SUSANDlg.obj
+.\Debug\Thinner.obj
+.\Debug\THRESHDlg.obj
+.\Debug\image.res
 ]
-Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP20.tmp" 
-Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP21.tmp" with contents
-[
-gdal_i.lib cxcorel.lib cvl.lib highguil.lib /nologo /subsystem:windows /incremental:no /pdb:"Release/image.pdb" /machine:I386 /out:"Release/image.exe" /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib" 
-.\Release\BandSelDlg.obj
-.\Release\CannyPara.obj
-.\Release\ChangeDetector.obj
-.\Release\ChildFrm.obj
-.\Release\CIE.obj
-.\Release\CKProcessTimeCounter.obj
-.\Release\colormrf.obj
-.\Release\DIB.obj
-.\Release\fuzzylogic.obj
-.\Release\HC.obj
-.\Release\image.obj
-.\Release\imageDoc.obj
-.\Release\imageView.obj
-.\Release\InitiateDlg.obj
-.\Release\MainFrm.obj
-.\Release\mersenne.obj
-.\Release\MFeatDlg.obj
-.\Release\MMOFUNC.obj
-.\Release\MorphDlg.obj
-.\Release\mrf_1.obj
-.\Release\MRFOptimDlg.obj
-.\Release\MultiDiff.obj
-.\Release\MyColorSpace.obj
-.\Release\MyGabor.obj
-.\Release\MyMath.obj
-.\Release\MyTexture.obj
-.\Release\PreviewDlg.obj
-.\Release\QT.obj
-.\Release\Region.obj
-.\Release\ResultDlg.obj
-.\Release\ResultImageDlg.obj
-.\Release\SegApi.obj
-.\Release\SegmenterMS.obj
-.\Release\SelPropDlg.obj
-.\Release\SetPropDlg.obj
-.\Release\StdAfx.obj
-.\Release\SUSANDlg.obj
-.\Release\Thinner.obj
-.\Release\THRESHDlg.obj
-.\Release\image.res
-]
-Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP21.tmp"
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBC.tmp"
 <h3>Output Window</h3>
-Compiling resources...
 Compiling...
-StdAfx.cpp
-Compiling...
-BandSelDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-CannyPara.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-ChangeDetector.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-ChildFrm.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-CIE.cpp
-CKProcessTimeCounter.cpp
-colormrf.cpp
-E:\landcruiser\HCE\colormrf.h(9) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
 DIB.cpp
-fuzzylogic.cpp
-HC.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-image.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
 imageDoc.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-imageView.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-InitiateDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-MainFrm.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-mersenne.cpp
-MFeatDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-MMOFUNC.cpp
-MorphDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-mrf_1.cpp
-E:\landcruiser\HCE\mrf_1.h(12) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
+e:\landcruiser\hce\imagedoc.cpp(3279) : warning C4305: 'argument' : truncation from 'const double' to 'float'
 Generating Code...
-Compiling...
-MRFOptimDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-MultiDiff.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-MyColorSpace.cpp
-MyGabor.cpp
-MyMath.cpp
-MyTexture.cpp
-PreviewDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-QT.cpp
-Region.cpp
-ResultDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-ResultImageDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-SegApi.cpp
-E:\landcruiser\HCE\susan.h(202) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-E:\landcruiser\HCE\susan.h(414) : warning C4244: '=' : conversion from 'const double' to 'int', possible loss of data
-E:\landcruiser\HCE\susan.h(919) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-E:\landcruiser\HCE\susan.h(1086) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-E:\landcruiser\HCE\susan.h(1749) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-E:\landcruiser\HCE\susan.h(1870) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
-SegmenterMS.cpp
-E:\landcruiser\HCE\SegmenterMS.cpp(1654) : warning C4805: '==' : unsafe mix of type 'const char' and type 'bool' in operation
-E:\landcruiser\HCE\SegmenterMS.cpp(1717) : warning C4805: '==' : unsafe mix of type 'char' and type 'bool' in operation
-E:\landcruiser\HCE\SegmenterMS.cpp(1722) : warning C4018: '<' : signed/unsigned mismatch
-E:\landcruiser\HCE\SegmenterMS.cpp(1735) : warning C4018: '<' : signed/unsigned mismatch
-E:\landcruiser\HCE\SegmenterMS.cpp(1741) : warning C4018: '<' : signed/unsigned mismatch
-SelPropDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-SetPropDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-SUSANDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-Thinner.cpp
-E:\landcruiser\HCE\Thinner.cpp(418) : warning C4244: '=' : conversion from 'short' to 'char', possible loss of data
-THRESHDlg.cpp
-E:\landcruiser\HCE\HC.h(19) : fatal error C1083: Cannot open include file: 'cv.h': No such file or directory
-Generating Code...
-Error executing cl.exe.
-Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP22.tmp" with contents
+Linking...
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBD.tmp" with contents
 [
-/nologo /o"Release/image.bsc" 
-.\Release\StdAfx.sbr
-.\Release\BandSelDlg.sbr
-.\Release\CannyPara.sbr
-.\Release\ChangeDetector.sbr
-.\Release\ChildFrm.sbr
-.\Release\CIE.sbr
-.\Release\CKProcessTimeCounter.sbr
-.\Release\colormrf.sbr
-.\Release\DIB.sbr
-.\Release\fuzzylogic.sbr
-.\Release\HC.sbr
-.\Release\image.sbr
-.\Release\imageDoc.sbr
-.\Release\imageView.sbr
-.\Release\InitiateDlg.sbr
-.\Release\MainFrm.sbr
-.\Release\mersenne.sbr
-.\Release\MFeatDlg.sbr
-.\Release\MMOFUNC.sbr
-.\Release\MorphDlg.sbr
-.\Release\mrf_1.sbr
-.\Release\MRFOptimDlg.sbr
-.\Release\MultiDiff.sbr
-.\Release\MyColorSpace.sbr
-.\Release\MyGabor.sbr
-.\Release\MyMath.sbr
-.\Release\MyTexture.sbr
-.\Release\PreviewDlg.sbr
-.\Release\QT.sbr
-.\Release\Region.sbr
-.\Release\ResultDlg.sbr
-.\Release\ResultImageDlg.sbr
-.\Release\SegApi.sbr
-.\Release\SegmenterMS.sbr
-.\Release\SelPropDlg.sbr
-.\Release\SetPropDlg.sbr
-.\Release\SUSANDlg.sbr
-.\Release\Thinner.sbr
-.\Release\THRESHDlg.sbr]
-Creating command line "bscmake.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP22.tmp"
+/nologo /o"Debug/image.bsc" 
+.\Debug\StdAfx.sbr
+.\Debug\BandSelDlg.sbr
+.\Debug\CannyPara.sbr
+.\Debug\ChangeDetector.sbr
+.\Debug\ChildFrm.sbr
+.\Debug\CIE.sbr
+.\Debug\CKProcessTimeCounter.sbr
+.\Debug\colormrf.sbr
+.\Debug\DIB.sbr
+.\Debug\fuzzylogic.sbr
+.\Debug\HC.sbr
+.\Debug\image.sbr
+.\Debug\imageDoc.sbr
+.\Debug\imageView.sbr
+.\Debug\InitiateDlg.sbr
+.\Debug\MainFrm.sbr
+.\Debug\mersenne.sbr
+.\Debug\MFeatDlg.sbr
+.\Debug\MMOFUNC.sbr
+.\Debug\MorphDlg.sbr
+.\Debug\mrf_1.sbr
+.\Debug\MRFOptimDlg.sbr
+.\Debug\MultiDiff.sbr
+.\Debug\MyColorSpace.sbr
+.\Debug\MyGabor.sbr
+.\Debug\MyMath.sbr
+.\Debug\MyTexture.sbr
+.\Debug\PreviewDlg.sbr
+.\Debug\QT.sbr
+.\Debug\Region.sbr
+.\Debug\ResultDlg.sbr
+.\Debug\ResultImageDlg.sbr
+.\Debug\SegApi.sbr
+.\Debug\SegmenterMS.sbr
+.\Debug\SelPropDlg.sbr
+.\Debug\SetPropDlg.sbr
+.\Debug\SUSANDlg.sbr
+.\Debug\Thinner.sbr
+.\Debug\THRESHDlg.sbr]
+Creating command line "bscmake.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSPBD.tmp"
 Creating browse info file...
-BSCMAKE: error BK1506 : cannot open file '.\Release\BandSelDlg.sbr': No such file or directory
-Error executing bscmake.exe.
 <h3>Output Window</h3>
 
 
 
 <h3>Results</h3>
-image.exe - 24 error(s), 12 warning(s)
+image.exe - 0 error(s), 1 warning(s)
 </pre>
 </body>
 </html>

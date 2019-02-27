@@ -127,7 +127,7 @@ private:
 	CDIB& operator=(const CDIB&);
 };
 
-void ImageProps(int&, CString&,const CString&fn);
+int ImageProps(int&, CString&,const CString&fn);
 //input:allocated EM 
 //output: EM initiated with data for edge detection
 BYTE* GetEM(const CString&fn, BYTE *EM,int eB);
