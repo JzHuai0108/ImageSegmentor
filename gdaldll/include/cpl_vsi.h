@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi.h,v 1.31 2006/03/27 15:24:41 fwarmerdam Exp $
+ * $Id: cpl_vsi.h 18725 2010-02-04 21:02:19Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -26,57 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- * 
- * $Log: cpl_vsi.h,v $
- * Revision 1.31  2006/03/27 15:24:41  fwarmerdam
- * buffer in FWrite is const
- *
- * Revision 1.30  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.29  2006/02/19 21:54:34  mloskot
- * [WINCE] Changes related to Windows CE port of CPL. Most changes are #ifdef wrappers.
- *
- * Revision 1.28  2006/01/10 17:03:56  fwarmerdam
- * added VSI Rename support
- *
- * Revision 1.27  2005/10/07 00:26:27  fwarmerdam
- * add documentation
- *
- * Revision 1.26  2005/10/03 18:56:40  fwarmerdam
- * always define large file api - cygwin fix
- *
- * Revision 1.25  2005/09/15 18:32:35  fwarmerdam
- * added VSICleanupFileManager
- *
- * Revision 1.24  2005/09/12 16:53:33  fwarmerdam
- * fixed VSIGetMemFileBuffer declaration
- *
- * Revision 1.23  2005/09/12 16:50:37  fwarmerdam
- * added VSIMemFile buffer fetcher
- *
- * Revision 1.22  2005/09/11 18:31:41  fwarmerdam
- * ensure a distinct VSIStatL() exists on win32
- *
- * Revision 1.21  2005/09/11 18:01:28  fwarmerdam
- * preliminary implementatin of fully virtualized large file api
- *
- * Revision 1.20  2005/04/12 03:51:11  fwarmerdam
- * Fixed stat64 problem.
- *
- * Revision 1.19  2005/04/12 00:27:39  fwarmerdam
- * added macos large file support
- *
- * Revision 1.18  2003/09/10 19:44:36  warmerda
- * added VSIStrerrno()
- *
- * Revision 1.17  2003/09/08 08:11:40  dron
- * Added VSIGMTime() and VSILocalTime().
- *
- * Revision 1.16  2003/05/27 20:44:40  warmerda
- * added VSI io debugging macros
- */
+ ****************************************************************************/
 
 #ifndef CPL_VSI_H_INCLUDED
 #define CPL_VSI_H_INCLUDED
@@ -139,7 +89,7 @@ size_t CPL_DLL  VSIFRead( void *, size_t, size_t, FILE * );
 size_t CPL_DLL  VSIFWrite( const void *, size_t, size_t, FILE * );
 char CPL_DLL   *VSIFGets( char *, int, FILE * );
 int CPL_DLL     VSIFPuts( const char *, FILE * );
-int CPL_DLL     VSIFPrintf( FILE *, const char *, ... );
+int CPL_DLL     VSIFPrintf( FILE *, const char *, ... ) CPL_PRINT_FUNC_FORMAT(2, 3);
 
 int CPL_DLL     VSIFGetc( FILE * );
 int CPL_DLL     VSIFPutc( int, FILE * );
@@ -182,7 +132,9 @@ void CPL_DLL    VSIRewindL( FILE * );
 size_t CPL_DLL  VSIFReadL( void *, size_t, size_t, FILE * );
 size_t CPL_DLL  VSIFWriteL( const void *, size_t, size_t, FILE * );
 int CPL_DLL     VSIFEofL( FILE * );
-int CPL_DLL    VSIFFlushL( FILE * );
+int CPL_DLL     VSIFFlushL( FILE * );
+int CPL_DLL     VSIFPrintfL( FILE *, const char *, ... ) CPL_PRINT_FUNC_FORMAT(2, 3);
+int CPL_DLL     VSIFPutcL( int, FILE * );
 
 #if defined(VSI_STAT64_T)
 typedef struct VSI_STAT64_T VSIStatBufL;
@@ -202,10 +154,31 @@ void CPL_DLL    VSIFree( void * );
 void CPL_DLL   *VSIRealloc( void *, size_t );
 char CPL_DLL   *VSIStrdup( const char * );
 
+/**
+ VSIMalloc2 allocates (nSize1 * nSize2) bytes.
+ In case of overflow of the multiplication, or if memory allocation fails, a
+ NULL pointer is returned and a CE_Failure error is raised with CPLError().
+ If nSize1 == 0 || nSize2 == 0, a NULL pointer will also be returned.
+ CPLFree() or VSIFree() can be used to free memory allocated by this function.
+*/
+void CPL_DLL *VSIMalloc2( size_t nSize1, size_t nSize2 );
+
+/**
+ VSIMalloc3 allocates (nSize1 * nSize2 * nSize3) bytes.
+ In case of overflow of the multiplication, or if memory allocation fails, a
+ NULL pointer is returned and a CE_Failure error is raised with CPLError().
+ If nSize1 == 0 || nSize2 == 0 || nSize3 == 0, a NULL pointer will also be returned.
+ CPLFree() or VSIFree() can be used to free memory allocated by this function.
+*/
+void CPL_DLL *VSIMalloc3( size_t nSize1, size_t nSize2, size_t nSize3 );
+
+
 /* ==================================================================== */
 /*      Other...                                                        */
 /* ==================================================================== */
 
+#define CPLReadDir VSIReadDir
+char CPL_DLL **VSIReadDir( const char * );
 int CPL_DLL VSIMkdir( const char * pathname, long mode );
 int CPL_DLL VSIRmdir( const char * pathname );
 int CPL_DLL VSIUnlink( const char * pathname );
@@ -217,6 +190,10 @@ char CPL_DLL *VSIStrerror( int );
 /* ==================================================================== */
 void CPL_DLL VSIInstallMemFileHandler(void);
 void CPL_DLL VSIInstallLargeFileHandler(void);
+void CPL_DLL VSIInstallSubFileHandler(void);
+void VSIInstallGZipFileHandler(void); /* No reason to export that */
+void VSIInstallZipFileHandler(void); /* No reason to export that */
+void VSIInstallStdoutHandler(void); /* No reason to export that */
 void CPL_DLL VSICleanupFileManager(void);
 
 FILE CPL_DLL *VSIFileFromMemBuffer( const char *pszFilename, 

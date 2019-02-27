@@ -1,3 +1,4 @@
+#include "stdafx.h"
 
 #include ".\cie.h"
 #include <math.h>
@@ -33,7 +34,7 @@ void CCIE::XYZ2Luv(float x, float y, float z, float &L, float &u, float &v)
 	//定义X0,Y0,X0为D65 CIE 标准光源的色度坐标
 	float X0=95.05f,Y0=100.00f,Z0=108.90f;
 	float fx=x/X0,fy=y/Y0,fz=z/Z0,frx,fry,frz;
-	float k =0.333;
+	float k =0.333f;
 
 	if(fx>0.008856) frx=float(pow(fx,k));
 	else frx=7.787f*fx+16.0f/116.0f;

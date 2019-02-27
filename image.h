@@ -22,6 +22,7 @@
 class CImageApp : public CWinApp
 {
 public:
+	void InitDoc();
 	CImageApp();
 
 // Overrides
@@ -36,6 +37,7 @@ public:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	afx_msg void OnFileOpen();
+	afx_msg void OnFileMultiFeat();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

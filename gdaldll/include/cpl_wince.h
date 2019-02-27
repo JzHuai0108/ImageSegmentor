@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_wince.h,v 1.3 2006/03/21 20:11:54 fwarmerdam Exp $
+ * $Id: cpl_wince.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Name:     cpl_win_api.h
  * Project:  CPL - Common Portability Library
@@ -26,17 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: cpl_wince.h,v $
- * Revision 1.3  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.2  2006/02/21 19:48:43  mloskot
- * [WCE] Added copyright note
- *
- *
- ******************************************************************************/
+ ****************************************************************************/
 #ifndef _CPL_WINCE_H_INCLUDED
 #define _CPL_WINCE_H_INCLUDED
 

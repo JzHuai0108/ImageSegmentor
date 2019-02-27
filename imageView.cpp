@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "image.h"
 
-#include "imageDoc.h"
+#include "DIB.h"
 #include "imageView.h"
 #include "MainFrm.h"
 
@@ -56,6 +56,9 @@ BOOL CImageView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CImageView::OnDraw(CDC* pDC)
 {
+	CMainFrame *pFrame;
+	pFrame = (CMainFrame*) AfxGetApp()->GetMainWnd();             
+	pFrame->pImageView = this;
 	CImageDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	// TODO: add draw code for native data here
@@ -65,9 +68,7 @@ void CImageView::OnDraw(CDC* pDC)
 	// 获取位图的显示宽度
 	h =int(pDoc->m_DIB.GetHeight()*pDoc->m_dRoom);
 	// 显示位图
-	pDoc->m_DIB.Stretch(pDC->m_hDC, 0, 0, w, h, 0, 0, 
-		pDoc->m_DIB.GetWidth(), pDoc->m_DIB.GetHeight(), 
-		DIB_RGB_COLORS, SRCCOPY);
+	pDoc->m_DIB.Stretch(pDC->m_hDC, 0, 0, w, h,DIB_RGB_COLORS, SRCCOPY);
 }
 
 void CImageView::OnInitialUpdate()
@@ -153,7 +154,7 @@ void CImageView::OnLButtonDown(UINT nFlags, CPoint point)
 	//SetCapture();viewfeatures==true
 	CImageDoc*pDoc=GetDocument();
 	CString rid,rs,rnc;
-	if(pDoc->m_HC.tag)
+	if(pDoc->m_HC.GetSetSize())
 	{
 		CClientDC dc(this);
  		OnPrepareDC(&dc);

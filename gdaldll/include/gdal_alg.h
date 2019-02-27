@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg.h,v 1.24 2005/10/28 18:30:28 fwarmerdam Exp $
+ * $Id: gdal_alg.h 18227 2009-12-09 13:08:16Z chaitanya $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes, and definitions for various GDAL based algorithms.
@@ -25,81 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: gdal_alg.h,v $
- * Revision 1.24  2005/10/28 18:30:28  fwarmerdam
- * added progress func for rasterize
- *
- * Revision 1.23  2005/10/28 17:46:29  fwarmerdam
- * Added rasterize related stuff
- *
- * Revision 1.22  2005/08/02 22:19:41  fwarmerdam
- * approx transformer now can own its subtransformer
- *
- * Revision 1.21  2005/04/11 17:36:53  fwarmerdam
- * added GDALDestroyTransformer
- *
- * Revision 1.20  2005/04/04 15:24:16  fwarmerdam
- * added CPL_STDCALL to some functions
- *
- * Revision 1.19  2004/12/26 16:12:21  fwarmerdam
- * thin plate spline support now implemented
- *
- * Revision 1.18  2004/08/11 19:00:06  warmerda
- * added GDALSetGenImgProjTransformerDstGeoTransform
- *
- * Revision 1.17  2004/08/09 14:38:27  warmerda
- * added serialize/deserialize support for warpoptions and transformers
- *
- * Revision 1.16  2003/12/15 15:59:25  warmerda
- * added CPL_DLL on contour stuff.
- *
- * Revision 1.15  2003/10/16 16:44:05  warmerda
- * added support for fixed levels
- *
- * Revision 1.14  2003/10/15 20:22:16  warmerda
- * removed C++ contour definitions
- *
- * Revision 1.13  2003/10/14 15:25:01  warmerda
- * added contour stuff
- *
- * Revision 1.12  2003/06/03 19:42:20  warmerda
- * modified rpc api
- *
- * Revision 1.11  2003/06/03 17:36:47  warmerda
- * Added RPC entry points
- *
- * Revision 1.10  2003/03/02 05:24:35  warmerda
- * added GDALChecksumImage
- *
- * Revision 1.9  2002/12/09 18:56:10  warmerda
- * added missing CPL_DLL
- *
- * Revision 1.8  2002/12/09 16:08:32  warmerda
- * added approximating transformer
- *
- * Revision 1.7  2002/12/07 22:58:42  warmerda
- * added initialization support for simple warper
- *
- * Revision 1.6  2002/12/07 17:09:38  warmerda
- * added order flag to GenImgProjTransformer
- *
- * Revision 1.5  2002/12/06 21:43:12  warmerda
- * tweak prototypes
- *
- * Revision 1.4  2002/12/05 21:44:35  warmerda
- * fixed prototype
- *
- * Revision 1.3  2002/12/05 05:43:28  warmerda
- * added warp/transformer definition
- *
- * Revision 1.2  2001/02/02 21:19:25  warmerda
- * added CPL_DLL for functions
- *
- * Revision 1.1  2001/01/22 22:30:59  warmerda
- * New
- */
+ ****************************************************************************/
 
 #ifndef GDAL_ALG_H_INCLUDED
 #define GDAL_ALG_H_INCLUDED
@@ -110,9 +36,11 @@
  * Public (C callable) GDAL algorithm entry points, and definitions.
  */
 
+#ifndef DOXYGEN_SKIP
 #include "gdal.h"
 #include "cpl_minixml.h"
 #include "ogr_api.h"
+#endif
 
 CPL_C_START
 
@@ -136,6 +64,38 @@ int CPL_DLL CPL_STDCALL GDALDitherRGB2PCT( GDALRasterBandH hRed,
 int CPL_DLL CPL_STDCALL GDALChecksumImage( GDALRasterBandH hBand, 
                                int nXOff, int nYOff, int nXSize, int nYSize );
                                
+CPLErr CPL_DLL CPL_STDCALL 
+GDALComputeProximity( GDALRasterBandH hSrcBand, 
+                      GDALRasterBandH hProximityBand,
+                      char **papszOptions,
+                      GDALProgressFunc pfnProgress, 
+                      void * pProgressArg );
+
+CPLErr CPL_DLL CPL_STDCALL
+GDALFillNodata( GDALRasterBandH hTargetBand, 
+                GDALRasterBandH hMaskBand,
+                double dfMaxSearchDist, 
+                int bDeprecatedOption,
+                int nSmoothingIterations,
+                char **papszOptions,
+                GDALProgressFunc pfnProgress, 
+                void * pProgressArg );
+
+CPLErr CPL_DLL CPL_STDCALL
+GDALPolygonize( GDALRasterBandH hSrcBand, 
+                GDALRasterBandH hMaskBand,
+                OGRLayerH hOutLayer, int iPixValField, 
+                char **papszOptions,
+                GDALProgressFunc pfnProgress, 
+                void * pProgressArg );
+
+CPLErr CPL_DLL CPL_STDCALL
+GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
+                 GDALRasterBandH hDstBand,
+                 int nSizeThreshold, int nConnectedness,
+                 char **papszOptions,
+                 GDALProgressFunc pfnProgress, 
+                 void * pProgressArg );
 
 /*
  * Warp Related.
@@ -148,14 +108,17 @@ typedef int
 
 typedef struct {
     char szSignature[4];
-    char *pszClassName;
+    const char *pszClassName;
     GDALTransformerFunc pfnTransform;
     void (*pfnCleanup)( void * );
     CPLXMLNode *(*pfnSerialize)( void * );
 } GDALTransformerInfo;
 
 void CPL_DLL GDALDestroyTransformer( void *pTransformerArg );
-
+int  CPL_DLL GDALUseTransformer( void *pTranformerArg, 
+                                 int bDstToSrc, int nPointCount, 
+                                 double *x, double *y, double *z, 
+                                 int *panSuccess );
 
 /* High level transformer for going from image coordinates on one file
    to image coordiantes on another, potentially doing reprojection, 
@@ -166,6 +129,14 @@ GDALCreateGenImgProjTransformer( GDALDatasetH hSrcDS, const char *pszSrcWKT,
                                  GDALDatasetH hDstDS, const char *pszDstWKT,
                                  int bGCPUseOK, double dfGCPErrorThreshold,
                                  int nOrder );
+void CPL_DLL *
+GDALCreateGenImgProjTransformer2( GDALDatasetH hSrcDS, GDALDatasetH hDstDS, 
+                                  char **papszOptions );
+void CPL_DLL *
+GDALCreateGenImgProjTransformer3( const char *pszSrcWKT,
+                                  const double *padfSrcGeoTransform,
+                                  const char *pszDstWKT,
+                                  const double *padfDstGeoTransform );
 void CPL_DLL GDALSetGenImgProjTransformerDstGeoTransform( void *, 
                                                           const double * );
 void CPL_DLL GDALDestroyGenImgProjTransformer( void * );
@@ -205,9 +176,21 @@ int CPL_DLL GDALTPSTransform(
 
 void CPL_DLL *
 GDALCreateRPCTransformer( GDALRPCInfo *psRPC, int bReversed, 
-                          double dfPixErrThreshold );
+                          double dfPixErrThreshold,
+                          char **papszOptions );
 void CPL_DLL GDALDestroyRPCTransformer( void *pTransformArg );
 int CPL_DLL GDALRPCTransform( 
+    void *pTransformArg, int bDstToSrc, int nPointCount,
+    double *x, double *y, double *z, int *panSuccess );
+
+/* Geolocation transformer */
+
+void CPL_DLL *
+GDALCreateGeoLocTransformer( GDALDatasetH hBaseDS, 
+                             char **papszGeolocationInfo,
+                             int bReversed );
+void CPL_DLL GDALDestroyGeoLocTransformer( void *pTransformArg );
+int CPL_DLL GDALGeoLocTransform( 
     void *pTransformArg, int bDstToSrc, int nPointCount,
     double *x, double *y, double *z, int *panSuccess );
 
@@ -241,6 +224,14 @@ GDALSuggestedWarpOutput( GDALDatasetH hSrcDS,
                          void *pTransformArg,
                          double *padfGeoTransformOut, 
                          int *pnPixels, int *pnLines );
+CPLErr CPL_DLL CPL_STDCALL
+GDALSuggestedWarpOutput2( GDALDatasetH hSrcDS, 
+                          GDALTransformerFunc pfnTransformer,
+                          void *pTransformArg,
+                          double *padfGeoTransformOut, 
+                          int *pnPixels, int *pnLines,
+                          double *padfExtents, 
+                          int nOptions );
 
 CPLXMLNode CPL_DLL *
 GDALSerializeTransformer( GDALTransformerFunc pfnFunc, void *pTransformArg );
@@ -289,20 +280,9 @@ GDALContourGenerate( GDALRasterBandH hBand,
                             void *hLayer, int iIDField, int iElevField,
                             GDALProgressFunc pfnProgress, void *pProgressArg );
 
-/* -------------------------------------------------------------------- */
-/*      Low level rasterizer API.                                       */
-/* -------------------------------------------------------------------- */
-typedef void (*llScanlineFunc)( void *pCBData, int nY, int nXStart, int nXEnd);
-
-
-void GDALdllImageFilledPolygon(int nRasterXSize, int nRasterYSize, 
-                               int nPartCount, int *panPartSize, 
-                               double *padfX, double *padfY,
-                               llScanlineFunc pfnScanlineFunc, void *pCBData );
-
-/* -------------------------------------------------------------------- */
-/*      High level API - GvShapes burned into GDAL raster.              */
-/* -------------------------------------------------------------------- */
+/************************************************************************/
+/*      Rasterizer API - geometries burned into GDAL raster.            */
+/************************************************************************/
 
 CPLErr CPL_DLL 
 GDALRasterizeGeometries( GDALDatasetH hDS, 
@@ -314,7 +294,150 @@ GDALRasterizeGeometries( GDALDatasetH hDS,
                          char **papszOptions,
                          GDALProgressFunc pfnProgress, 
                          void * pProgressArg );
+CPLErr CPL_DLL
+GDALRasterizeLayers( GDALDatasetH hDS, 
+                     int nBandCount, int *panBandList,
+                     int nLayerCount, OGRLayerH *pahLayers,
+                     GDALTransformerFunc pfnTransformer, 
+                     void *pTransformArg, 
+                     double *padfLayerBurnValues,
+                     char **papszOptions,
+                     GDALProgressFunc pfnProgress, 
+                     void *pProgressArg );
 
+CPLErr CPL_DLL 
+GDALRasterizeLayersBuf( void *pData, int nBufXSize, int nBufYSize,
+                        GDALDataType eBufType, int nPixelSpace, int nLineSpace,
+                        int nLayerCount, OGRLayerH *pahLayers,
+                        const char *pszDstProjection,
+                        double *padfDstGeoTransform,
+                        GDALTransformerFunc pfnTransformer, 
+                        void *pTransformArg, double dfBurnValue,
+                        char **papszOptions, GDALProgressFunc pfnProgress, 
+                        void *pProgressArg );
+
+
+/************************************************************************/
+/*  Gridding interface.                                                 */
+/************************************************************************/
+
+/** Gridding Algorithms */
+typedef enum {
+  /*! Inverse distance to a power */    GGA_InverseDistanceToAPower = 1,
+  /*! Moving Average */                 GGA_MovingAverage = 2,
+  /*! Nearest Neighbor */               GGA_NearestNeighbor = 3,
+  /*! Minimum Value (Data Metric) */    GGA_MetricMinimum = 4,
+  /*! Maximum Value (Data Metric) */    GGA_MetricMaximum = 5,
+  /*! Data Range (Data Metric) */       GGA_MetricRange = 6,
+  /*! Number of Points (Data Metric) */ GGA_MetricCount = 7,
+  /*! Average Distance (Data Metric) */ GGA_MetricAverageDistance = 8,
+  /*! Average Distance Between Data Points (Data Metric) */
+                                        GGA_MetricAverageDistancePts = 9
+} GDALGridAlgorithm;
+
+/** Inverse distance to a power method control options */
+typedef struct
+{
+    /*! Weighting power. */
+    double  dfPower;
+    /*! Smoothing parameter. */
+    double  dfSmoothing;
+    /*! Reserved for future use. */
+    double  dfAnisotropyRatio;
+    /*! Reserved for future use. */
+    double  dfAnisotropyAngle;
+    /*! The first radius (X axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius1;
+    /*! The second radius (Y axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius2;
+    /*! Angle of ellipse rotation in degrees.
+     *
+     * Ellipse rotated counter clockwise.
+     */
+    double  dfAngle;
+    /*! Maximum number of data points to use.
+     *
+     * Do not search for more points than this number.
+     * If less amount of points found the grid node considered empty and will
+     * be filled with NODATA marker.
+     */
+    GUInt32 nMaxPoints;
+    /*! Minimum number of data points to use.
+     *
+     * If less amount of points found the grid node considered empty and will
+     * be filled with NODATA marker.
+     */
+    GUInt32 nMinPoints;
+    /*! No data marker to fill empty points. */
+    double  dfNoDataValue;
+} GDALGridInverseDistanceToAPowerOptions;
+
+/** Moving average method control options */
+typedef struct
+{
+    /*! The first radius (X axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius1;
+    /*! The second radius (Y axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius2;
+    /*! Angle of ellipse rotation in degrees.
+     *
+     * Ellipse rotated counter clockwise.
+     */
+    double  dfAngle;
+    /*! Minimum number of data points to average.
+     *
+     * If less amount of points found the grid node considered empty and will
+     * be filled with NODATA marker.
+     */
+    GUInt32 nMinPoints;
+    /*! No data marker to fill empty points. */
+    double  dfNoDataValue;
+} GDALGridMovingAverageOptions;
+
+/** Nearest neighbor method control options */
+typedef struct
+{
+    /*! The first radius (X axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius1;
+    /*! The second radius (Y axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius2;
+    /*! Angle of ellipse rotation in degrees.
+     *
+     * Ellipse rotated counter clockwise.
+     */
+    double  dfAngle;
+    /*! No data marker to fill empty points. */
+    double  dfNoDataValue;
+} GDALGridNearestNeighborOptions;
+
+/** Data metrics method control options */
+typedef struct
+{
+    /*! The first radius (X axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius1;
+    /*! The second radius (Y axis if rotation angle is 0) of search ellipse. */
+    double  dfRadius2;
+    /*! Angle of ellipse rotation in degrees.
+     *
+     * Ellipse rotated counter clockwise.
+     */
+    double  dfAngle;
+    /*! Minimum number of data points to average.
+     *
+     * If less amount of points found the grid node considered empty and will
+     * be filled with NODATA marker.
+     */
+    GUInt32 nMinPoints;
+    /*! No data marker to fill empty points. */
+    double  dfNoDataValue;
+} GDALGridDataMetricsOptions;
+
+CPLErr CPL_DLL
+GDALGridCreate( GDALGridAlgorithm, const void *, GUInt32,
+                const double *, const double *, const double *,
+                double, double, double, double,
+                GUInt32, GUInt32, GDALDataType, void *,
+                GDALProgressFunc, void *);
 CPL_C_END
                             
 #endif /* ndef GDAL_ALG_H_INCLUDED */

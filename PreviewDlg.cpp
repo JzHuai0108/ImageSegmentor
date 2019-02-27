@@ -30,6 +30,7 @@ CPreviewDlg::CPreviewDlg(CWnd* pParent /*=NULL*/)
 		dataChannel[i] = 0;
 	}
 
+
 	InitCoordinate();
 	//{{AFX_DATA_INIT(CPreviewDlg)
 	//}}AFX_DATA_INIT
@@ -87,6 +88,15 @@ BOOL CPreviewDlg::OnInitDialog()
 	pMax->SetWindowText(msg);
 	msg.Format("%.4f",curMin);
 	pThresh->SetWindowText(msg);
+	pPic=(CStatic*)GetDlgItem(IDC_STATIC_PICBOX); 
+
+	pPic->ModifyStyle(0,SS_BITMAP);
+	if(mask.IsRectEmpty())
+	{
+		AfxMessageBox("The picture box for preview dialog is not initiated correctly! ");
+	}
+
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -274,21 +284,14 @@ void CPreviewDlg::OnPaint()
 	CPen GreenPen(PS_SOLID, 1, RGB(0, 255, 0));
 			pOldPen = dc.SelectObject(&GreenPen);
 			DrawColorHistogram(  &dc , dataChannel );
-			dc.SelectObject(pOldPen);
-	
-	
+			dc.SelectObject(pOldPen);	
 	
 	DrawCurrentFavorPosition(  &dc );
-
 	DisplayRGBCounts();
-	
+
+	CDialog::OnPaint();
 	// Do not call CDialog::OnPaint() for painting messages
 }
-
-
-
-
-
 void CPreviewDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar) 
 {
 	// TODO: Add your message handler code here and/or call default
@@ -301,6 +304,23 @@ void CPreviewDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	m_nCur = p_Slider->GetPos ();
 	bGrayValue=m_nCur;
 	InvalidateRect( rectDraw );
-	((CImageDoc*)(pView->GetDocument()))->m_HC.RegionThresh(curMin,mask);
+
+	CvSize sz = cvSize(mask.Width(),mask.Height());
+	IplImage* img = cvCreateImage( sz, 8,3 ); 
+	RegionThresh(&(((CImageDoc*)(pView->GetDocument()))->m_HC),curMin,mask,img);
+
+	CRect rect;
+	pPic->GetClientRect(&rect);
+	CDC *pDC=pPic->GetDC();
+	HDC hDC=pDC->GetSafeHdc();
+	
+	CvvImage cvvImg;
+	cvvImg.CopyOf(img);
+	cvvImg.DrawToHDC(hDC,&rect);
+	
+    cvReleaseImage( &img);
+	
 	CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
 }
+
+

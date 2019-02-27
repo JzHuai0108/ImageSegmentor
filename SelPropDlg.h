@@ -15,7 +15,6 @@ class CSelPropDlg : public CDialog
 // Construction
 public:
 	int numb;
-	CComboBox* pSP;
 	CSelPropDlg(CWnd* pParent = NULL);   // standard constructor
 
 // Dialog Data
@@ -41,7 +40,7 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(CSelPropDlg)
 	virtual BOOL OnInitDialog();
-	virtual void OnOK();
+	afx_msg void OnDestroy();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

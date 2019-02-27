@@ -3,9 +3,134 @@
 
 //#include "stdafx.h"
 #include <math.h>
+#include "mymath.h"
+#include "MyColorSpace.h"
+#include "Thinner.h"
+#include "MMOFUNC.h"
+
 //#include "ColorTable.h"
 //#include <complex>
 //using namespace std;
+typedef struct tagMyFeatureVector{
+	CString classname;
+	DOUBLE colorl;
+	DOUBLE colorlw;
+	DOUBLE coloru;
+    DOUBLE coloruw;
+	DOUBLE colorv;
+	DOUBLE colorvw;
+	DOUBLE minmaxtexl;
+	DOUBLE minmaxtexlw;
+	DOUBLE minmaxtexu;
+	DOUBLE minmaxtexuw;
+	DOUBLE minmaxtexv;
+	DOUBLE minmaxtexvw;
+}MyFeatureVector;	
+
+typedef struct tagMyPtNei{
+	BYTE* ptneiarr;
+}MyPtNei;
+
+typedef struct tagRgnInfo{
+	BOOL  isflag;//备用标记；
+	INT   ptcount;//该区所含的点数；
+	FLOAT   l;//该区l均值
+	FLOAT   u;//该区u均值
+	FLOAT   v;//该区v均值
+}MyRgnInfo;//分割后各个区的一些统计信息,图像中各点所属区域的信息存放在flag数组中；
+
+//void RoadThin(BYTE*roadseed, int Width,int Height,vector<int>&terminal);
+
+	BYTE* EdgeSusan(BYTE*,int w,int h,int=20,bool=false);
+	void Morph(BYTE*,int wid, int heg,int opt);
+
+void GaussianFilter(BYTE*,int Width, int Height,float sigma);
+
+void EdgeMag(BYTE*,int w,int h);	
+void EdgePoints(BYTE* ,int w,int h,float sig=0.8f, float low=0.4f, float high=0.79f);
+MyLUV*  GetNearPixelsLUV(int xPos, int yPos
+	  , MyLUV* inLUVs, int picWidth, int picHeight
+	  , int inScale, int& outWidth, int& outHeight);
+//得到LUV邻域；
+
+
+void  GetNearPixelsGreenExt(int xPos, int yPos
+	    , BYTE* inPixels, int picWidth, int picHeight
+	    , int radius, BYTE** outArr);
+//得到邻域像素值(正方形,G通道),输入位置从0开始计数, 边缘处对称延拓；
+
+
+
+void  GetNearPixelsExt(int xPos, int yPos
+	, BYTE* inPixels, int picWidth, int picHeight
+	, int radius, BYTE** outArr);
+//得到邻域像素值(正方形),输入位置从0开始计数, 边缘处延拓；
+
+
+
+BYTE*  GetNearPixels(int xPos, int yPos, 
+      BYTE* inPixels, int picWidth, int picHeight, int inScale, 
+	  int& outWidth, int& outHeight);
+//得到邻域像素值, 输入位置从0开始计数；
+void GetGradient(BYTE* image, int width, int height
+		, FLOAT* deltar, FLOAT* deltasita);
+void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr);
+//将nearid的邻域加到curid的邻域中去；
+
+
+
+int  FindNearestNei(int curid, CString neistr, MyRgnInfo* rginfoarr, int* mergearr);
+//寻找neistr中与curid最接近的区，返回该区id号；
+
+
+int  FindMergedRgnMaxbias(int idint, int* mergearr, int bias);
+//大阈值终止查找合并区，用于coarse watershed, 
+//调用者必须保证idint有效，即：mergearr[idint]>0；
+//以及mergearr有效，即：mergearr[idint]<idint;
+
+
+int  FindMergedRgn(int idint, int* mergearr);
+//找到idint最终所合并到的区号；
+
+
+void  AddNeiRgn(int curid, int neiid, CString* neiarr);
+//增加neiid为curid的相邻区
+
+
+void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, CString* neiarr);
+//刷新当前点的所有相邻区；
+
+//////////////////////////////////////////////////////////////////////////
+// Luc Vincent and Pierre Soille的分水岭分割flood步骤的实现代码， 
+// 修改自相应伪代码, 伪代码来自作者论文《Watersheds in Digital Spaces:
+// An Efficient Algorithm Based on Immersion Simulations》
+// IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE.
+// VOL.13, NO.6, JUNE 1991;
+// by dzj, 2004.06.28 
+// MyImageGraPt* imiarr - 输入的排序后数组
+// int* graddarr -------- 输入的各梯度数组，由此直接存取各H像素点
+// int minh，int maxh == 最小最大梯度
+// int* flagarr --------- 输出标记数组
+// 注意：目前不设分水岭标记，只设每个像素所属区域；
+//////////////////////////////////////////////////////////////////////////
+void FloodVincent(MyImageGraPt* imiarr, int imageWidth,int imageHeight,int* graddarr, int minh, int maxh, int* flagarr, int& outrgnumber);
+
+//找到idint最终所合并到的区号；
+int FindMergedRgnMaxbias(int idint, int* mergearr, int bias);
+#define NearMeasureBias 200.0//判定区域颜色相似的阈值；
+void  MergeRgs(MyRgnInfo* rginfoarr, int rgnumber, int* flag, int width, int height, int* outmerge, int& rgnum);
+//合并相似区域；
+
+
+void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergearr);
+//合并相似区域；
+
+
+void  MergeTwoRgn(int curid, int nearid
+	, CString* neiarr, MyRgnInfo* rginfoarr, int* mergearr);
+//将nearid合并到curid中去，更新合并后的区信息，并记录该合并；
+
+
 
 //----------------------------------------------------------------------
 /* DIB处理函数

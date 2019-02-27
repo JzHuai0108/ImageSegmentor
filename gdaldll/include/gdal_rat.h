@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rat.h,v 1.2 2005/09/28 21:29:30 fwarmerdam Exp $
+ * $Id: gdal_rat.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  GDALRasterAttributeTable class declarations.
@@ -25,13 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: gdal_rat.h,v $
- * Revision 1.2  2005/09/28 21:29:30  fwarmerdam
- * added RAT documentation
- *
- */
+ ****************************************************************************/
 
 #ifndef GDAL_RAT_H_INCLUDED
 #define GDAL_RAT_H_INCLUDED
@@ -76,6 +70,8 @@ private:
     double dfRow0Min;
     double dfBinSize;
 
+    void  AnalyseColumns();
+    int   bColumnsAnalysed;
     int   nMinCol;
     int   nMaxCol;
 
@@ -92,7 +88,7 @@ public:
     
     int           GetColumnCount() const;
 
-    CPLString     GetNameOfCol( int ) const;
+    const char   *GetNameOfCol( int ) const;
     GDALRATFieldUsage GetUsageOfCol( int ) const;
     GDALRATFieldType GetTypeOfCol( int ) const;
     
@@ -100,7 +96,7 @@ public:
 
     int           GetRowCount() const;
 
-    CPLString     GetValueAsString( int iRow, int iField ) const;
+    const char   *GetValueAsString( int iRow, int iField ) const;
     int           GetValueAsInt( int iRow, int iField ) const;
     double        GetValueAsDouble( int iRow, int iField ) const;
 
@@ -116,7 +112,7 @@ public:
     double        GetRowMin( int iRow ) const;
     double        GetRowMax( int iRow ) const;
 
-    CPLErr        CreateColumn( CPLString osFieldName, 
+    CPLErr        CreateColumn( const char *pszFieldName, 
                                 GDALRATFieldType eFieldType, 
                                 GDALRATFieldUsage eFieldUsage );
     CPLErr        SetLinearBinning( double dfRow0Min, double dfBinSize );
@@ -126,6 +122,7 @@ public:
     CPLErr        XMLInit( CPLXMLNode *, const char * );
 
     CPLErr        InitializeFromColorTable( const GDALColorTable * );
+    GDALColorTable *TranslateToColorTable( int nEntryCount = -1 );
     
     void          DumpReadable( FILE * = NULL );
 };

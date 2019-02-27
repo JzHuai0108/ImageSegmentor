@@ -1,11 +1,1614 @@
 #include "stdafx.h"
 #include "GlobalApi.h"
-
+#include <queue>
+#include "susan.h"
 //#include "math.h"
 //#include <direct.h>
-//#include <complex>
-//using namespace std;
 
+using namespace std;
+//following freeman code style as introduced in opencv reference
+//roadseed points a memory space of size width*height with 1 denotes roads 0 for background 
+//after processing, 2 for centerline
+//vector<int>terminal returns the end pixels in form of serial number in roads after pruning
+/*void RoadThin(BYTE*roadseed, int Width,int Height,vector<int>&terminal)
+{
+	int sernum=0,i,j,L=Height*Width;
+	int x,y,tsize,hsize;
+	BYTE*roads=new BYTE[L];
+	memcpy(roads,roadseed,sizeof(BYTE)*L);
+	ThinnerRosenfeld(roads,Height,Width);
+	//	int **img2,xsize,ysize;
+	/*	ysize=Width; 
+	xsize=Height;
+	img2=new int *[ysize];
+	for (i=0; i<ysize; i++)
+	img2[i] =new int[xsize];
+	for(i=0;i<Height;i++)
+	{
+		for(j=0;j<Width;j++)
+		{	      
+			img2[j][i]=roads[i*Width+j];				
+		}
+	}
+	trimming(img2,xsize,ysize,3);	*/
+	//detect end nodes
+/*	vector<int> edgecode;
+	vector<int>::iterator vint;
+	int normin[8]={0},dest[8]={0};
+	int k,count,runlen,next;
+//x,y coordinate for pixel, tsize the size of stack storing terminals, 
+	//hsize terminals deleted during pruning
+	const int dangle=10;
+	bool flag;
+		//do not take care border pixels
+	for(i=0;i<Height;++i)
+	{
+		sernum=i*Width;
+		roads[sernum]=0;
+		roads[sernum+Width-1]=0;
+	}
+	sernum=(Height-1)*Width;
+	for(j=0;j<Width;++j)
+	{
+		roads[j]=0;
+		roads[sernum+j]=0;
+	}
+	for(i=1;i<Height-1;++i)
+	{
+		for(j=1;j<Width-1;++j)
+		{
+			sernum=i*Width+j;
+			if(roads[sernum]==1)
+			{
+				normin[0]=sernum+1;
+				normin[1]=sernum+1-Width;
+				normin[2]=sernum-Width;
+				normin[3]=sernum-1-Width;
+				normin[4]=sernum-1;
+				normin[5]=sernum-1+Width;
+				normin[6]=sernum+Width;
+				normin[7]=sernum+1+Width;
+				count=0;
+				for(k=0;k<8;++k)
+				{
+					if(roads[normin[k]])
+					{
+						dest[count]=k;
+						++count;
+					}
+				}
+				//there are spur lines on the left border of the image			
+
+				//1 0 0  count==4	0	1	0 count==4
+				//1 1 1	on the  	1	1	1 in the interior				
+				//1 0 0 image border0	1	0 for cross		
+			
+				switch(count)
+				{				
+				case 1:
+					terminal.push_back(sernum);
+					break;
+				case 2:
+					if((dest[1]-dest[0]==1)||(dest[1]-dest[0]==7))
+						terminal.push_back(sernum);
+					break;
+				case 3:
+				//	terminal.push_back(sernum);
+					break;
+				case 4: break;
+					default:
+				AfxMessageBox("damn!singular point exists!");break;
+				
+				}
+			}
+		}
+	}
+
+	//prune dangling edges, note that the pruned edge may be longer than later processed spurs 
+	tsize=terminal.size();
+	hsize=0;
+	for(i=0;i<tsize;++i)//for each end point
+	{
+		sernum=terminal[i];//position in image array
+		assert(roads[sernum]>0);
+			
+		runlen=0;
+		flag=true;//true for proceeding, false for halt while loop
+		edgecode.clear();
+		while(runlen<dangle)
+		{
+			assert(roads[sernum]==1);
+			x=sernum%Width;
+			y=sernum/Width;
+			for(j=0;j<8;++j)
+				normin[j]=0;
+			if(x==0)
+			{
+				if(y==0)
+				{					
+					normin[0]=roads[sernum+1];
+					normin[6]=roads[sernum+Width];
+					normin[7]=roads[sernum+1+Width];
+				}
+				else if(y==Height-1)
+				{
+					normin[0]=roads[sernum+1];
+					normin[1]=roads[sernum+1-Width];
+					normin[2]=roads[sernum-Width];
+				}
+				else
+				{
+					normin[0]=roads[sernum+1];
+					normin[1]=roads[sernum+1-Width];
+					normin[2]=roads[sernum-Width];
+					normin[6]=roads[sernum+Width];
+					normin[7]=roads[sernum+1+Width];					
+				}
+			}
+			else if(x==Width-1)
+			{
+				if(y==0)
+				{
+					normin[4]=roads[sernum-1];
+					normin[5]=roads[sernum-1+Width];
+					normin[6]=roads[sernum+Width];
+				}
+				else if(y==Height-1)
+				{
+					normin[2]=roads[sernum-Width];
+					normin[3]=roads[sernum-1-Width];
+					normin[4]=roads[sernum-1];
+				}
+				else
+				{
+					normin[2]=roads[sernum-Width];
+					normin[3]=roads[sernum-1-Width];
+					normin[4]=roads[sernum-1];
+					normin[5]=roads[sernum-1+Width];
+					normin[6]=roads[sernum+Width];
+					
+				}
+			}
+			else
+			{
+				if(y==0)
+				{
+					normin[0]=roads[sernum+1];
+					normin[4]=roads[sernum-1];
+					normin[5]=roads[sernum-1+Width];
+					normin[6]=roads[sernum+Width];
+					normin[7]=roads[sernum+1+Width];
+				}
+				else if(y==Height-1)
+				{
+					normin[0]=roads[sernum+1];
+					normin[1]=roads[sernum+1-Width];
+					normin[2]=roads[sernum-Width];
+					normin[3]=roads[sernum-1-Width];
+					normin[4]=roads[sernum-1];
+				}
+				else
+				{
+					normin[0]=roads[sernum+1];
+					normin[1]=roads[sernum+1-Width];
+					normin[2]=roads[sernum-Width];
+					normin[3]=roads[sernum-1-Width];
+					normin[4]=roads[sernum-1];
+					normin[5]=roads[sernum-1+Width];
+					normin[6]=roads[sernum+Width];
+					normin[7]=roads[sernum+1+Width];
+					
+				}
+			}					
+			count=0;
+			for(k=0;k<8;++k)
+			{
+				if(normin[k])
+				{
+					dest[count]=k;
+					++count;
+				}
+			}
+			switch(count)
+			{				
+			case 1:
+				if(runlen>0)					
+				{
+					AfxMessageBox("small edge with length less than 7 exist!");
+					flag=false;
+				}
+				next=dest[0];
+				edgecode.push_back(sernum);
+				++runlen;
+				break;
+			case 2:
+				assert(runlen>0);
+				next=next>3?next-4:next+4;
+				next=dest[0]+dest[1]-next;
+				
+				edgecode.push_back(sernum);
+				++runlen;
+				break;
+			case 3://we don't push back sernum here, bacause if that sernum is nullified in roads
+				//the other spurs may not be found or fall into dead loops
+			case 4://010
+				   //111
+				   //010
+				flag=false;
+				break;
+			default: 
+				AfxMessageBox("neighbor count illegal!");
+				break;
+				
+			}
+			if(flag==false)
+				break;
+			switch(next)
+			{
+			case 0:
+				++sernum;
+				break;
+			case 1:
+				sernum=sernum-Width+1;
+				break;
+			case 2:
+				sernum=sernum-Width;
+				break;
+			case 3:
+				sernum=sernum-Width-1;
+				break;
+			case 4:
+				sernum=sernum-1;
+				break;
+			case 5:
+				sernum=sernum+Width-1;
+				break;
+			case 6:
+				sernum=sernum+Width;
+				break;
+			case 7:
+				sernum=sernum+Width+1;
+				break;
+			default:
+				AfxMessageBox("next neighbor index exceeds bound!");
+			}				
+			
+		}
+		assert(runlen==edgecode.size());
+		if(runlen<dangle)//negative pixels in edgecode
+		{
+			for(k=0;k<runlen;++k)			
+				roads[edgecode[k]]=0;
+			++hsize;
+		}	
+	}
+	edgecode.clear();
+	//get really terminals
+	hsize=tsize-hsize;
+	vint=terminal.begin();
+	while(vint!=terminal.end())
+	{
+		if(roads[*vint]==0)
+		{			
+			terminal.erase(vint);
+		}
+		else
+		{
+			++vint;
+		}
+	}
+	assert(hsize==terminal.size());
+	for(i=0;i<L;++i)
+		roadseed[i]+=roads[i];
+
+	//show result
+/*	CvSize bound=cvSize(Width,Height);
+	IplImage*portal=cvCreateImage(bound, IPL_DEPTH_8U , 3);
+	cvNamedWindow("Portal", 0);		
+	cvZero(portal);
+	for(i=0;i<Height;++i)
+	{
+		for(j=0;j<Width;++j)
+		{				
+			if(roads[i*Width+j]>0)//(img2[j][i]==1)
+			{	uchar* temp_ptr = &((uchar*)(portal->imageData + portal->widthStep*i))[j*3];
+			temp_ptr[0]=0;
+			temp_ptr[1]=255;
+			temp_ptr[2]=0;
+			}		
+		}   
+	}
+	count=terminal.size();
+	for(k=0;k<count;++k)
+	{
+		i=terminal[k]/Width;
+		j=terminal[k]%Width;
+		CvPoint center=cvPoint(j,i);		
+		cvCircle( portal, center, 2, CV_RGB (255, 0, 0 ),1);
+	}
+
+	cvFlip(portal);
+	cvShowImage("Portal", portal);
+	cvWaitKey(0);
+	cvDestroyWindow("Portal");
+	cvReleaseImage(&portal);*
+	
+	delete[]roads;
+
+}*/
+//process binary image data stored in EM with white background
+void Morph(BYTE*EM, int Width,int Height,int opt)
+{
+	int i,j;
+	int *img;
+	int **img2;
+	int xsize,ysize;
+	//2 3 5 outperform others, test image has bright background
+	//before processing negative or binarize might be required
+	//note the order of height and width in the parameters list of each thinning operation
+	switch(opt)
+	{
+	case 1:
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				EM[i*Width+j]=~EM[i*Width+j];
+			}
+		}
+		
+		ThinnerPavlidis(EM,Height,Width);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{
+				
+				if(EM[i*Width+j]!=0)
+					EM[i*Width+j]=(BYTE)255;
+			}   
+		}
+		break;
+	case 2:	
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				EM[i*Width+j]=~EM[i*Width+j];
+			}
+		}
+		
+		ThinnerHilditch(EM,Height,Width);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{
+				
+				if(EM[i*Width+j]!=0)
+					EM[i*Width+j]=(BYTE)255;
+			}   
+		}
+		break;
+	case 3:
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				if(EM[i*Width+j]==0)
+					EM[i*Width+j]=1;
+				
+				else
+					EM[i*Width+j]=0;
+			}
+		}
+		ThinnerRosenfeld(EM,Height,Width);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{
+				
+				if(EM[i*Width+j]==1)
+					EM[i*Width+j]=(BYTE)255;
+				
+				else
+					EM[i*Width+j]=(BYTE)0;
+			}   
+		}
+		break;
+	case 4:
+
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				EM[i*Width+j]=~EM[i*Width+j];
+			}
+		}
+		ThiningDIBSkeleton (EM,Width,Height);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{
+				
+				if(EM[i*Width+j]!=0)
+					EM[i*Width+j]=(BYTE)255;
+			}   
+		}
+		break;
+	case 5://from image-j1 
+		img=new int[Height*Width];
+	
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				if(EM[i*Width+j]==0)
+					img[i*Width+j]=1;				
+				else
+					img[i*Width+j]=0;
+			}
+		}
+		Thin_2(img,0, 0 , (int)Height,(int)Width);
+		
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{				
+				if(img[i*Width+j]!=0)
+					EM[i*Width+j]=(BYTE)0;
+				else EM[i*Width+j]=(BYTE)255;
+			}   
+		}
+		delete[]img;
+		break;
+	case 6://from mmofunc not effective
+		ysize=Width; 
+		xsize=Height;
+		img2=new int *[ysize];
+		for (i=0; i<ysize; i++)
+			img2[i] =new int[xsize];
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				if(EM[i*Width+j]==0)
+					img2[j][i]=1;				
+				else
+					img2[j][i]=0;
+			}
+		}
+		thinning(img2,xsize,ysize,3,3);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{				
+				if(img2[j][i]!=0)
+					EM[i*Width+j]=(BYTE)255;
+			}   
+		}
+		for (i=0; i<ysize; i++)
+		{
+			delete[] img2[i];
+			
+		}
+		delete[]img2;
+	
+		break;
+	case 7://THIN BLACK THREAD IN BINARY IMAGE
+		ysize=Width; 
+		xsize=Height;
+		img2=new int *[ysize];
+		for (i=0; i<ysize; i++)
+			img2[i] =new int[xsize];
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{	      
+				if(EM[i*Width+j]==0)
+					img2[j][i]=1;				
+				else
+					img2[j][i]=0;
+			}
+		}
+		trimming(img2,xsize,ysize,3);
+		for(i=0;i<Height;i++)
+		{
+			for(j=0;j<Width;j++)
+			{				
+				if(img2[j][i]!=0)
+					EM[i*Width+j]=(BYTE)0;
+				else
+					EM[i*Width+j]=255;
+			}   
+		}
+		for (i=0; i<ysize; i++)
+		{
+			delete[] img2[i];		
+		}
+		delete[]img2;
+	
+		break;
+	default: break;
+	}	
+}
+BYTE* EdgeSusan(BYTE*EM, int w,int h,int BT,bool Trixtri)
+{
+	int L=h*w,y=0;
+	BYTE*pPE=EM;
+	susanedge(EM,w,h,BT,Trixtri);//mark edge pixels black on white background 
+	//convert to 255 standing for edge and 0 for nonedge
+	/*for(y=0;y<L;++y)
+	{
+			*pPE=255-(*pPE);						
+			++pPE;			
+	}*/
+	//if more accurate tuning is necessary, susan is optional.
+	return EM;
+}
+void GaussianFilter(BYTE*EM,int Width, int Height,float sigma)
+{
+	int L=Width*Height;
+	BYTE*pUnchSmooth=new BYTE[L];
+
+	GaussianSmooth(EM, Width, Height, sigma, pUnchSmooth);
+	memcpy(EM,pUnchSmooth,sizeof(BYTE)*L);
+	delete[]pUnchSmooth;
+}
+void EdgeMag(BYTE*EM,int w,int h)
+{
+
+	float *exEM = new float[w*h];
+	float max=0.f,min=256.f;
+	float *ptr=exEM;
+	int i=0,j=0;
+	// 调用SOBEL FILTER compute gradient absolute value
+	Gradient(EM,w,h,exEM);
+	for(j=0;j<h;++j)
+		for(i=0;i<w;++i)
+		{
+			if(*ptr>max)
+				max=*ptr;
+			if(*ptr<min)
+				min=*ptr;
+			++ptr;
+		}
+		ptr=exEM;
+		BYTE*p2=EM;
+		max-=min;
+	for(j=0;j<h;++j)
+		for(i=0;i<w;++i)
+		{
+			*p2=(*ptr-min)/max*255;
+			++p2;++ptr;
+		}
+	delete []exEM;
+	exEM=NULL;
+}
+//edgepoints finds edge candidate points in edge channel
+//input:edge channel with arbitrary size output: edge map with 255 for edge point
+//the edge channel is processed by gaussian filter and then canny filter
+void EdgePoints(BYTE* EM,int w,int h,float sig, float low, float high)
+{
+	BYTE* input = new BYTE[w*h];
+	memcpy(input,EM,sizeof(BYTE)*w*h);
+	// 调用canny函数进行边界提取
+	Canny(input,w,h, sig,low,high, EM);
+	
+	delete[] input;
+}
+
+MyLUV*  GetNearPixelsLUV(int xPos, int yPos
+	  , MyLUV* inLUVs, int picWidth, int picHeight
+	  , int inScale, int& outWidth, int& outHeight)
+//得到LUV邻域；
+{
+	//首先计算可能的邻域点数；
+	int templeft = xPos - inScale;
+	int tempright = xPos + inScale;
+	int left, right, up, down;//邻域的左右上下边界；
+	if (templeft>0 && tempright<picWidth)
+	{
+		left = inScale;
+		right = inScale;
+	}else
+	{
+		if (templeft<=0)
+		{
+			left = xPos;
+		}else
+		{
+			left = inScale;
+		}
+		if (tempright>=picWidth)
+		{
+			right = picWidth - xPos - 1;
+		}else
+		{
+			right = inScale;
+		}
+	}
+
+	int temptop = yPos - inScale;
+	int tempbottom = yPos + inScale;
+	if ( temptop>0 && tempbottom<picHeight )
+	{
+		up = inScale;
+		down = inScale;
+	}else
+	{
+		if (temptop<=0)
+		{
+			up = yPos;
+		}else
+		{
+			up = inScale;
+		}
+		if (tempbottom>=picHeight)
+		{
+			down = picHeight - yPos - 1;
+		}else
+		{
+			down = inScale;
+		}
+	}
+
+	outWidth = left + right + 1;
+	outHeight = up + down + 1;
+
+	LONG outlen = outWidth * outHeight;
+	MyLUV* outarr = new MyLUV[outlen];
+
+	LONG pos = 0;
+	for (int x=0; x<outWidth; x++)
+	{
+		for (int y=0; y<outHeight; y++)
+		{
+			pos = ( y*outWidth + x );
+			//以下求输出的第x,y个元素在原数组中的X和Y位置；
+			int originx = xPos - left + x;
+			int originy = yPos - up + y;
+			//在输入的图像数据中的位置；
+			LONG inpos = (originy * picWidth + originx); 
+			outarr[pos].l = inLUVs[inpos].l;
+			outarr[pos].u = inLUVs[inpos].u;
+			outarr[pos].v = inLUVs[inpos].v;
+		}
+	}
+	
+	return outarr;
+}
+
+void  GetNearPixelsGreenExt(int xPos, int yPos
+	    , BYTE* inPixels, int picWidth, int picHeight
+	    , int radius, BYTE** outArr)
+//得到邻域像素值(正方形,G通道),输入位置从0开始计数, 边缘处对称延拓；
+{
+	int matrixwidth = (radius*2+1);
+	BYTE* temparr = new BYTE[matrixwidth*matrixwidth];//包括指定点自身；
+
+	LONG pos = 0;
+	int rposx, rposy;
+	rposx = rposy = 0;//在图像中的位置；
+
+	for (int y=-radius; y<=radius; y++)
+	{
+		rposy = yPos+y;
+		if (rposy<0)
+		{
+			rposy = -rposy;
+		}else if (rposy>=picHeight)
+		{
+			rposy = picHeight - (rposy-picHeight);
+		}
+		
+		for (int x=-radius; x<=radius; x++)
+		{
+			rposx = xPos+x;
+			if (rposx<0)
+			{
+				rposx = -rposx;
+			}else if (rposx>=picWidth)
+			{
+				rposx = picWidth - (rposx-picWidth);
+			}
+
+			//在输入的图像数据中的位置；
+			LONG inpos = ( rposy*picWidth + rposx ) * 3 + 1;//RGB三色值；
+			//在输出数组中的位置；
+			LONG pos = ( (y+radius)*matrixwidth + (x+radius) );
+			temparr[pos] = ( inPixels[inpos] );
+		}
+	}
+
+	*outArr = temparr;
+}
+
+
+void  GetNearPixelsExt(int xPos, int yPos
+	, BYTE* inPixels, int picWidth, int picHeight
+	, int radius, BYTE** outArr)
+//得到邻域像素值(正方形),输入位置从0开始计数, 边缘处延拓；
+{
+	int matrixwidth = (radius*2+1);
+	BYTE* temparr = new BYTE[matrixwidth*matrixwidth*3];//包括指定点自身；
+
+	LONG pos = 0;
+	int rposx, rposy;
+	rposx = rposy = 0;//在图像中的位置；
+
+	for (int y=-radius; y<=radius; y++)
+	{
+		rposy = yPos+y;
+		if (rposy<0)
+		{
+			rposy = -rposy;
+		}else if (rposy>=picHeight)
+		{
+			rposy = picHeight - (rposy-picHeight);
+		}
+		
+		for (int x=-radius; x<=radius; x++)
+		{
+			rposx = xPos+x;
+			if (rposx<0)
+			{
+				rposx = -rposx;
+			}else if (rposx>=picWidth)
+			{
+				rposx = picWidth - (rposx-picWidth);
+			}
+
+			//在输入的图像数据中的位置；
+			LONG inpos = ( rposy*picWidth + rposx ) * 3;//RGB三色值；
+			//在输出数组中的位置；
+			LONG pos = ( (y+radius)*matrixwidth + (x+radius) ) * 3;
+			temparr[pos] = inPixels[inpos];
+			temparr[pos+1] = inPixels[inpos+1];
+			temparr[pos+2] = inPixels[inpos+2];
+		}
+	}
+
+	*outArr = temparr;
+}
+
+
+BYTE*  GetNearPixels(int xPos, int yPos, 
+      BYTE* inPixels, int picWidth, int picHeight, int inScale, 
+	  int& outWidth, int& outHeight)
+//得到邻域像素值, 输入位置从0开始计数；
+{
+	//首先计算可能的邻域点数；
+	int templeft = xPos - inScale;
+	int tempright = xPos + inScale;
+	int left, right, up, down;//邻域的左右上下边界；
+	if (templeft>0 && tempright<picWidth)
+	{
+		//outWidth = inScale * 2 + 1;//加1则包含了像素本身；
+		left = inScale;
+		right = inScale;
+	}else
+	{
+		if (templeft<=0)
+		{
+			//outWidth += xPos;//以左全在邻域内；
+			left = xPos;
+		}else
+		{
+			left = inScale;
+		}
+		if (tempright>=picWidth)
+		{
+			//outWidth += picWidth - xPos - 1;//以右全在邻域内；
+			right = picWidth - xPos - 1;
+		}else
+		{
+			right = inScale;
+		}
+
+/*
+		if (outWidth>picWidth)
+		{
+			outWidth = picWidth;//邻域宽度与图像宽相等；
+		}
+*/
+	}
+
+	int temptop = yPos - inScale;
+	int tempbottom = yPos + inScale;
+	if ( temptop>0 && tempbottom<picHeight )
+	{
+		//outWidth = inScale * 2 + 1;//加1则包含了像素本身；
+		up = inScale;
+		down = inScale;
+	}else
+	{
+		if (temptop<=0)
+		{
+			up = yPos;
+		}else
+		{
+			up = inScale;
+		}
+		if (tempbottom>=picHeight)
+		{
+			down = picHeight - yPos - 1;
+		}else
+		{
+			down = inScale;
+		}
+/*
+		if (outWidth>picWidth)
+		{
+			outWidth = picWidth;//邻域宽度与图像宽相等；
+		}
+*/
+	}
+
+	outWidth = left + right + 1;
+	outHeight = up + down + 1;
+
+	LONG outlen = outWidth * outHeight;
+	BYTE* outarr = new BYTE[outlen*3];
+
+	LONG pos = 0;
+	for (int x=0; x<outWidth; x++)
+	{
+		for (int y=0; y<outHeight; y++)
+		{
+			pos = ( y*outWidth + x ) * 3;//RGB三色值；
+			//以下求输出的第x,y个元素在原数组中的X和Y位置；
+			int originx = xPos - left + x;
+			int originy = yPos - up + y;
+			//在输入的图像数据中的位置；
+			LONG inpos = (originy * picWidth + originx) * 3; 
+			outarr[pos] = inPixels[inpos];
+			outarr[pos+1] = inPixels[inpos+1];
+			outarr[pos+2] = inPixels[inpos+2];
+		}
+	}
+	
+	return outarr;
+}
+void GetGradient(BYTE* image, int width, int height
+		, FLOAT* deltar, FLOAT* deltasita)
+//得到输入图像的梯度；
+{
+	//下面计算各像素在水平和垂直方向上的梯度,边缘点梯度计为0；
+	int* deltaxarr;
+	int* deltayarr;
+	int grawidth = width;
+	int graheight = height;
+	int deltacount = grawidth * graheight;
+	deltaxarr = new int[deltacount];
+	deltayarr = new int[deltacount];
+
+    //暂不计算边缘点；
+	for (int y=1; y<graheight-1; y++)
+	{
+		for (int x=1; x<grawidth-1; x++)
+		{
+			int inarrpos = ((y)*width + (x))*3 + 1;//在输入块中的位置；
+			int deltaarrpos = y*grawidth + x;//在梯度数组中的位置；
+			//卷积计算；
+			deltaxarr[deltaarrpos] = (int) ( (
+				image[((y-1)*width + (x+1))*3 + 1] //右上
+				+ image[((y)*width + (x+1))*3 + 1] //右
+				+ image[((y+1)*width + (x+1))*3 + 1] //右下
+				- image[((y-1)*width + (x-1))*3 + 1] //左上
+				- image[((y)*width + (x-1))*3 + 1] //左
+				- image[((y+1)*width + (x-1))*3 + 1] ) / 3 );//左下
+			deltayarr[deltaarrpos] = (int) ( ( 
+				image[((y-1)*width + (x+1))*3 + 1] //右上
+				+ image[((y-1)*width + (x))*3 + 1] //上
+				+ image[((y-1)*width + (x-1))*3 + 1] //左上
+				- image[((y+1)*width + (x-1))*3 + 1] //左下
+				- image[((y+1)*width + (x))*3 + 1] //下
+				- image[((y+1)*width + (x+1))*3 + 1]) / 3 );//右下
+		}
+	}
+
+	//边缘赋为其内侧点的值；
+	for (y=0; y<graheight; y++)
+	{
+		int x1 = 0;
+		int pos1 = y*grawidth + x1;
+		deltaxarr[pos1] = deltaxarr[pos1+1];
+		deltayarr[pos1] = deltayarr[pos1+1];
+		int x2 = grawidth-1;
+		int pos2 = y*grawidth + x2;
+		deltaxarr[pos2] = deltaxarr[pos2-1];
+		deltayarr[pos2] = deltayarr[pos2-1];
+	}
+	for (int x=0; x<grawidth; x++)
+	{
+		int y1 = 0;
+		int pos1 = x;
+		int inner = x + grawidth;//下一行；
+		deltaxarr[pos1] = deltaxarr[inner];
+		deltayarr[pos1] = deltayarr[inner];
+		int y2 = graheight-1;
+		int pos2 = y2*grawidth + x;
+		inner = pos2 - grawidth;//上一行；
+		deltaxarr[pos2] = deltaxarr[inner];
+		deltayarr[pos2] = deltayarr[inner];
+	}
+
+
+	for (y=0; y<graheight; y++)
+	{
+		for (x=0; x<grawidth; x++)
+		{
+			int temppos = y*grawidth + x;
+			if ( (deltaxarr[temppos])==0 )
+			{
+				if (deltayarr[temppos]!=0)
+				{
+					deltasita[temppos] = 0;//水平方向;
+					deltar[temppos] = (FLOAT) abs(deltayarr[temppos]);
+				}else
+				{
+					deltasita[temppos] = -1;//无确定方向;
+					deltar[temppos] = (FLOAT) abs(deltayarr[temppos]);
+				}
+				continue;
+			}
+			deltasita[temppos] = (FLOAT) ( atan( 
+				(FLOAT)deltayarr[temppos]
+				/ (FLOAT)deltaxarr[temppos] ) + PI/2. );
+			deltar[temppos] = (FLOAT) sqrt((DOUBLE) 
+				( deltayarr[temppos]*deltayarr[temppos]
+				+ deltaxarr[temppos]*deltaxarr[temppos] ) );
+		}
+	}
+
+	delete [] deltaxarr; deltaxarr = NULL; //删除水平和垂直梯度数组；
+	delete [] deltayarr; deltayarr = NULL;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Luc Vincent and Pierre Soille的分水岭分割flood步骤的实现代码， 
+// 修改自相应伪代码, 伪代码来自作者论文《Watersheds in Digital Spaces:
+// An Efficient Algorithm Based on Immersion Simulations》
+// IEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE.
+// VOL.13, NO.6, JUNE 1991;
+// by dzj, 2004.06.28 
+// MyImageGraPt* imiarr - 输入的排序后数组
+// int* graddarr -------- 输入的各梯度数组，由此直接存取各H像素点
+// int minh，int maxh == 最小最大梯度
+// int* flagarr --------- 输出标记数组
+// 注意：目前不设分水岭标记，只设每个像素所属区域；
+//////////////////////////////////////////////////////////////////////////
+void  FloodVincent(MyImageGraPt* imiarr,int imageWidth,int imageHeight, int* graddarr, int minh, int maxh, int* flagarr, int& outrgnumber)
+{
+	const int INIT = -2;
+	const int MASK = -1;
+	const int WATERSHED = 0;
+	int h = 0;
+	int imagelen = imageWidth * imageHeight;
+	for (int i=0; i<imagelen; i++)
+	{
+		flagarr[i] = INIT;
+	}
+	//memset(flagarr, INIT, sizeof(int)*imagelen);
+	int* imd = new int[imagelen];//距离数组，直接存取；
+	for (i=0; i<imagelen; i++)
+	{
+		imd[i] = 0;
+	}
+	//memset(imd, 0, sizeof(int)*imagelen);
+	std::queue <int> myqueue;
+	int curlabel = 0;//各盆地标记；
+
+	for (h=minh; h<=maxh; h++)
+	{
+		int stpos = graddarr[h];
+		int edpos = graddarr[h+1];
+		for (int ini=stpos; ini<edpos; ini++)
+		{
+			int x = imiarr[ini].x;
+			int y = imiarr[ini].y;
+			int ipos = y*imageWidth + x;
+			flagarr[ipos] = MASK;
+			//以下检查该点邻域是否已标记属于某区或分水岭，若是，则将该点加入fifo;
+			int left = ipos - 1;
+			if (x-1>=0) 
+			{
+				if (flagarr[left]>=0)
+				{
+					imd[ipos] = 1;
+					myqueue.push(ipos);//点位置压入fifo;
+					continue;
+				}				
+			}
+			int right = ipos + 1;
+			if (x+1<imageWidth) 
+			{
+				if (flagarr[right]>=0) 
+				{
+					imd[ipos] = 1;
+					myqueue.push(ipos);//点位置压入fifo;
+					continue;
+				}
+			}
+			int up = ipos - imageWidth;
+			if (y-1>=0) 
+			{
+				if (flagarr[up]>=0)
+				{
+					imd[ipos] = 1;
+					myqueue.push(ipos);//点位置压入fifo;
+					continue;
+				}				
+			}
+			int down = ipos + imageWidth;
+			if (y+1<imageHeight)
+			{
+				if (flagarr[down]>=0) 
+				{
+					imd[ipos] = 1;
+					myqueue.push(ipos);//点位置压入fifo;
+					continue;
+				}			
+			}
+		}
+
+    	//以下根据先进先出队列扩展现有盆地；
+		int curdist = 1; myqueue.push(-99);//特殊标记；
+		while (TRUE)
+		{
+			int p = myqueue.front();
+			myqueue.pop();
+			if (p == -99)
+			{
+				if ( myqueue.empty() )
+				{
+					break;
+				}else
+				{
+					myqueue.push(-99);
+					curdist = curdist + 1;
+					p = myqueue.front();
+					myqueue.pop();
+				}
+			}
+
+			//以下找p的邻域；
+			int y = (int) (p/imageWidth);
+			int x = p - y*imageWidth;
+			int left = p - 1;
+			if  (x-1>=0)
+			{
+				if ( ( (imd[left]<curdist) && flagarr[left]>0)
+					|| (flagarr[left]==0) ) 
+				{
+					if ( flagarr[left]>0 )
+					{
+						//ppei属于某区域（不是分水岭）；
+						if ( (flagarr[p]==MASK) 
+							|| (flagarr[p]==WATERSHED) )
+						{
+							//将其设为邻点所属区域；
+							flagarr[p] = flagarr[left];
+						}else if (flagarr[p]!=flagarr[left])
+						{
+							//原来赋的区与现在赋的区不同，设为分水岭；
+							//flagarr[p] = WATERSHED;
+						}
+					}else if (flagarr[p]==MASK)//ppei为分岭；
+					{
+						flagarr[p] = WATERSHED;
+					}
+				}else if ( (flagarr[left]==MASK) && (imd[left]==0) )
+				//ppei中已MASK的点，但尚未标记（即不属某区也不是分水岭）;
+				{
+					imd[left] = curdist + 1; myqueue.push(left);
+				}
+			}
+			
+			int right = p + 1;
+			if (x+1<imageWidth) 
+			{
+				if ( ( (imd[right]<curdist) &&  flagarr[right]>0)
+					|| (flagarr[right]==0) )
+				{
+					if ( flagarr[right]>0 )
+					{
+						//ppei属于某区域（不是分水岭）；
+						if ( (flagarr[p]==MASK) 
+							|| (flagarr[p]==WATERSHED) )
+						{
+							//将其设为邻点所属区域；
+							flagarr[p] = flagarr[right];
+						}else if (flagarr[p]!=flagarr[right])
+						{
+							//原来赋的区与现在赋的区不同，设为分水岭；
+							//flagarr[p] = WATERSHED;
+						}
+					}else if (flagarr[p]==MASK)//ppei为分岭；
+					{
+						flagarr[p] = WATERSHED;
+					}
+				}else if ( (flagarr[right]==MASK) && (imd[right]==0) )
+					//ppei中已MASK的点，但尚未标记（即不属某区也不是分水岭）;
+				{
+					imd[right] = curdist + 1; myqueue.push(right);
+				}
+			}
+			
+			int up = p - imageWidth;
+			if (y-1>=0) 
+			{
+				if ( ( (imd[up]<curdist) &&  flagarr[up]>0)
+					|| (flagarr[up]==0) )
+				{
+					if ( flagarr[up]>0 )
+					{
+						//ppei属于某区域（不是分水岭）；
+						if ( (flagarr[p]==MASK) 
+							|| (flagarr[p]==WATERSHED) )
+						{
+							//将其设为邻点所属区域；
+							flagarr[p] = flagarr[up];
+						}else if (flagarr[p]!=flagarr[up])
+						{
+							//原来赋的区与现在赋的区不同，设为分水岭；
+							//flagarr[p] = WATERSHED;
+						}
+					}else if (flagarr[p]==MASK)//ppei为分岭；
+					{
+						flagarr[p] = WATERSHED;
+					}
+				}else if ( (flagarr[up]==MASK) && (imd[up]==0) )
+					//ppei中已MASK的点，但尚未标记（即不属某区也不是分水岭）;
+				{
+					imd[up] = curdist + 1; myqueue.push(up);
+				}
+			}
+			
+			int down = p + imageWidth;
+			if (y+1<imageHeight) 
+			{
+				if ( ( (imd[down]<curdist) &&  flagarr[down]>0)
+					|| (flagarr[down]==0) )
+				{
+					if ( flagarr[down]>0 )
+					{
+						//ppei属于某区域（不是分水岭）；
+						if ( (flagarr[p]==MASK) 
+							|| (flagarr[p]==WATERSHED) )
+						{
+							//将其设为邻点所属区域；
+							flagarr[p] = flagarr[down];
+						}else if (flagarr[p]!=flagarr[down])
+						{
+							//原来赋的区与现在赋的区不同，设为分水岭；
+							//flagarr[p] = WATERSHED;
+						}
+					}else if (flagarr[p]==MASK)//ppei为分岭；
+					{
+						flagarr[p] = WATERSHED;
+					}
+				}else if ( (flagarr[down]==MASK) && (imd[down]==0) )
+					//ppei中已MASK的点，但尚未标记（既不属某区也不是分水岭）;
+				{
+					imd[down] = curdist + 1; myqueue.push(down);
+				}	
+			}
+
+		}//以上现有盆地的扩展；
+
+		//以下处理新发现的盆地；
+		for (ini=stpos; ini<edpos; ini++)
+		{
+			int x = imiarr[ini].x;
+			int y = imiarr[ini].y;
+			int ipos = y*imageWidth + x;
+			imd[ipos] = 0;//重置所有距离
+			if (flagarr[ipos]==MASK)
+			{
+				//经过前述扩展后该点仍为MASK，则该点必为新盆地的一个起始点;
+				curlabel = curlabel + 1;
+				myqueue.push(ipos); 
+				flagarr[ipos] = curlabel;
+				
+				while ( myqueue.empty()==FALSE )
+				{
+					int ppei = myqueue.front();
+					myqueue.pop();
+					int ppeiy = (int) (ppei/imageWidth);
+			        int ppeix = ppei - ppeiy*imageWidth;
+					
+					int ppeileft = ppei - 1;
+					if ( (ppeix-1>=0) && (flagarr[ppeileft]==MASK) )
+					{
+						myqueue.push(ppeileft);//点位置压入fifo;
+						flagarr[ppeileft] = curlabel;
+					}
+					int ppeiright = ppei + 1;
+					if ( (ppeix+1<imageWidth) && (flagarr[ppeiright]==MASK) )
+					{
+						myqueue.push(ppeiright);//点位置压入fifo;
+						flagarr[ppeiright] = curlabel;
+					}
+					int ppeiup = ppei - imageWidth;
+					if ( (ppeiy-1>=0) && (flagarr[ppeiup]==MASK) )
+					{
+						myqueue.push(ppeiup);//点位置压入fifo;
+						flagarr[ppeiup] = curlabel;
+					}
+					int ppeidown = ppei + imageWidth;
+					if ( (ppeiy+1<imageHeight) && (flagarr[ppeidown]==MASK) )
+					{
+						myqueue.push(ppeidown);//点位置压入fifo;
+						flagarr[ppeidown] = curlabel;
+					}					
+				}				
+			}
+		}//以上处理新发现的盆地；
+
+	}
+
+	outrgnumber = curlabel;	
+	delete [] imd; imd = NULL;
+}
+
+#define NearMeasureBias 200.0//判定区域颜色相似的阈值；
+void  MergeRgs(MyRgnInfo* rginfoarr, int rgnumber, int* flag, int width, int height, int* outmerge, int& rgnum)
+//合并相似区域；
+{
+	//////////////////////////////////////////////////////////////////////////
+	//1、建立各区的邻域数组；
+	//2、依次扫描各区域，寻找极小区域；
+	//3、对每个极小区（A），在相邻区中找到最相似者；
+	//4、与相似区（B）合并（各种信息刷新），在极小区（A）的邻域中
+	//   删除相似区（B），在邻域数组中删除相似区（B）对应的项，将
+	//   相似区（B）的相邻区s加到极小区（A）的邻域中去；
+	//5、记录合并信息，设一数组专门存放该信息，该数组的第A个元素值设为B；
+	//6、判断是否仍为极小区，若是则返回3；
+	//7、是否所有区域都已处理完毕，若非则返回2；
+	//
+	//   由于各区的相邻区不会太多，因此采用邻接数组作为存储结构；
+	//////////////////////////////////////////////////////////////////////////
+	CString* neiarr = new CString[rgnumber+1];//第一个不用；
+	int* mergearr = outmerge;//记录合并情况数组；
+	MyMath myMath;
+	//建立邻域数组；
+	for (int y=0; y<height; y++)
+	{
+		int lstart = y * width;
+		for (int x=0; x<width; x++)
+		{
+			int pos = lstart + x;
+			int left=-1, right=-1, up=-1, down=-1;
+			myMath.GetNeiInt(x, y, pos, width, height
+		, left, right, up, down);//找pos的四个邻域；
+			//确定并刷新邻域区信息；
+			int curid = flag[pos];
+			AddNeiOfCur(curid, left, right
+				, up, down, flag, neiarr);
+		}
+	}//建立邻域数组；
+	
+	//区域信息数组中的有效信息从1开始，第i个位置存放第i个区域的信息；
+	for (int rgi=1; rgi<=rgnumber; rgi++)
+	{
+		//扫描所有区域，找极小区；
+		LONG allpoints = width * height;
+		LONG nmin = (LONG) (allpoints / 400);
+		int curid = rgi;
+
+		//rginfoarr[rgi].isflag初始为FALSE，在被合并到其它区后改为TRUE；
+		while ( ( (rginfoarr[rgi].ptcount)<nmin ) 
+			&& !rginfoarr[rgi].isflag )
+		{
+			//该区为极小区，遍历所有相邻区，找最接近者；
+			CString neistr = neiarr[curid];
+			int nearid = FindNearestNei(curid, neistr, rginfoarr, mergearr);
+			//合并curid与nearid；
+			MergeTwoRgn(curid, nearid, neiarr
+				, rginfoarr, mergearr);			
+		} 
+	}
+
+	//以下再合并相似区域，（无论大小）,如果不需要，直接将整个循环注释掉就行了；
+	int countjjj = 0;
+	//区域信息数组中的有效信息从1开始，第i个位置存放第i个区域的信息；
+	for (int ii=1; ii<=rgnumber; ii++)
+	{
+		if (!rginfoarr[ii].isflag)
+		{
+			int curid = ii;
+			MergeNearest(curid, rginfoarr, neiarr, mergearr);
+		}
+	}
+
+
+
+	int counttemp = 0;
+	for (int i=0; i<rgnumber; i++)
+	{
+		if (!rginfoarr[i].isflag)
+		{
+			counttemp ++;
+		}
+	}
+
+	rgnum = counttemp;
+
+	delete [] neiarr; neiarr = NULL;
+}
+int FindMergedRgn(int idint, int* mergearr)
+//找到idint最终所合并到的区号；
+{
+	int outid = idint;
+	while ( mergearr[outid] > 0 )
+	{
+		outid = mergearr[outid];
+	}
+	return outid;
+}
+void  MergeNearest(int curid, MyRgnInfo* rginfoarr, CString* neiarr, int* mergearr)
+//合并相似区域；
+{
+	//依次处理各个邻域，若相似，则合并；
+	//CString neistr = neiarr[curid];
+	FLOAT cl, cu, cv;
+	cl = rginfoarr[curid].l;//当前区的LUV值；
+	cu = rginfoarr[curid].u;
+	cv = rginfoarr[curid].v;
+	BOOL loopmerged = TRUE;//一次循环中是否有合并操作发生，若无，则退出循环；
+
+	while (loopmerged)
+	{
+		loopmerged = FALSE;
+		CString tempstr = neiarr[curid];//用于本函数内部处理；
+		while (tempstr.GetLength()>0)
+		{
+			int pos = tempstr.Find(" ");
+			ASSERT(pos>=0);
+			CString idstr = tempstr.Left(pos);
+			tempstr.Delete(0, pos+1);
+			
+			int idint = (int) strtol(idstr, NULL, 10);
+			//判断该区是否已被合并，若是，则一直找到该区当前的区号；
+			idint = FindMergedRgn(idint, mergearr);
+			if (idint==curid)
+			{
+				continue;//这个邻区已被合并到当前区，跳过；
+			}
+			FLOAT tl, tu, tv;
+			tl = rginfoarr[idint].l;//当前处理的邻区的LUV值;
+			tu = rginfoarr[idint].u;
+			tv = rginfoarr[idint].v;
+			DOUBLE tempdis = pow(tl-cl, 2) 
+				+ pow(tu-cu, 2) + pow(tv-cv, 2);
+			if (tempdis<NearMeasureBias)
+			{
+				MergeTwoRgn(curid, idint, neiarr, rginfoarr, mergearr);
+				cl = rginfoarr[curid].l;//当前区的LUV值刷新；
+				cu = rginfoarr[curid].u;
+				cv = rginfoarr[curid].v;
+				loopmerged = TRUE;
+			}		
+		}
+	}
+}
+
+void  MergeTwoRgn(int curid, int nearid
+	, CString* neiarr, MyRgnInfo* rginfoarr, int* mergearr)
+//将nearid合并到curid中去，更新合并后的区信息，并记录该合并；
+{
+	//将区信息中nearid对应项的标记设为已被合并；
+	rginfoarr[nearid].isflag = TRUE;
+	//更新合并后的LUV信息；
+	LONG ptincur = rginfoarr[curid].ptcount;
+	LONG ptinnear = rginfoarr[nearid].ptcount;
+	DOUBLE curpercent = (FLOAT)ptincur / (FLOAT)(ptincur+ptinnear);
+	rginfoarr[curid].ptcount = ptincur + ptinnear;
+	rginfoarr[curid].l = (FLOAT) ( curpercent * rginfoarr[curid].l
+		+ (1-curpercent) * rginfoarr[nearid].l );
+	rginfoarr[curid].u = (FLOAT) ( curpercent * rginfoarr[curid].u
+		+ (1-curpercent) * rginfoarr[nearid].u );
+	rginfoarr[curid].v = (FLOAT) ( curpercent * rginfoarr[curid].v
+		+ (1-curpercent) * rginfoarr[nearid].v );
+	//将nearid的邻域加到curid的邻域中去；
+	AddBNeiToANei(curid, nearid, neiarr, mergearr);
+	//记录该合并；
+	mergearr[nearid] = curid;
+}
+
+void  AddBNeiToANei(int curid, int nearid, CString* neiarr, int* mergearr)
+//将nearid的邻域加到curid的邻域中去；
+{
+	//先从curid的邻区中把nearid删去；
+/*
+	CString tempstr;
+	tempstr.Format("%d ", nearid);
+	int temppos = neiarr[curid].Find(tempstr, 0);
+	while (temppos>0 && neiarr[curid].GetAt(temppos-1)!=' ')
+	{
+		temppos = neiarr[curid].Find(tempstr, temppos+1);
+	}
+	if (temppos>=0)
+	{
+		//否则邻近区为合并过来的区，忽略；
+		neiarr[curid].Delete(temppos, tempstr.GetLength());
+	}
+*/
+    //将nearid的邻区依次加到curid的邻区中去；
+	CString neistr = neiarr[nearid];
+	CString curstr = neiarr[curid];
+	//一般说来，极小区的邻域应该较少，因此，为着提高合并速度，将
+	//curstr加到neistr中去，然后将结果赋给neiarr[curid];
+	while ( curstr.GetLength()>0 )
+	{
+		int pos = curstr.Find(" ");		
+		ASSERT(pos>=0);
+		CString idstr = curstr.Left(pos);
+        curstr.Delete(0, pos+1);
+		int idint = (int) strtol(idstr, NULL, 10);
+		idint = FindMergedRgn(idint, mergearr);
+		idstr += " ";
+		if ( (idint == curid) || (idint == nearid) )
+		{
+			continue;//本区不与本区相邻；
+		}else
+		{
+			if ( neistr.Find(idstr, 0) >= 0 )
+			{
+				continue;
+			}else
+			{
+				neistr += idstr;//加到邻区中去;
+			}
+		}		
+	}
+	neiarr[curid] = neistr;
+/*
+	CString toaddneis = neiarr[nearid];
+	while (toaddneis.GetLength()>0)
+	{
+		int pos = toaddneis.Find(" ");		
+		ASSERT(pos>=0);
+		CString idstr = toaddneis.Left(pos);
+        toaddneis.Delete(0, pos+1);
+		int idint = (int) strtol(idstr, NULL, 10);
+		idint = FindMergedRgn(idint, mergearr);
+		idstr += " ";
+		if ( (idint == curid) || (idint == nearid) )
+		{
+			continue;//本区不与本区相邻；
+		}else
+		{
+			if ( neiarr[curid].Find(idstr, 0) >= 0 )
+			{
+				continue;
+			}else
+			{
+				neiarr[curid] += idstr;//加到邻区中去;
+			}
+		}		
+	}
+*/
+}
+
+
+int  FindNearestNei(int curid, CString neistr, MyRgnInfo* rginfoarr, int* mergearr)
+//寻找neistr中与curid最接近的区，返回该区id号；
+{
+	int outid = -1;
+	DOUBLE mindis = 999999;
+	FLOAT cl, cu, cv;
+	cl = rginfoarr[curid].l;//当前区的LUV值；
+	cu = rginfoarr[curid].u;
+	cv = rginfoarr[curid].v;
+
+	CString tempstr = neistr;//用于本函数内部处理；
+	while (tempstr.GetLength()>0)
+	{
+		int pos = tempstr.Find(" ");
+		ASSERT(pos>=0);
+		CString idstr = tempstr.Left(pos);
+		tempstr.Delete(0, pos+1);
+
+		int idint = (int) strtol(idstr, NULL, 10);
+		//判断该区是否已被合并，若是，则一直找到该区当前的区号；
+		idint = FindMergedRgn(idint, mergearr);
+		if (idint==curid)
+		{
+			continue;//这个邻区已被合并到当前区，跳过；
+		}
+		FLOAT tl, tu, tv;
+		tl = rginfoarr[idint].l;//当前处理的邻区的LUV值;
+		tu = rginfoarr[idint].u;
+		tv = rginfoarr[idint].v;
+		DOUBLE tempdis = pow(tl-cl, 2) 
+			+ pow(tu-cu, 2) + pow(tv-cv, 2);
+		if (tempdis<mindis)
+		{
+			mindis = tempdis;//最大距离和对应的相邻区ID；
+			outid = idint;
+		}		
+	}
+
+	return outid;
+}
+
+int  FindMergedRgnMaxbias(int idint, int* mergearr, int bias)
+//大阈值终止查找合并区，用于coarse watershed, 
+//调用者必须保证idint有效，即：mergearr[idint]>0；
+//以及mergearr有效，即：mergearr[idint]<idint;
+{
+	int outid = idint;
+	while ( mergearr[outid]<bias )
+	{
+		outid = mergearr[outid];
+	}
+	return mergearr[outid];
+}
+
+
+void  AddNeiRgn(int curid, int neiid, CString* neiarr)
+//增加neiid为curid的相邻区
+{
+	CString tempneis = neiarr[curid];//当前的相邻区；
+	CString toaddstr;
+	toaddstr.Format("%d ", neiid);
+
+	int temppos = tempneis.Find(toaddstr, 0);
+	while (temppos>0 && neiarr[curid].GetAt(temppos-1)!=' ')
+	{
+		temppos = neiarr[curid].Find(toaddstr, temppos+1);
+	}
+	
+	if ( temppos<0 )
+	{
+		//当前相邻区中没有tempneis,则加入
+		neiarr[curid] += toaddstr;
+	}
+}
+
+void  AddNeiOfCur(int curid, int left, int right, int up, int down, int* flag, CString* neiarr)
+//刷新当前点的所有相邻区；
+{
+	int leftid, rightid, upid, downid;
+	leftid = rightid = upid = downid = curid;
+	if (left>=0)
+	{
+		leftid = flag[left];
+		if (leftid!=curid)
+		{
+			//邻点属于另一区, 加邻域点信息；
+			AddNeiRgn(curid, leftid, neiarr);
+		}
+	}
+	if (right>0)
+	{
+		rightid = flag[right];
+		if (rightid!=curid)
+		{
+			//邻点属于另一区, 加邻域点信息；
+			AddNeiRgn(curid, rightid, neiarr);
+		}
+	}
+	if (up>=0)
+	{
+		upid = flag[up];
+		if (upid!=curid)
+		{
+			//邻点属于另一区, 加邻域点信息；
+			AddNeiRgn(curid, upid, neiarr);
+		}
+	}
+	if (down>0)
+	{
+		downid = flag[down];
+		if (downid!=curid)
+		{
+			//邻点属于另一区, 加邻域点信息；
+			AddNeiRgn(curid, downid, neiarr);
+		}
+	}
+}
 /*************************************************************************
  *
  * \函数名称：
@@ -701,14 +2304,15 @@ void MakeGauss(double sigma, double **pdKernel, int *pnWindowSize)
 	int nCenter;
 
 	// 数组的某一点到中心点的距离
-	double  dDis  ; 
+	double dDis;
 
-	double PI = 3.14159;
+
 	// 中间变量
 	double  dValue; 
-	double  dSum  ;
+	double  dSum;
 	dSum = 0 ; 
-	
+	double pie;
+	pie=3.14159;
 	// 数组长度，根据概率论的知识，选取[-3*sigma, 3*sigma]以内的数据。
 	// 这些数据会覆盖绝大部分的滤波系数
 	*pnWindowSize = 1 + 2 * (int)ceil(3 * sigma);
@@ -722,7 +2326,7 @@ void MakeGauss(double sigma, double **pdKernel, int *pnWindowSize)
 	for(i=0; i< (*pnWindowSize); i++)
 	{
 		dDis = (double)(i - nCenter);
-		dValue = exp(-(1/2)*dDis*dDis/(sigma*sigma)) / (sqrt(2 * PI) * sigma );
+		dValue = exp(-(1/2)*dDis*dDis/(sigma*sigma)) / (sqrt(2 * pie) * sigma );
 		(*pdKernel)[i] = dValue ;
 		dSum += dValue;
 	}

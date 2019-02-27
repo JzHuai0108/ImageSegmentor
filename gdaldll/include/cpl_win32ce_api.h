@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_win32ce_api.h,v 1.3 2006/03/21 20:11:54 fwarmerdam Exp $
+ * $Id: cpl_win32ce_api.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Name:     cpl_win32ce_api.h
  * Project:  CPL - Common Portability Library
@@ -26,19 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: cpl_win32ce_api.h,v $
- * Revision 1.3  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.2  2006/02/21 19:48:43  mloskot
- * [WCE] Added copyright note
- *
- * Revision 1.1  2006/02/19 21:50:56  mloskot
- * [WCE] non-Unicode wrappers around Unicode-only Windows CE API
- *
- ******************************************************************************/
+ ****************************************************************************/
 #ifndef _CPL_WINCEAPI_H_INCLUDED
 #define _CPL_WINCEAPI_H_INCLUDED    1
 

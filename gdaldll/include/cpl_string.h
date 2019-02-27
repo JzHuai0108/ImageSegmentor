@@ -1,10 +1,10 @@
 /**********************************************************************
- * $Id: cpl_string.h,v 1.25 2006/04/12 15:10:40 fwarmerdam Exp $
+ * $Id: cpl_string.h 18103 2009-11-25 21:03:23Z rouault $
  *
  * Name:     cpl_string.h
  * Project:  CPL - Common Portability Library
  * Purpose:  String and StringList functions.
- * Author:   Daniel Morissette, danmo@videotron.ca
+ * Author:   Daniel Morissette, dmorissette@mapgears.com
  *
  **********************************************************************
  * Copyright (c) 1998, Daniel Morissette
@@ -26,48 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- **********************************************************************
- *
- * $Log: cpl_string.h,v $
- * Revision 1.25  2006/04/12 15:10:40  fwarmerdam
- * argument to InsertString should be const
- *
- * Revision 1.24  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.23  2006/02/19 21:54:34  mloskot
- * [WINCE] Changes related to Windows CE port of CPL. Most changes are #ifdef wrappers.
- *
- * Revision 1.22  2005/10/13 01:20:16  fwarmerdam
- * added CSLMerge()
- *
- * Revision 1.21  2005/09/14 19:21:17  fwarmerdam
- * binary pointer is const in binarytohex
- *
- * Revision 1.20  2005/08/31 05:08:01  fwarmerdam
- * fixed up std::string use for vc6 compatability
- *
- * Revision 1.19  2005/08/31 03:30:51  fwarmerdam
- * added binarytohex/hextobinary, CPLString
- *
- * Revision 1.18  2005/04/04 15:23:31  fwarmerdam
- * some functions now CPL_STDCALL
- *
- * Revision 1.17  2004/08/16 20:23:46  warmerda
- * added .csv escaping
- *
- * Revision 1.16  2004/07/12 21:50:38  warmerda
- * Added SQL escaping style
- *
- * Revision 1.15  2003/07/17 10:15:40  dron
- * CSLTestBoolean() added.
- *
- * Revision 1.14  2003/03/11 21:33:03  warmerda
- * added URL encode/decode support, untested
- *
- * Revision 1.13  2003/01/30 19:15:55  warmerda
- * added some docs
- **********************************************************************/
+ ****************************************************************************/
 
 #ifndef _CPL_STRING_H_INCLUDED
 #define _CPL_STRING_H_INCLUDED
@@ -115,9 +74,12 @@ char CPL_DLL **CSLTokenizeString2( const char *pszString,
 #define CSLT_ALLOWEMPTYTOKENS   0x0002
 #define CSLT_PRESERVEQUOTES     0x0004
 #define CSLT_PRESERVEESCAPES    0x0008
+#define CSLT_STRIPLEADSPACES    0x0010
+#define CSLT_STRIPENDSPACES     0x0020
 
 int CPL_DLL CSLPrint(char **papszStrList, FILE *fpOut);
 char CPL_DLL **CSLLoad(const char *pszFname);
+char CPL_DLL **CSLLoad2(const char *pszFname, int nMaxLines, int nMaxCols, char** papszOptions);
 int CPL_DLL CSLSave(char **papszStrList, const char *pszFname);
 
 char CPL_DLL **CSLInsertStrings(char **papszStrList, int nInsertAtLineNo, 
@@ -127,17 +89,24 @@ char CPL_DLL **CSLInsertString(char **papszStrList, int nInsertAtLineNo,
 char CPL_DLL **CSLRemoveStrings(char **papszStrList, int nFirstLineToDelete,
                          int nNumToRemove, char ***ppapszRetStrings);
 int CPL_DLL CSLFindString( char **, const char * );
+int CPL_DLL CSLPartialFindString( char **papszHaystack, 
+	const char * pszNeedle );
+int CPL_DLL CSLFindName(char **papszStrList, const char *pszName);
 int CPL_DLL CSLTestBoolean( const char *pszValue );
 int CPL_DLL CSLFetchBoolean( char **papszStrList, const char *pszKey, 
                              int bDefault );
 
-const char CPL_DLL *CPLSPrintf(char *fmt, ...);
-char CPL_DLL **CSLAppendPrintf(char **papszStrList, char *fmt, ...);
+const char CPL_DLL *CPLSPrintf(const char *fmt, ...) CPL_PRINT_FUNC_FORMAT(1, 2);
+char CPL_DLL **CSLAppendPrintf(char **papszStrList, const char *fmt, ...) CPL_PRINT_FUNC_FORMAT(2, 3);
+int CPL_DLL CPLVASPrintf(char **buf, const char *fmt, va_list args );
 
 const char CPL_DLL *
       CPLParseNameValue(const char *pszNameValue, char **ppszKey );
 const char CPL_DLL *
       CSLFetchNameValue(char **papszStrList, const char *pszName);
+const char CPL_DLL *
+      CSLFetchNameValueDef(char **papszStrList, const char *pszName,
+                           const char *pszDefault );
 char CPL_DLL **
       CSLFetchNameValueMultiple(char **papszStrList, const char *pszName);
 char CPL_DLL **
@@ -163,13 +132,49 @@ char CPL_DLL *CPLUnescapeString( const char *pszString, int *pnLength,
 char CPL_DLL *CPLBinaryToHex( int nBytes, const GByte *pabyData );
 GByte CPL_DLL *CPLHexToBinary( const char *pszHex, int *pnBytes );
 
+typedef enum
+{
+    CPL_VALUE_STRING,
+    CPL_VALUE_REAL,
+    CPL_VALUE_INTEGER
+} CPLValueType;
+
+CPLValueType CPL_DLL CPLGetValueType(const char* pszValue);
+
+size_t CPL_DLL CPLStrlcpy(char* pszDest, const char* pszSrc, size_t nDestSize);
+size_t CPL_DLL CPLStrlcat(char* pszDest, const char* pszSrc, size_t nDestSize);
+size_t CPL_DLL CPLStrnlen (const char *pszStr, size_t nMaxLen);
+
+/* -------------------------------------------------------------------- */
+/*      RFC 23 character set conversion/recoding API (cpl_recode.cpp).  */
+/* -------------------------------------------------------------------- */
+#define CPL_ENC_LOCALE     ""
+#define CPL_ENC_UTF8       "UTF-8"
+#define CPL_ENC_UTF16      "UTF-16"
+#define CPL_ENC_UCS2       "UCS-2"
+#define CPL_ENC_UCS4       "UCS-4"
+#define CPL_ENC_ASCII      "ASCII"
+#define CPL_ENC_ISO8859_1  "ISO-8859-1"
+
+char CPL_DLL *CPLRecode( const char *pszSource, 
+                         const char *pszSrcEncoding, 
+                         const char *pszDstEncoding );
+char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource, 
+                                  const char *pszSrcEncoding, 
+                                  const char *pszDstEncoding );
+wchar_t CPL_DLL *CPLRecodeToWChar( const char *pszSource,
+                                   const char *pszSrcEncoding, 
+                                   const char *pszDstEncoding );
+int CPL_DLL CPLIsUTF8(const char* pabyData, int nLen);
+char CPL_DLL *CPLForceToASCII(const char* pabyData, int nLen, char chReplacementChar);
+
 CPL_C_END
 
 /************************************************************************/
 /*                              CPLString                               */
 /************************************************************************/
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
 
 #include <string>
 
@@ -186,10 +191,11 @@ CPL_C_END
  * 1200 - VC++ 6.0
  * 1200-1202 - eVC++ 4.0
  */
-#if (_MSC_VER <= 1202)
-#  define MSVC_OLD_STUPID_BEHAVIOUR
+#if defined(_MSC_VER) 
+# if (_MSC_VER <= 1202) 
+#  define MSVC_OLD_STUPID_BEHAVIOUR 
+# endif
 #endif
- 
 
 /* Avoid C2614 errors */
 #ifdef MSVC_OLD_STUPID_BEHAVIOUR
@@ -199,9 +205,9 @@ CPL_C_END
 # define std_string std::string
 #endif 
 
-/* Remove annoying warnings in eVC++ and VC++ 6.0 */
+/* Remove annoying warnings in Microsoft eVC++ and Microsoft Visual C++ */
 #if defined(WIN32CE)
-#  pragma warning(disable:4786)
+#  pragma warning(disable:4251 4275 4786)
 #endif
 
 
@@ -210,16 +216,43 @@ CPL_C_END
 class CPL_DLL CPLString : public std_string
 {
 public:
+
+    
     CPLString(void) {}
     CPLString( const std::string &oStr ) : std_string( oStr ) {}
     CPLString( const char *pszStr ) : std_string( pszStr ) {}
     
     operator const char* (void) const { return c_str(); }
 
-    CPLString &Printf( const char *pszFormat, ... );
+    char& operator[](std::string::size_type i)
+    {
+        return std_string::operator[](i);
+    }
+    
+    const char& operator[](std::string::size_type i) const
+    {
+        return std_string::operator[](i);
+    }
+
+    char& operator[](int i)
+    {
+        return std_string::operator[](static_cast<std::string::size_type>(i));
+    }
+
+    const char& operator[](int i) const
+    {
+        return std_string::operator[](static_cast<std::string::size_type>(i));
+    }
+
+    void Clear() { resize(0); }
+
+    /* There seems to be a bug in the way the compiler count indices... Should be CPL_PRINT_FUNC_FORMAT (1, 2) */
+    CPLString &Printf( const char *pszFormat, ... ) CPL_PRINT_FUNC_FORMAT (2, 3);
     CPLString &vPrintf( const char *pszFormat, va_list args );
+    CPLString &FormatC( double dfValue, const char *pszFormat = NULL );
+    CPLString &Trim();
 };
 
-#endif /* def __cplusplus */
+#endif /* def __cplusplus && !CPL_SUPRESS_CPLUSPLUS */
 
 #endif /* _CPL_STRING_H_INCLUDED */

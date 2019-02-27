@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.h,v 1.16 2006/04/03 23:08:58 fwarmerdam Exp $
+ * $Id: cpl_odbc.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -25,59 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: cpl_odbc.h,v $
- * Revision 1.16  2006/04/03 23:08:58  fwarmerdam
- * Use SQLULEN by default now.
- *
- * Revision 1.15  2006/02/19 21:54:34  mloskot
- * [WINCE] Changes related to Windows CE port of CPL. Most changes are #ifdef wrappers.
- *
- * Revision 1.14  2005/09/05 20:18:43  fwarmerdam
- * added binary column support
- *
- * Revision 1.13  2005/08/31 03:32:41  fwarmerdam
- * GetTypeName now returns CPLString
- *
- * Revision 1.12  2005/06/29 01:01:01  ssoule
- * Changed return type of CPLODBCStatement::GetTypeName from const char * to
- * std::string.
- *
- * Revision 1.11  2005/01/13 03:24:54  fwarmerdam
- * changed type of m_panColSize, per ODBC 3.52 requirements
- *
- * Revision 1.10  2004/06/23 16:11:30  warmerda
- * just testing cvs commits
- *
- * Revision 1.9  2004/06/01 20:40:02  warmerda
- * expanded tabs
- *
- * Revision 1.8  2003/11/24 20:45:00  warmerda
- * make CollectResultsInfo() public
- *
- * Revision 1.7  2003/10/29 17:56:57  warmerda
- * Added PrimaryKeys() support
- *
- * Revision 1.6  2003/10/06 20:04:08  warmerda
- * added escaping support
- *
- * Revision 1.5  2003/10/06 17:16:18  warmerda
- * added windows.h for windows, and fixed m_panColSize type
- *
- * Revision 1.4  2003/09/26 20:02:41  warmerda
- * update GetColData()
- *
- * Revision 1.3  2003/09/26 13:51:02  warmerda
- * Add documentation
- *
- * Revision 1.2  2003/09/25 17:09:49  warmerda
- * added some more methods
- *
- * Revision 1.1  2003/09/24 15:39:14  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
 #ifndef CPL_ODBC_H_INCLUDED
 #define CPL_ODBC_H_INCLUDED
@@ -92,16 +40,109 @@
 
 #include <sql.h>
 #include <sqlext.h>
+#include <odbcinst.h>
 #include "cpl_string.h"
 
+#ifdef PATH_MAX
+#  define ODBC_FILENAME_MAX PATH_MAX
+#else
+#  define ODBC_FILENAME_MAX (255 + 1) /* Max path length */
+#endif
+
+ 
 /**
  * \file cpl_odbc.h
  *
  * ODBC Abstraction Layer (C++).
  */
 
+/**
+ * A class providing functions to install or remove ODBC driver.
+ */
+class CPL_DLL CPLODBCDriverInstaller
+{
+    char m_szPathOut[ODBC_FILENAME_MAX];
+    char m_szError[SQL_MAX_MESSAGE_LENGTH];
+    DWORD m_nErrorCode;
+    DWORD m_nUsageCount;
+
+  public:
+    
+    // Default constructor.
+    CPLODBCDriverInstaller();
+
+
+    /**
+     * Installs ODBC driver or updates definition of already installed driver.
+     * Interanally, it calls ODBC's SQLInstallDriverEx function.
+     * 
+     * @param pszDriver - The driver definition as a list of keyword-value
+     * pairs describing the driver (See ODBC API Reference).
+     *
+     * @param pszPathIn - Full path of the target directory of the installation,
+     * or a null pointer (for unixODBC, NULL is passed).
+     *
+     * @param fRequest - The fRequest argument must contain one of
+     * the following values:
+     * ODBC_INSTALL_COMPLETE - (default) complete the installation request
+     * ODBC_INSTALL_INQUIRY - inquire about where a driver can be installed
+     *
+     * @return TRUE indicates success, FALSE if it fails.
+     */
+    int InstallDriver( const char* pszDriver, const char* pszPathIn,
+            WORD fRequest = ODBC_INSTALL_COMPLETE );
+
+    /**
+     * Removes or changes information about the driver from
+     * the Odbcinst.ini entry in the system information.
+     *
+     * @param pszDriverName - The name of the driver as registered in
+     * the Odbcinst.ini key of the system information.
+     * 
+     * @param fRemoveDSN - TRUE: Remove DSNs associated with the driver 
+     * specified in lpszDriver. FALSE: Do not remove DSNs associated
+     * with the driver specified in lpszDriver. 
+     *
+     * @return The function returns TRUE if it is successful,
+     * FALSE if it fails. If no entry exists in the system information
+     * when this function is called, the function returns FALSE.
+     * In order to obtain usage count value, call GetUsageCount().
+     */
+    int RemoveDriver( const char* pszDriverName, int fRemoveDSN = FALSE );
+
+
+    // The usage count of the driver after this function has been called
+    int GetUsageCount() const {  return m_nUsageCount; }
+
+
+    // Path of the target directory where the driver should be installed.
+    // For details, see ODBC API Reference and lpszPathOut
+    // parameter of SQLInstallDriverEx 
+    const char* GetPathOut() const { return m_szPathOut; }
+
+
+    // If InstallDriver returns FALSE, then GetLastError then
+    // error message can be obtained by calling this function.
+    // Internally, it calls ODBC's SQLInstallerError function.
+    const char* GetLastError() const { return m_szError; }
+   
+
+    // If InstallDriver returns FALSE, then GetLastErrorCode then
+    // error code can be obtained by calling this function.
+    // Internally, it calls ODBC's SQLInstallerError function.
+    // See ODBC API Reference for possible error flags.
+    DWORD GetLastErrorCode() const { return m_nErrorCode; }
+};
+
 class CPLODBCStatement;
 
+/* On MSVC SQLULEN is missing in some cases (ie. VC6)
+** but it is always a #define so test this way.   On Unix
+** it is a typedef so we can't always do this.
+*/
+#if defined(_MSC_VER) && !defined(SQLULEN) && !defined(_WIN64)
+#  define MISSING_SQLULEN
+#endif
 
 #if !defined(MISSING_SQLULEN)
 /* ODBC types to support 64 bit compilation */
@@ -156,21 +197,22 @@ class CPL_DLL CPLODBCStatement {
     CPLODBCSession     *m_poSession;
     HSTMT               m_hStmt;
 
-    short          m_nColCount;
+    SQLSMALLINT    m_nColCount;
     char         **m_papszColNames;
-    short         *m_panColType;
-    _SQLULEN       *m_panColSize;
-    short         *m_panColPrecision;
-    short         *m_panColNullable;
+    SQLSMALLINT   *m_panColType;
+    char         **m_papszColTypeNames;
+    _SQLULEN      *m_panColSize;
+    SQLSMALLINT   *m_panColPrecision;
+    SQLSMALLINT   *m_panColNullable;
 
     char         **m_papszColValues;
-    int           *m_panColValueLengths;
+    _SQLLEN       *m_panColValueLengths;
     
     int            Failed( int );
 
     char          *m_pszStatement;
-    int            m_nStatementMax;
-    int            m_nStatementLen;
+    size_t         m_nStatementMax;
+    size_t         m_nStatementLen;
 
   public:
     CPLODBCStatement( CPLODBCSession * );
@@ -195,11 +237,12 @@ class CPL_DLL CPLODBCStatement {
     void           ClearColumnData();
 
     int            GetColCount();
-    const char    *GetColName(int iCol);
-    short          GetColType(int iCol);
-    short          GetColSize(int iCol);
-    short          GetColPrecision(int iCol);
-    short          GetColNullable(int iCol);
+    const char    *GetColName( int );
+    short          GetColType( int );
+    const char    *GetColTypeName( int );
+    short          GetColSize( int );
+    short          GetColPrecision( int );
+    short          GetColNullable( int );
 
     int            GetColId( const char * );
     const char    *GetColData( int, const char * = NULL );
@@ -220,6 +263,7 @@ class CPL_DLL CPLODBCStatement {
     void           DumpResult( FILE *fp, int bShowSchema = FALSE );
 
     static CPLString GetTypeName( int );
+    static SQLSMALLINT GetTypeMapping( SQLSMALLINT );
 
     int            CollectResultsInfo();
 };

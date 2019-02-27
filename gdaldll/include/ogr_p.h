@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_p.h,v 1.10 2006/03/31 17:44:20 fwarmerdam Exp $
+ * $Id: ogr_p.h 17696 2009-09-26 15:56:39Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Some private helper functions and stuff for OGR implementation.
@@ -25,43 +25,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: ogr_p.h,v $
- * Revision 1.10  2006/03/31 17:44:20  fwarmerdam
- * header updates
- *
- * Revision 1.9  2005/10/16 01:59:06  cfis
- * Added declaration for OGRGeneralCmdLineProcessor to ogr_p.h, and included it into ogr2ogr.  Also changed call to CPL_DLL from CPL_STDCALL
- *
- * Revision 1.8  2005/07/20 01:43:51  fwarmerdam
- * upgraded OGR geometry dimension handling
- *
- * Revision 1.7  2001/11/01 17:01:28  warmerda
- * pass output buffer into OGRMakeWktCoordinate
- *
- * Revision 1.6  1999/11/18 19:02:20  warmerda
- * expanded tabs
- *
- * Revision 1.5  1999/09/13 02:27:33  warmerda
- * incorporated limited 2.5d support
- *
- * Revision 1.4  1999/07/29 17:30:38  warmerda
- * avoid geometry dependent stuff if ogr_geometry.h not included
- *
- * Revision 1.3  1999/07/07 04:23:07  danmo
- * Fixed typo in  #define _OGR_..._H_INCLUDED  line
- *
- * Revision 1.2  1999/05/20 14:36:04  warmerda
- * added well known text parsing prototypes
- *
- * Revision 1.1  1999/03/29 21:21:10  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
-#ifndef _OGR_P_H_INCLUDED
-#define _OGR_P_H_INCLUDED
+#ifndef OGR_P_H_INCLUDED
+#define OGR_P_H_INCLUDED
 
 /* -------------------------------------------------------------------- */
 /*      Include the common portability library ... lets us do lots      */
@@ -70,6 +37,8 @@
 
 #include "cpl_string.h"
 #include "cpl_conv.h"
+
+#include "ogr_core.h"
 
 #ifdef CPL_MSB 
 #  define OGR_SWAP(x)   (x == wkbNDR)
@@ -95,9 +64,53 @@ const char CPL_DLL * OGRWktReadPoints( const char * pszInput,
 void CPL_DLL OGRMakeWktCoordinate( char *, double, double, double, int );
 #endif
 
+/* -------------------------------------------------------------------- */
+/*      Date-time parsing and processing functions                      */
+/* -------------------------------------------------------------------- */
+
+/* Internal use by OGR drivers only, CPL_DLL is just there in case */
+/* they are compiled as plugins  */
+int CPL_DLL OGRGetDayOfWeek(int day, int month, int year);
+int CPL_DLL OGRParseXMLDateTime( const char* pszXMLDateTime,
+                               int *pnYear, int *pnMonth, int *pnDay,
+                               int *pnHour, int *pnMinute, float* pfSecond, int *pnTZ);
+int CPL_DLL OGRParseRFC822DateTime( const char* pszRFC822DateTime,
+                                  int *pnYear, int *pnMonth, int *pnDay,
+                                  int *pnHour, int *pnMinute, int *pnSecond, int *pnTZ);
+char CPL_DLL * OGRGetRFC822DateTime(int year, int month, int day,
+                                    int hour, int minute, int second, int TZ);
+char CPL_DLL * OGRGetXMLDateTime(int year, int month, int day,
+                                 int hour, int minute, int second, int TZFlag);
+char CPL_DLL * OGRGetXML_UTF8_EscapedString(const char* pszString);
+
 
 /* General utility option processing. */
 int CPL_DLL OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions );
 
+/************************************************************************/
+/*     Support for special attributes (feature query and selection)     */
+/************************************************************************/
+CPL_C_START
+#include "swq.h"
+CPL_C_END
 
-#endif /* ndef _OGR_P_H_INCLUDED */
+#define SPF_FID 0
+#define SPF_OGR_GEOMETRY 1
+#define SPF_OGR_STYLE 2
+#define SPF_OGR_GEOM_WKT 3
+#define SPF_OGR_GEOM_AREA 4
+#define SPECIAL_FIELD_COUNT 5
+
+extern const char* SpecialFieldNames[SPECIAL_FIELD_COUNT];
+extern const swq_field_type SpecialFieldTypes[SPECIAL_FIELD_COUNT];
+
+/************************************************************************/
+/*     Some SRS related stuff, search in SRS data files.                */
+/************************************************************************/
+
+OGRErr CPL_DLL OSRGetEllipsoidInfo( int, char **, double *, double *);
+
+/* Fast atof function */
+double OGRFastAtof(const char* pszStr);
+
+#endif /* ndef OGR_P_H_INCLUDED */

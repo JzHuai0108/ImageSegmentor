@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_list.h,v 1.2 2003/06/27 16:14:05 warmerda Exp $
+ * $Id: cpl_list.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Name:     cpl_list.h
  * Project:  CPL - Common Portability Library
@@ -26,17 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- **********************************************************************
- *
- * $Log: cpl_list.h,v $
- * Revision 1.2  2003/06/27 16:14:05  warmerda
- * regularized CPLList declaration
- *
- * Revision 1.1  2003/06/25 07:45:57  dron
- * New.
- *
- *
- **********************************************************************/
+ ****************************************************************************/
 
 #ifndef _CPL_LIST_H_INCLUDED
 #define _CPL_LIST_H_INCLUDED

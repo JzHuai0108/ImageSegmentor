@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h,v 1.52 2006/04/19 01:59:18 fwarmerdam Exp $
+ * $Id: cpl_port.h 19887 2010-06-17 22:47:55Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -26,63 +26,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: cpl_port.h,v $
- * Revision 1.52  2006/04/19 01:59:18  fwarmerdam
- * move deprecate declarations before system include files
- *
- * Revision 1.51  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.50  2006/03/13 20:58:32  mloskot
- * Test if macros _CRT_SECURE_NO_DEPRECATE and  _CRT_NONSTDC_NO_DEPRECATE
- * are already defined, to get rid of warnings
- *
- * Revision 1.49  2006/02/20 01:03:01  fwarmerdam
- * Fixed last change.
- *
- * Revision 1.48  2006/02/20 00:59:58  fwarmerdam
- * Avoid deprecation of some common functions with VS8.
- * http://bugzilla.remotesensing.org/show_bug.cgi?id=1083
- *
- * Revision 1.47  2006/02/19 21:54:34  mloskot
- * [WINCE] Changes related to Windows CE port of CPL. Most changes are #ifdef wrappers.
- *
- * Revision 1.46  2005/12/08 20:21:10  fwarmerdam
- * added CPL_ODLL declaration
- *
- * Revision 1.45  2005/06/15 09:47:40  dron
- * Fixed typo.
- *
- * Revision 1.44  2005/06/15 09:11:58  dron
- * Added CPLIsEqual() macro.
- *
- * Revision 1.43  2005/05/23 03:57:08  fwarmerdam
- * added default definition of CPL_THREADLOCAL
- *
- * Revision 1.42  2005/04/04 15:22:36  fwarmerdam
- * added CPL_STDCALL declaration
- *
- * Revision 1.41  2005/03/17 04:20:24  fwarmerdam
- * added FORCE_CDECL
- *
- * Revision 1.40  2005/03/11 14:59:07  fwarmerdam
- * Default to assuming nothing is infinite if isinf() macro not defined.
- * Per http://bugzilla.remotesensing.org/show_bug.cgi?id=795
- *
- * Revision 1.39  2005/03/01 21:22:07  fwarmerdam
- * added CPLIsFinite()
- *
- * Revision 1.38  2005/03/01 20:44:38  fwarmerdam
- * Check for _MSC_VER instead of WIN32.
- *
- * Revision 1.37  2005/03/01 19:57:55  fwarmerdam
- * Added CPLIsNan and CPLIsInf macros.
- */
+ ****************************************************************************/
 
 #ifndef CPL_BASE_H_INCLUDED
 #define CPL_BASE_H_INCLUDED
+
+/* Remove annoying warnings Microsoft Visual C++ */
+#if defined(_MSC_VER)
+#  pragma warning(disable:4251 4275 4786)
+#endif
 
 /**
  * \file cpl_port.h
@@ -128,8 +80,10 @@
 #  ifndef _CRT_NONSTDC_NO_DEPRECATE
 #    define _CRT_NONSTDC_NO_DEPRECATE
 #  endif
+#  ifdef MSVC_USE_VLD
+#    include <vld.h>
+#  endif
 #endif
-
 
 #include "cpl_config.h"
 
@@ -157,6 +111,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #if !defined(WIN32CE)
 #  include <time.h>
@@ -172,6 +127,10 @@
 
 #ifdef HAVE_LOCALE_H
 #  include <locale.h>
+#endif
+
+#ifdef HAVE_DIRECT_H
+#  include <direct.h>
 #endif
 
 #ifdef _AIX
@@ -231,6 +190,24 @@ typedef unsigned long    GUIntBig;
 
 #endif
 
+#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
+  #define CPL_FRMT_GB_WITHOUT_PREFIX     "I64"
+#elif HAVE_LONG_LONG
+  #define CPL_FRMT_GB_WITHOUT_PREFIX     "ll"
+#else
+  #define CPL_FRMT_GB_WITHOUT_PREFIX     "l"
+#endif
+
+#define CPL_FRMT_GIB     "%" CPL_FRMT_GB_WITHOUT_PREFIX "d"
+#define CPL_FRMT_GUIB    "%" CPL_FRMT_GB_WITHOUT_PREFIX "u"
+
+/* Workaround VC6 bug */
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#define GUINTBIG_TO_DOUBLE(x) (double)(GIntBig)(x)
+#else
+#define GUINTBIG_TO_DOUBLE(x) (double)(x)
+#endif
+
 /* ==================================================================== */
 /*      Other standard services.                                        */
 /* ==================================================================== */
@@ -246,11 +223,15 @@ typedef unsigned long    GUIntBig;
 #if defined(_MSC_VER) && !defined(CPL_DISABLE_DLL)
 #  define CPL_DLL     __declspec(dllexport)
 #else
-#  define CPL_DLL
+#  if defined(USE_GCC_VISIBILITY_FLAG)
+#    define CPL_DLL     __attribute__ ((visibility("default")))
+#  else
+#    define CPL_DLL
+#  endif
 #endif
 #endif
 
-// Should optional (normally private) interfaces be exported?
+/* Should optional (normally private) interfaces be exported? */
 #ifdef CPL_OPTIONAL_APIS
 #  define CPL_ODLL CPL_DLL
 #else
@@ -269,6 +250,17 @@ typedef unsigned long    GUIntBig;
 #  define FORCE_CDECL  __cdecl
 #else
 #  define FORCE_CDECL 
+#endif
+
+/* TODO : support for other compilers needed */
+#if defined(__GNUC__) || defined(_MSC_VER)
+#define HAS_CPL_INLINE  1
+#define CPL_INLINE __inline
+#elif defined(__SUNPRO_CC)
+#define HAS_CPL_INLINE  1
+#define CPL_INLINE inline
+#else
+#define CPL_INLINE
 #endif
 
 #ifndef NULL
@@ -298,7 +290,7 @@ typedef unsigned long    GUIntBig;
 /*      effects.                                                        */
 /* -------------------------------------------------------------------- */
 #ifndef CPLIsEqual
-#  define CPLIsEqual(x,y) (fabs(fabs(x) - fabs(y)) < 0.0000000000001 ? 1 : 0)
+#  define CPLIsEqual(x,y) (fabs((x) - (y)) < 0.0000000000001)
 #endif
 
 #ifndef EQUAL
@@ -323,14 +315,15 @@ char * strdup (char *instr);
 
 /* -------------------------------------------------------------------- */
 /*      Handle isnan() and isinf().  Note that isinf() and isnan()      */
-/*      are supposed to be macros according to C99.  Some systems       */
-/*      (ie. Tru64) don't have isinf() at all, so if the macro is       */
-/*      not defined we just assume nothing is infinite.  This may       */
-/*      mean we have no real CPLIsInf() on systems with an isinf()      */
+/*      are supposed to be macros according to C99, defined in math.h   */
+/*      Some systems (ie. Tru64) don't have isinf() at all, so if       */
+/*      the macro is not defined we just assume nothing is infinite.    */
+/*      This may mean we have no real CPLIsInf() on systems with isinf()*/
 /*      function but no corresponding macro, but I can live with        */
 /*      that since it isn't that important a test.                      */
 /* -------------------------------------------------------------------- */
 #ifdef _MSC_VER
+#  include <float.h>
 #  define CPLIsNan(x) _isnan(x)
 #  define CPLIsInf(x) (!_isnan(x) && !_finite(x))
 #  define CPLIsFinite(x) _finite(x)
@@ -423,7 +416,7 @@ char * strdup (char *instr);
                                                             
 
 /* Until we have a safe 64 bits integer data type defined, we'll replace
-m * this version of the CPL_SWAP64() macro with a less efficient one.
+ * this version of the CPL_SWAP64() macro with a less efficient one.
  */
 /*
 #define CPL_SWAP64(x) \
@@ -464,6 +457,23 @@ m * this version of the CPL_SWAP64() macro with a less efficient one.
 #  define CPL_MSBPTR64(x)       CPL_SWAP64PTR(x)
 #endif
 
+/** Return a Int16 from the 2 bytes ordered in LSB order at address x */
+#define CPL_LSBINT16PTR(x)    ((*(GByte*)(x)) | ((*(GByte*)((x)+1)) << 8))
+
+/** Return a Int32 from the 4 bytes ordered in LSB order at address x */
+#define CPL_LSBINT32PTR(x)    ((*(GByte*)(x)) | ((*(GByte*)((x)+1)) << 8) | \
+                              ((*(GByte*)((x)+2)) << 16) | ((*(GByte*)((x)+3)) << 24))
+
+
+/* Utility macro to explicitly mark intentionally unreferenced parameters. */
+#ifndef UNREFERENCED_PARAM 
+#  ifdef UNREFERENCED_PARAMETER /* May be defined by Windows API */
+#    define UNREFERENCED_PARAM(param) UNREFERENCED_PARAMETER(param)
+#  else
+#    define UNREFERENCED_PARAM(param) ((void)param)
+#  endif /* UNREFERENCED_PARAMETER */
+#endif /* UNREFERENCED_PARAM */
+
 /***********************************************************************
  * Define CPL_CVSID() macro.  It can be disabled during a build by
  * defining DISABLE_CPLID in the compiler options.
@@ -473,10 +483,20 @@ m * this version of the CPL_SWAP64() macro with a less efficient one.
  */
 
 #ifndef DISABLE_CVSID
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  define CPL_CVSID(string)     static char cpl_cvsid[] __attribute__((used)) = string;
+#else
 #  define CPL_CVSID(string)     static char cpl_cvsid[] = string; \
 static char *cvsid_aw() { return( cvsid_aw() ? ((char *) NULL) : cpl_cvsid ); }
+#endif
 #else
 #  define CPL_CVSID(string)
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 3 && !defined(DOXYGEN_SKIP)
+#define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )  __attribute__((__format__ (__printf__, format_idx, arg_idx)))
+#else
+#define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )
 #endif
 
 #endif /* ndef CPL_BASE_H_INCLUDED */

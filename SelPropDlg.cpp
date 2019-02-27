@@ -41,6 +41,7 @@ void CSelPropDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CSelPropDlg, CDialog)
 	//{{AFX_MSG_MAP(CSelPropDlg)
+	ON_WM_DESTROY()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -50,21 +51,24 @@ END_MESSAGE_MAP()
 BOOL CSelPropDlg::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
-	
-	pSP=(CComboBox*)GetDlgItem(IDC_COMBO_SELPROP);	
-	pSP->SetCurSel(0);
+	numb=0;
+	((CComboBox*)GetDlgItem(IDC_COMBO_SELPROP))->SetCurSel(0);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CSelPropDlg::OnOK() 
+
+
+
+
+void CSelPropDlg::OnDestroy() 
 {
-	// TODO: Add extra validation here
-	numb= pSP->GetCurSel(); 
+	CDialog::OnDestroy();
+	numb= ((CComboBox*)GetDlgItem(IDC_COMBO_SELPROP))->GetCurSel(); 
 	CString str;
 	if(numb<1)
 	{
-		pSP->GetWindowText(str);	
+		((CComboBox*)GetDlgItem(IDC_COMBO_SELPROP))->GetWindowText(str);	
 		numb=atoi((const char*)str);
 		if(str=="Band Average")
 			numb=-1;
@@ -73,5 +77,6 @@ void CSelPropDlg::OnOK()
 	{
 		numb+=10;
 	}	
-	CDialog::OnOK();
+	// TODO: Add your message handler code here
+	
 }

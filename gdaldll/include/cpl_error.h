@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_error.h,v 1.20 2006/03/07 22:05:32 fwarmerdam Exp $
+ * $Id: cpl_error.h 14047 2008-03-20 18:46:12Z rouault $
  *
  * Name:     cpl_error.h
  * Project:  CPL - Common Portability Library
@@ -26,73 +26,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- **********************************************************************
- *
- * $Log: cpl_error.h,v $
- * Revision 1.20  2006/03/07 22:05:32  fwarmerdam
- * fix up docs a bit
- *
- * Revision 1.19  2005/08/31 03:32:13  fwarmerdam
- * fixed void arg list
- *
- * Revision 1.18  2005/08/25 18:05:36  fwarmerdam
- * Added void in empty arg lists.
- *
- * Revision 1.17  2005/04/04 15:23:31  fwarmerdam
- * some functions now CPL_STDCALL
- *
- * Revision 1.16  2001/11/02 22:07:58  warmerda
- * added logging error handler
- *
- * Revision 1.15  2001/01/19 21:16:41  warmerda
- * expanded tabs
- *
- * Revision 1.14  2000/11/30 17:30:10  warmerda
- * added CPLGetLastErrorType
- *
- * Revision 1.13  2000/08/24 18:08:17  warmerda
- * made default and quiet error handlers public on windows
- *
- * Revision 1.12  2000/06/26 21:44:07  warmerda
- * added CPLE_UserInterrupt for progress terminations
- *
- * Revision 1.11  2000/03/31 14:11:55  warmerda
- * added CPLErrorV
- *
- * Revision 1.10  2000/01/10 17:35:45  warmerda
- * added push down stack of error handlers
- *
- * Revision 1.9  1999/07/23 14:27:47  warmerda
- * CPLSetErrorHandler returns old handler
- *
- * Revision 1.8  1999/05/20 14:59:05  warmerda
- * added CPLDebug()
- *
- * Revision 1.7  1999/05/20 02:54:38  warmerda
- * Added API documentation
- *
- * Revision 1.6  1999/02/17 05:40:47  danmo
- * Fixed CPLAssert() macro to work with EGCS.
- *
- * Revision 1.5  1999/01/11 15:34:29  warmerda
- * added reserved range comment
- *
- * Revision 1.4  1998/12/15 19:02:27  warmerda
- * Avoid use of errno as a variable
- *
- * Revision 1.3  1998/12/06 22:20:42  warmerda
- * Added error code.
- *
- * Revision 1.2  1998/12/06 02:52:52  warmerda
- * Implement assert support
- *
- * Revision 1.1  1998/12/03 18:26:02  warmerda
- * New
- *
- **********************************************************************/
+ ****************************************************************************/
 
-#ifndef _CPL_ERROR_H_INCLUDED_
-#define _CPL_ERROR_H_INCLUDED_
+#ifndef CPL_ERROR_H_INCLUDED
+#define CPL_ERROR_H_INCLUDED
 
 #include "cpl_port.h"
 
@@ -117,7 +54,7 @@ typedef enum
     CE_Fatal = 4
 } CPLErr;
 
-void CPL_DLL CPLError(CPLErr eErrClass, int err_no, const char *fmt, ...);
+void CPL_DLL CPLError(CPLErr eErrClass, int err_no, const char *fmt, ...)  CPL_PRINT_FUNC_FORMAT (3, 4);
 void CPL_DLL CPLErrorV(CPLErr, int, const char *, va_list );
 void CPL_DLL CPL_STDCALL CPLErrorReset( void );
 int CPL_DLL CPL_STDCALL CPLGetLastErrorNo( void );
@@ -132,9 +69,9 @@ void CPL_DLL CPL_STDCALL CPLQuietErrorHandler( CPLErr, int, const char * );
 
 CPLErrorHandler CPL_DLL CPL_STDCALL CPLSetErrorHandler(CPLErrorHandler);
 void CPL_DLL CPL_STDCALL CPLPushErrorHandler( CPLErrorHandler );
-void CPL_DLL CPL_STDCALL CPLPopErrorHandler();
+void CPL_DLL CPL_STDCALL CPLPopErrorHandler(void);
 
-void CPL_DLL CPL_STDCALL CPLDebug( const char *, const char *, ... );
+void CPL_DLL CPL_STDCALL CPLDebug( const char *, const char *, ... )  CPL_PRINT_FUNC_FORMAT (2, 3);
 void CPL_DLL CPL_STDCALL _CPLAssert( const char *, const char *, int );
 
 #ifdef DEBUG
@@ -144,6 +81,31 @@ void CPL_DLL CPL_STDCALL _CPLAssert( const char *, const char *, int );
 #endif
 
 CPL_C_END
+
+/*
+ * Helper macros used for input parameters validation.
+ */
+#ifdef DEBUG
+#  define VALIDATE_POINTER_ERR CE_Fatal
+#else
+#  define VALIDATE_POINTER_ERR CE_Failure
+#endif
+
+#define VALIDATE_POINTER0(ptr, func) \
+   do { if( NULL == ptr ) \
+      { \
+        CPLErr const ret = VALIDATE_POINTER_ERR; \
+        CPLError( ret, CPLE_ObjectNull, \
+           "Pointer \'%s\' is NULL in \'%s\'.\n", #ptr, (func)); \
+         return; }} while(0)
+
+#define VALIDATE_POINTER1(ptr, func, rc) \
+   do { if( NULL == ptr ) \
+      { \
+          CPLErr const ret = VALIDATE_POINTER_ERR; \
+          CPLError( ret, CPLE_ObjectNull, \
+           "Pointer \'%s\' is NULL in \'%s\'.\n", #ptr, (func)); \
+        return (rc); }} while(0)
 
 /* ==================================================================== */
 /*      Well known error codes.                                         */
@@ -159,7 +121,8 @@ CPL_C_END
 #define CPLE_AssertionFailed            7
 #define CPLE_NoWriteAccess              8
 #define CPLE_UserInterrupt              9
+#define CPLE_ObjectNull                 10
 
 /* 100 - 299 reserved for GDAL */
 
-#endif /* _CPL_ERROR_H_INCLUDED_ */
+#endif /* CPL_ERROR_H_INCLUDED */

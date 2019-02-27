@@ -31,9 +31,7 @@ void CResultDlg::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CResultDlg)
 	DDX_Text(pDX, IDC_EDIT_COMPS, m_nComps);
-	DDV_MinMaxInt(pDX, m_nComps, 1, 2147483647);
 	DDX_Text(pDX, IDC_EDIT_TIME, m_nTime);
-	DDV_MinMaxDouble(pDX, m_nTime, 0., 1000.);
 	DDX_Text(pDX, IDC_EDIT_QS, m_nQS);
 	//}}AFX_DATA_MAP
 }

@@ -8,6 +8,8 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
+#include "imageView.h"
+
 #define PANE_LENGTH_UNIT		1
 #define PANE_CURSOR_POSITION	2
 #define PANE_IMAGE_SIZE			3
@@ -36,6 +38,8 @@ public:
 
 // Implementation
 public:	
+	
+	CImageView* pImageView;
 	CStatusBar  m_wndStatusBar;
 	virtual ~CMainFrame();
 #ifdef _DEBUG

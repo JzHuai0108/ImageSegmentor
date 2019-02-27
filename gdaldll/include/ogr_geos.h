@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geos.h,v 1.2 2005/10/20 19:55:29 fwarmerdam Exp $
+ * $Id: ogr_geos.h 17469 2009-07-28 18:28:27Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Definitions related to support for use of GEOS in OGR.
@@ -27,30 +27,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: ogr_geos.h,v $
- * Revision 1.2  2005/10/20 19:55:29  fwarmerdam
- * added GEOS C API support
- *
- * Revision 1.1  2004/07/10 04:52:58  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
-#ifndef _OGR_GEOS_H_INCLUDED
-#define _OGR_GEOS_H_INCLUDED
+#ifndef OGR_GEOS_H_INCLUDED
+#define OGR_GEOS_H_INCLUDED
 
 #ifdef HAVE_GEOS 
-
-#ifdef GEOS_C_API
-#  include "geos_c.h"
-#else
-#  include "geos/geom.h"
-#  include "geos/io.h"
-#  include "geos/util.h"
-#endif
-
+#  include <geos_c.h>
 #else
 
 namespace geos { 
@@ -59,4 +42,4 @@ namespace geos {
 
 #endif
 
-#endif /* ndef _OGR_GEOS_H_INCLUDED */
+#endif /* ndef OGR_GEOS_H_INCLUDED */

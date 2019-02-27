@@ -18,18 +18,62 @@ typedef struct tPair
 	int r[2];
 	float t;
 	unsigned int bl;//boundary length between the pair region
-//	float es;//edge strength, note that when a pixel belong to P abuts two neighbors which merge to Q later,
+	//	float es;//edge strength, note that when a pixel belong to P abuts two neighbors which merge to Q later,
 	//then the edge strength of this pixel is added twice in the edge strength between region P and Q.
 	//since intuitively, the chance the pixel is an edge point is bigger.
 	tPair():t(0.f),bl(0){}
-}tPair;
+} tPair;
+
+typedef struct tMergeNode
+{ 
+	float fc;//current minimum fusion cost 
+	float *gval;//array gray scale values for the image layers in the newly formed region*/
+	int plabel;/*label of first region in the merged pair*/
+	int qlabel;/*label of second region in the merged pair*/
+} tMergeNode;
+
+typedef struct exRegion
+{
+	int label;//indicate the father pixel index of this region in tagMatrix
+	float* attList;//attribute list according to prop
+	bool isVisited;
+	exRegion():label(-1),attList(NULL),isVisited(false)
+	{
+	
+	}
+	bool operator<(exRegion b)
+	{
+		return label<b.label;
+	}
+	bool operator==(exRegion b)
+	{
+		return label==b.label;
+	}
+}exRegion;
+
 enum PROP
 {
-	maxaxislen=0,
-	minaxislen,
-	meanwidth,
-	meanlen,
-	ndvindex
+	centerX=0,//x coordinate of bounding box center
+	centerY,//y coord
+	minRectWid,//bounding box width
+	minRectHeg,//bounding box height
+	boxAngle,//bounding box angle
+	eigRatio,//the major eigenvalue of the point coordinate covariance matrix to the minor one
+	meanThick,//the average width of a region computed from erosion
+	validRate,//the rate of valid pixels in one region
+};
+//texture intensity color
+enum TIC//terms as defined in Vincent Tao's integrating intensity texture color
+{
+	PC1=0,//for diff in image 1
+	PC2,//for diff in image 2
+	ROUC,//for color hue and saturation
+	GMEAN1,//MEAN INTENSITY FOR IMAGE 1 IN REGION 
+	GMEAN2,//FOR image 2
+	ROUI,//for intensity rou
+	PT1,//for var threshold in image 1
+	PT2,//in image 2
+	ROUT//for LBP AND VAR (texture)
 };
 
 class Region  
@@ -37,16 +81,16 @@ class Region
 public:
 
 	//void DeleteNeighbor(const int tag);
-	UINT size; 
+	unsigned int size; 
 	float *addition;//all the pixel gray value sum
-	float *sSum;//average square sum
+	float *sSum;//all the pixels gray scale value square sum
 	NPL NPList;
 	int perim;
 	int bestp;// best merge candidate pair index
-	int p;//parent index
+	int p;//parent region index
 	float interdif;
+	bool isChecked;
 	CRect *norbox;//regular box bounding the region
-	vector<float> attlist;//attribute list according to prop
 public:
 	float InterDiff(int d=1,float wc=0.9,float=0.5,float=256.f);
 	Region();

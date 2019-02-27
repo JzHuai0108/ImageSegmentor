@@ -53,6 +53,7 @@ void CInitiateDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CInitiateDlg, CDialog)
 	//{{AFX_MSG_MAP(CInitiateDlg)
+	ON_CBN_SELENDOK(IDC_COMBO_METRIC, OnSelendokComboMetric)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -62,3 +63,21 @@ END_MESSAGE_MAP()
 
 
 
+
+BOOL CInitiateDlg::OnInitDialog() 
+{
+	CDialog::OnInitDialog();
+	
+	// TODO: Add extra initialization here
+	iPos=0;
+	// TODO: Add extra initialization here
+	((CComboBox*)GetDlgItem(IDC_COMBO_METRIC))->SetCurSel(0);
+	return TRUE;  // return TRUE unless you set the focus to a control
+	              // EXCEPTION: OCX Property Pages should return FALSE
+}
+
+void CInitiateDlg::OnSelendokComboMetric() 
+{
+	// TODO: Add your control notification handler code here
+		iPos=((CComboBox*)GetDlgItem(IDC_COMBO_METRIC))->GetCurSel();//当前选中的行。
+}

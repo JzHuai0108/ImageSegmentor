@@ -20,11 +20,12 @@ public:
 
 
 public:
+
 	CRect mask;
 	
 	CImageView*pView;
 	CSliderCtrl*p_Slider;
-	CStatic*pCount,*pThresh,*pMax,*pMin;
+	CStatic*pCount,*pThresh,*pMax,*pMin,*pPic;
 	float m_RMax,m_RMin;
 	int m_nCur;//current position of slider range fropm 0 to 255
 	float curMin;//current mininum for regions threshold
@@ -41,6 +42,7 @@ public:
 	int		iArrowWidth, iArrowLen, iFlagLen, iTopReserve, iReserve;
 	int		iLeft, iBottom, ivStep, ihStep, nMaxHeight, nMaxWidth;
 	int		startleft, startbottom;
+
 //	int		iFavorPos;
 
 // Dialog Data

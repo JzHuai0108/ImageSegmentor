@@ -76,6 +76,7 @@ IDR_IMAGETYPE           ICON    DISCARDABLE     "res\\imageDoc.ico"
 //
 
 IDR_MAINFRAME           BITMAP  MOVEABLE PURE   "res\\Toolbar.bmp"
+IDB_LENA                BITMAP  DISCARDABLE     "res\\LENA.BMP"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -144,9 +145,9 @@ CAPTION "Segmenting Setting"
 FONT 10, "System"
 BEGIN
     CONTROL         "Sorted by Dither Matrix",IDC_RADIO_DM,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,10,38,99,16
+                    BS_AUTORADIOBUTTON | WS_GROUP,10,29,99,16
     CONTROL         "Sorted by Homogeneity",IDC_RADIO_HOMO,"Button",
-                    BS_AUTORADIOBUTTON,127,39,92,14
+                    BS_AUTORADIOBUTTON,110,30,92,14
     DEFPUSHBUTTON   "OK",IDOK,213,62,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,213,104,50,14
     LTEXT           "K",IDC_STATIC,10,62,14,8
@@ -165,9 +166,12 @@ BEGIN
     EDITTEXT        IDC_EDIT_PACWEI,169,115,40,12,ES_AUTOHSCROLL
     LTEXT           "Region Merge Sequence Option",IDC_STATIC_OPT,22,19,103,
                     12
-    LTEXT           "Image layer weight band 1 based, comma separated, all bands denoted,  like :1,1,1,0",
+    LTEXT           "Image layer weight, comma separated, all bands denoted,  like :1,1,1,0",
                     IDC_STATIC_LWA,10,147,115,28
     EDITTEXT        IDC_EDIT_LWARRAY,125,157,99,10,ES_AUTOHSCROLL
+    COMBOBOX        IDC_COMBO_METRIC,70,44,48,52,CBS_DROPDOWNLIST | 
+                    CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Distance Used",IDC_STATIC_METRIC,10,47,49,8
 END
 
 IDD_DIALOG_SEGOUT DIALOG DISCARDABLE  0, 0, 200, 100
@@ -177,12 +181,12 @@ FONT 10, "System"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,143,30,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,143,54,50,14
-    EDITTEXT        IDC_EDIT_TIME,87,18,43,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_COMPS,87,39,43,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_TIME,87,18,43,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT_COMPS,87,39,43,14,ES_AUTOHSCROLL | ES_READONLY
     LTEXT           "Time Consumed/sec",IDC_STATIC_TIME,7,22,67,8
     LTEXT           "Component Number",IDC_STATIC_BITNUM,7,42,65,8
     LTEXT           "QS",IDC_STATIC_QS,7,66,11,8
-    EDITTEXT        IDC_EDIT_QS,87,65,43,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_QS,87,65,43,14,ES_AUTOHSCROLL | ES_READONLY
 END
 
 IDD_DIALOG_IMAGEPROP DIALOG DISCARDABLE  0, 0, 223, 149
@@ -238,15 +242,10 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,112,73,50,14
     LTEXT           "Canny edge detector parameters:",IDC_STATIC_HEADLINE,15,
                     13,124,11
-    EDITTEXT        IDC_EDIT_SIGMA,112,25,45,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT_LOW,112,40,46,13,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDIT_HIGH,112,56,45,12,ES_AUTOHSCROLL
-    LTEXT           "0.6 - 2.4",IDC_STATIC_SGAP,166,24,36,12
-    LTEXT           "0.2 - 0.5",IDC_STATIC_LOWGAP,166,40,33,13
-    LTEXT           "0.6 - 0.9",IDC_STATIC_HIGHGAP,166,53,51,13
-    LTEXT           "Sigma",IDC_STATIC_SIG,18,26,33,11
     LTEXT           "Hysteresis Low Value",IDC_STATIC_LOW,17,42,86,11
-    LTEXT           "Hysteresis High Value",IDC_STATIC_HIGH,19,57,77,10
+    LTEXT           "Hysteresis High Value",IDC_STATIC_HIGH,15,56,77,10
 END
 
 IDD_DIALOG_SUSAN DIALOG DISCARDABLE  0, 0, 187, 94
@@ -256,7 +255,7 @@ FONT 10, "System"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,7,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,130,24,50,14
-    LTEXT           "SUSAN edge detector",IDC_STATIC_HEAD,20,7,100,18
+    LTEXT           "SUSAN edge detector",IDC_STATIC_HEAD,13,14,75,10
     LTEXT           "Brightness Threshold",IDC_STATIC_BT,17,40,51,16
     LTEXT           "Mask Template",IDC_STATIC_MASK,20,60,49,18
     EDITTEXT        IDC_EDIT_BT,72,41,45,14,ES_AUTOHSCROLL
@@ -273,26 +272,28 @@ FONT 10, "System"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,7,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,130,24,50,14
-    LTEXT           "Edge Band",IDC_STATIC_EBAND,14,13,37,9
+    LTEXT           "Band to Use",IDC_STATIC_EBAND,14,16,46,9
     EDITTEXT        IDC_EDIT_EBAND,72,13,23,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_COMBO_MORPH,66,31,48,52,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_COMBO_MORPH,67,48,76,52,CBS_DROPDOWNLIST | 
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Morphology Operations",IDC_STATIC_MT,14,27,47,19
+    LTEXT           "Morphology Operations",IDC_STATIC_MT,13,43,47,19
 END
 
-IDD_DIALOG_PREVIEW DIALOG DISCARDABLE  0, 0, 272, 237
+IDD_DIALOG_PREVIEW DIALOG DISCARDABLE  0, 0, 381, 237
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Preview Regions"
 FONT 10, "System"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,215,157,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,215,180,50,14
+    DEFPUSHBUTTON   "OK",IDOK,324,157,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,324,180,50,14
     CONTROL         "Slider1",IDC_SLIDER1,"msctls_trackbar32",TBS_AUTOTICKS | 
                     TBS_BOTH | WS_TABSTOP,15,172,100,15
     LTEXT           "Count",IDC_STATIC_COUNT,39,160,59,10
     LTEXT           "Threshold",IDC_STATIC_THRESH,45,188,50,10
     LTEXT           "0",IDC_STATIC_MIN,7,189,32,9
     LTEXT           "255",IDC_STATIC_MAX,105,188,26,9
+    CONTROL         "",IDC_STATIC_PICBOX,"Static",SS_BLACKFRAME,233,13,124,
+                    134
 END
 
 IDD_DIALOG_SELPROP DIALOG DISCARDABLE  0, 0, 253, 133
@@ -302,18 +303,104 @@ FONT 10, "System"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,196,7,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,196,24,50,14
-    COMBOBOX        IDC_COMBO_SELPROP,18,19,65,66,CBS_DROPDOWN | WS_VSCROLL | 
+    COMBOBOX        IDC_COMBO_SELPROP,18,19,65,74,CBS_DROPDOWN | WS_VSCROLL | 
                     WS_TABSTOP
     LTEXT           "Select the property to show or save",IDC_STATIC_SELPROP,
                     15,7,128,8
-    EDITTEXT        IDC_EDIT_TOP,7,70,39,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_BOT,65,71,37,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_LEFT,119,70,46,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_RIGHT,181,70,41,14,ES_AUTOHSCROLL
-    LTEXT           "Top",IDC_STATIC_TOP,13,55,40,9
-    LTEXT           "Bottom",IDC_STATIC_BOTTOM,64,54,39,9
-    LTEXT           "Left",IDC_STATIC_LEFT,120,53,40,10
-    LTEXT           "Right",IDC_STATIC_RIGHT,185,55,39,11
+    EDITTEXT        IDC_EDIT_TOP,14,108,39,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_BOT,74,108,37,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_LEFT,125,108,46,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_RIGHT,190,106,41,14,ES_AUTOHSCROLL
+    LTEXT           "Top",IDC_STATIC_TOP,14,95,40,9
+    LTEXT           "Bottom",IDC_STATIC_BOTTOM,73,95,39,9
+    LTEXT           "Left",IDC_STATIC_LEFT,124,94,40,10
+    LTEXT           "Right",IDC_STATIC_RIGHT,188,93,39,11
+END
+
+IDD_DIALOG_FEATUREEXTR DIALOG DISCARDABLE  0, 0, 213, 135
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Multi feature extraction setting"
+FONT 10, "System"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,150,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,150,24,50,14
+    LTEXT           "MinDiff",IDC_STATIC_MIND,15,15,27,9
+    LTEXT           "MaxDiff",IDC_STATIC_MAXD,15,31,30,10
+    LTEXT           "Level",IDC_STATIC_LEVEL,15,49,22,10
+    EDITTEXT        IDC_EDIT_MINDIFF,89,13,51,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAXDIFF,89,31,51,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_LEVEL,89,47,51,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_BANDWT,140,100,51,12,ES_AUTOHSCROLL
+    LTEXT           "Image layer weight, comma separated, all bands denoted,  like :1,1,1,0",
+                    IDC_STATIC_BWA,15,93,105,28
+    LTEXT           "0 Based Level to Use",IDC_STATIC_LEVELUSE,15,72,71,8
+    EDITTEXT        IDC_EDIT_LEVELUSE,89,70,51,14,ES_AUTOHSCROLL
+END
+
+IDD_DIALOG_CDTHRESH DIALOG DISCARDABLE  0, 0, 332, 219
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Change Detection Threshold"
+FONT 10, "System"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,275,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,275,24,50,14
+    CONTROL         "Slider1",IDC_SLIDER,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,61,170,100,15
+    LTEXT           "Threshold",IDC_STATIC_THRESH,86,185,50,10
+    LTEXT           "0",IDC_STATIC_MIN,48,186,32,9
+    LTEXT           "255",IDC_STATIC_MAX,146,185,26,9
+    LTEXT           "Count",IDC_STATIC_COUNT,78,156,59,10
+END
+
+IDD_DIALOG_SETTHRESH DIALOG DISCARDABLE  0, 0, 201, 139
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Set conditions for building extraction"
+FONT 10, "System"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,144,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,144,24,50,14
+    LTEXT           "Minimum Area",IDC_STATIC_AREA,19,19,48,8
+    EDITTEXT        IDC_EDIT_MINAREA,93,15,40,14,ES_AUTOHSCROLL
+    LTEXT           "Minimum Width",IDC_STATIC_MEANW,19,58,52,8
+    EDITTEXT        IDC_EDIT_MINWID,93,56,40,14,ES_AUTOHSCROLL
+    LTEXT           "Maximum L/W",IDC_STATIC_BLWR,19,76,48,8
+    EDITTEXT        IDC_EDIT_MAXLWR,93,75,40,14,ES_AUTOHSCROLL
+    LTEXT           "Minimum Area/(W*L)",IDC_STATIC_COMPCT,19,96,68,8
+    EDITTEXT        IDC_EDIT_MINCMPCT,93,93,40,14,ES_AUTOHSCROLL
+    LTEXT           "Maximum Area",IDC_STATIC_MAXAREA,19,38,50,8
+    EDITTEXT        IDC_EDIT_MAXAREA,93,36,40,14,ES_AUTOHSCROLL
+END
+
+IDD_DIALOG_RESULTIMAGE DIALOG DISCARDABLE  0, 0, 203, 179
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Result image"
+FONT 10, "System"
+BEGIN
+    CONTROL         "",IDC_RESULTIMAGE,"Static",SS_BLACKFRAME,14,14,175,152
+END
+
+IDD_DIALOG_MRFOPTIM DIALOG DISCARDABLE  0, 0, 197, 111
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "MRF Optimizing Setting"
+FONT 10, "System"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,140,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,140,24,50,14
+    LTEXT           "Optimizing Method",IDC_STATIC_MRFCD,14,33,62,8
+    COMBOBOX        IDC_COMBO_MRF,79,31,48,30,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Number of Classes",IDC_STATIC_NUMCLS,13,13,63,8
+    EDITTEXT        IDC_EDIT_NC,79,9,40,14,ES_AUTOHSCROLL
+    LTEXT           "BETA",IDC_STATIC_BETA,20,49,19,8
+    EDITTEXT        IDC_EDIT_BETA,44,47,40,14,ES_AUTOHSCROLL
+    LTEXT           "t",IDC_STATIC_T,97,51,8,8
+    EDITTEXT        IDC_EDIT_T,121,49,40,14,ES_AUTOHSCROLL
+    LTEXT           "T0",IDC_STATIC_T0,21,68,8,8
+    EDITTEXT        IDC_EDIT_T0,45,66,40,14,ES_AUTOHSCROLL
+    LTEXT           "c",IDC_STATIC_C,95,67,8,8
+    EDITTEXT        IDC_EDIT_C,121,65,40,14,ES_AUTOHSCROLL
+    LTEXT           "alpha",IDC_STATIC_ALPHA,18,84,19,8
+    EDITTEXT        IDC_EDIT_ALPHA,44,82,40,14,ES_AUTOHSCROLL
 END
 
 
@@ -458,7 +545,7 @@ BEGIN
     IDD_DIALOG_PREVIEW, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 265
+        RIGHTMARGIN, 374
         TOPMARGIN, 7
         BOTTOMMARGIN, 230
     END
@@ -469,6 +556,53 @@ BEGIN
         RIGHTMARGIN, 246
         TOPMARGIN, 7
         BOTTOMMARGIN, 126
+        HORZGUIDE, 104
+        HORZGUIDE, 120
+    END
+
+    IDD_DIALOG_FEATUREEXTR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 200
+        VERTGUIDE, 15
+        VERTGUIDE, 89
+        VERTGUIDE, 140
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 121
+    END
+
+    IDD_DIALOG_CDTHRESH, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 325
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 212
+    END
+
+    IDD_DIALOG_SETTHRESH, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        VERTGUIDE, 19
+        VERTGUIDE, 93
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 132
+    END
+
+    IDD_DIALOG_RESULTIMAGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 196
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 172
+    END
+
+    IDD_DIALOG_MRFOPTIM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 190
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 104
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -517,18 +651,38 @@ BEGIN
 0x694d, 0x696e, 0x756d, 0x206d, 0x7841, 0x6169, 0x206c, 0x654c, 0x676e, 
 0x6874, "\000" 
     IDC_COMBO_SELPROP, 0x403, 11, 0
+0x6c45, 0x6e6f, 0x6167, 0x6974, 0x6e6f, "\000" 
+    IDC_COMBO_SELPROP, 0x403, 19, 0
+0x6f43, 0x6176, 0x6972, 0x6e61, 0x6563, 0x4c20, 0x6e65, 0x572f, 0x6469, 
+"\000" 
+    IDC_COMBO_SELPROP, 0x403, 11, 0
 0x654d, 0x6e61, 0x5720, 0x6469, 0x6874, "\000" 
     IDC_COMBO_SELPROP, 0x403, 12, 0
-0x654d, 0x6e61, 0x4c20, 0x6e65, 0x7467, 0x0068, 
-    IDC_COMBO_SELPROP, 0x403, 11, 0
-0x444e, 0x4956, 0x4128, 0x7276, 0x292e, "\000" 
-    IDC_COMBO_SELPROP, 0x403, 12, 0
 0x6f43, 0x706d, 0x6361, 0x6e74, 0x7365, 0x0073, 
-    IDC_COMBO_SELPROP, 0x403, 11, 0
-0x6c45, 0x6e6f, 0x6167, 0x6974, 0x6e6f, "\000" 
-    IDC_COMBO_SELPROP, 0x403, 23, 0
-0x654d, 0x6e61, 0x4c20, 0x6e65, 0x7467, 0x2f68, 0x654d, 0x6e61, 0x5720, 
-0x6469, 0x6874, "\000" 
+    0
+END
+
+IDD_DIALOG_MRFOPTIM DLGINIT
+BEGIN
+    IDC_COMBO_MRF, 0x403, 14, 0
+0x6947, 0x6262, 0x2073, 0x6153, 0x706d, 0x656c, 0x0072, 
+    IDC_COMBO_MRF, 0x403, 11, 0
+0x654d, 0x7274, 0x706f, 0x6c6f, 0x7369, "\000" 
+    IDC_COMBO_MRF, 0x403, 4, 0
+0x4d4d, 0x0044, 
+    IDC_COMBO_MRF, 0x403, 4, 0
+0x4349, 0x004d, 
+    0
+END
+
+IDD_DIALOG_INITIATE DLGINIT
+BEGIN
+    IDC_COMBO_METRIC, 0x403, 14, 0
+0x6542, 0x7a6e, 0x4420, 0x7369, 0x6174, 0x636e, 0x0065, 
+    IDC_COMBO_METRIC, 0x403, 16, 0
+0x614c, 0x626d, 0x6164, 0x5320, 0x6863, 0x6465, 0x6c75, 0x0065, 
+    IDC_COMBO_METRIC, 0x403, 16, 0
+0x6946, 0x6873, 0x7265, 0x4420, 0x7369, 0x6174, 0x636e, 0x0065, 
     0
 END
 
@@ -778,8 +932,59 @@ BEGIN
             MENUITEM "SUSAN",                       ID_PREP_SUSAN
         END
         MENUITEM "Smooth by Guass",             ID_PROCESS_GUASS
-        MENUITEM "Morph...",                    ID_PREP_MORPH
+        MENUITEM "Skeletonize Binary Map...",   ID_PREP_MORPH
+        MENUITEM "Gabor Transform",             ID_PREP_GABORTRANS
+        MENUITEM "Entropy",                     ID_PREP_ENTROPY
+        MENUITEM "Opening Morph",               ID_PREP_OPENING
         MENUITEM "Show QT Regions",             ID_PREP_SR
+        MENUITEM "RGB to Sat Hue",              ID_PREP_SATHUE
+        MENUITEM "Create Image From Text",      ID_PREP_TEXTIMG
+        MENUITEM "Erode",                       ID_CLASS_ERODE
+    END
+    POPUP "&Seg"
+    BEGIN
+        MENUITEM "Set Parameters",              ID_SEG_INITIATE
+        MENUITEM "QuadTree",                    ID_SEG_QT
+        MENUITEM "HierClust",                   ID_SEG_REGMEG
+        MENUITEM "GraphSeg",                    ID_SEG_GS
+        MENUITEM "GraphSeg-HC",                 ID_SEG_GSHC
+        MENUITEM "QuadTree-HC",                 ID_SEG_QTHC
+        MENUITEM "Preview",                     ID_CLASS_PREVIEW
+        POPUP "Evaluation"
+        BEGIN
+            MENUITEM "Rand Index",                  ID_SEG_RANDINDEX
+            MENUITEM "QS",                          ID_EVAL_QS
+        END
+        POPUP "Save Seg Res"
+        BEGIN
+            MENUITEM "Save Object Mean",            ID_SEG_SAVE
+            MENUITEM "Save contour image",          ID_SEG_SAVETOUR
+            MENUITEM "Export as shapefile",         ID_SEG_EXPORTSHP
+        END
+        MENUITEM "Mean Shift (bg-dzj)",         ID_SEG_MEANSHIFTDZJ
+        MENUITEM "Watershed (Vincent)",         ID_SEG_WATERSHEDV
+        MENUITEM "Watershed (G-channel)",       ID_SEG_WATERSHEDG
+        MENUITEM "Watershed (Seq-Flood)",       ID_SEG_WATERSHEDSEQ
+        MENUITEM "Pyr Mean Shift (Opencv)",     ID_SEG_PYRMEANSHIFT
+        MENUITEM "Mean Shift (Edison)",         ID_SEG_MEANSHIFTEDISON
+    END
+    POPUP "&Classify"
+    BEGIN
+        MENUITEM "MRF Classifier",              ID_CLASS_MRFCD
+        MENUITEM "Color MRF",                   ID_CLASS_COLORMRF
+        MENUITEM "Kmeans",                      ID_CLASS_KMEANS
+        MENUITEM "Building KMeans",             ID_CLASS_BUILDINGISODATA
+        MENUITEM "Building",                    ID_CLASS_BUILDING
+        MENUITEM "Road Seeds",                  ID_CLASS_ROADCLUMP
+    END
+    POPUP "Texture CD"
+    BEGIN
+        MENUITEM "Rosin CD",                    ID_TEXTURE_ROSINCD
+        MENUITEM "LBP/C Histo CD",              ID_CLASS_MULTI_FEAT
+        MENUITEM "Correlation CD",              ID_TEXTURE_CORRBINARY
+        MENUITEM "Grad Corr CD",                ID_TEXTURE_GRADCORR
+        MENUITEM "Histogram Stat CD",           ID_TEXTURE_HISTOSTATCD
+        MENUITEM "Multilevel Diff CD",          ID_CLASS_MULTIFEATURE
     END
     POPUP "&View"
     BEGIN
@@ -796,32 +1001,6 @@ BEGIN
         MENUITEM "&Cascade",                    ID_WINDOW_CASCADE
         MENUITEM "&Tile",                       ID_WINDOW_TILE_HORZ
         MENUITEM "&Arrange Icons",              ID_WINDOW_ARRANGE
-    END
-    POPUP "&Seg"
-    BEGIN
-        MENUITEM "Set Parameters",              ID_SEG_INITIATE
-        MENUITEM "QuadTree",                    ID_SEG_QT
-        MENUITEM "HierClust",                   ID_SEG_REGMEG
-        MENUITEM "GraphSeg",                    ID_SEG_GS
-        MENUITEM "GraphSeg-HC",                 ID_SEG_GSHC
-        MENUITEM "QuadTree-HC",                 ID_SEG_QTHC
-        POPUP "Evaluation"
-        BEGIN
-            MENUITEM "TEST Doc List",               ID_VIEW_REGIONS
-            MENUITEM "QS",                          ID_EVAL_QS
-        END
-        POPUP "Save Seg Res"
-        BEGIN
-            MENUITEM "Save Object Mean",            ID_SEG_SAVE
-            MENUITEM "Save contour image",          ID_SEG_SAVETOUR
-        END
-    END
-    POPUP "&Classify"
-    BEGIN
-        MENUITEM "RegProp",                     ID_CLASS_REGPROP
-        MENUITEM "RoadClump",                   ID_CLASS_ROADCLUMP
-        MENUITEM "Erode",                       ID_CLASS_ERODE
-        MENUITEM "Preview",                     ID_CLASS_PREVIEW
     END
     POPUP "&Help"
     BEGIN

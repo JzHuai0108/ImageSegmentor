@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: thinplatespline.h,v 1.2 2004/12/26 16:12:21 fwarmerdam Exp $
+ * $Id: thinplatespline.h 14122 2008-03-30 10:33:39Z rouault $
  *
  * Project:  GDAL Warp API
  * Purpose:  Declarations for 2D Thin Plate Spline transformer. 
@@ -28,16 +28,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: thinplatespline.h,v $
- * Revision 1.2  2004/12/26 16:12:21  fwarmerdam
- * thin plate spline support now implemented
- *
- * Revision 1.1  2004/11/14 04:16:44  fwarmerdam
- * New
- *
- */
+ ****************************************************************************/
 
 #include "gdal_alg.h"
 #include "cpl_conv.h"
@@ -87,9 +78,9 @@ class VizGeorefSpline2D
 
     ~VizGeorefSpline2D(){
         if ( _AA )
-            delete _AA;
+            CPLFree(_AA);
         if ( _Ainv )
-            delete _Ainv;
+            CPLFree(_Ainv);
 
         CPLFree( x );
         CPLFree( y );
@@ -137,12 +128,12 @@ class VizGeorefSpline2D
             type = VIZ_GEOREF_SPLINE_ZERO_POINTS;
             if ( _AA )
             {
-                delete _AA;
+                CPLFree(_AA);
                 _AA = NULL;
             }
             if ( _Ainv )
             {
-                delete _Ainv;
+                CPLFree(_Ainv);
                 _Ainv = NULL;
             }
             return _nof_points;

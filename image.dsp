@@ -23,8 +23,8 @@ CFG=image - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName ""$/imagex", BAAAAAAA"
+# PROP Scc_LocalPath "."
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "../HCE/gdaldll/include/" /I "C:/Program Files/OpenCV/cxcore/include" /I "C:/Program Files/OpenCV/cv/include" /I "C:/Program Files/OpenCV/cvaux/include" /I "C:/Program Files/OpenCV/ml/include" /I "C:/Program Files/OpenCV/otherlibs/highgui" /I "C:/Program Files/OpenCV/otherlibs/cvcam/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../HCE/gdaldll/include/" /I "C:/Program Files/OpenCV/cxcore/include" /I "C:/Program Files/OpenCV/cv/include" /I "C:/Program Files/OpenCV/otherlibs/highgui" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x804 /d "NDEBUG" /d "_AFXDLL"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 gdal_i.lib cxcore.lib cv.lib ml.lib cvaux.lib highgui.lib cvcam.lib /nologo /subsystem:windows /machine:I386 /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
+# ADD LINK32 gdal_i.lib cxcore.lib cv.lib highgui.lib /nologo /subsystem:windows /machine:I386 /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
 # SUBTRACT LINK32 /debug
 
 !ELSEIF  "$(CFG)" == "image - Win32 Debug"
@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 gdal_i.lib cxcore.lib cv.lib ml.lib cvaux.lib highgui.lib cvcam.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
+# ADD LINK32 gdal_i.lib ogr.lib ogrsf_frmts.lib cpl.lib ogrsf_frmts_sup.lib cxcore.lib cv.lib ml.lib cvaux.lib highgui.lib cvcam.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib"
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -108,6 +108,18 @@ SOURCE=.\CannyPara.cpp
 # Begin Source File
 
 SOURCE=.\ChildFrm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\CIE.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\CKProcessTimeCounter.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\colormrf.cpp
 # End Source File
 # Begin Source File
 
@@ -143,7 +155,43 @@ SOURCE=.\MainFrm.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\mersenne.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MFeatDlg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MMOFUNC.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\MorphDlg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\mrf_1.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MRFOptimDlg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyColorSpace.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyGabor.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyMath.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyTexture.cpp
 # End Source File
 # Begin Source File
 
@@ -167,11 +215,23 @@ SOURCE=.\ResultDlg.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ResultImageDlg.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\SegApi.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\SegmenterMS.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\SelPropDlg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SetPropDlg.cpp
 # End Source File
 # Begin Source File
 
@@ -185,6 +245,10 @@ SOURCE=.\SUSANDlg.cpp
 # Begin Source File
 
 SOURCE=.\Thinner.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\THRESHDlg.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -205,6 +269,18 @@ SOURCE=.\CannyPara.h
 # Begin Source File
 
 SOURCE=.\ChildFrm.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\CIE.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\CKProcessTimeCounter.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\colormrf.h
 # End Source File
 # Begin Source File
 
@@ -232,6 +308,14 @@ SOURCE=.\imageDoc.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\imageinclude\ImageErrors.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\imageinclude\Imageload.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\imageView.h
 # End Source File
 # Begin Source File
@@ -241,6 +325,10 @@ SOURCE=.\InitiateDlg.h
 # Begin Source File
 
 SOURCE=.\MainFrm.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MFeatDlg.h
 # End Source File
 # Begin Source File
 
@@ -256,6 +344,30 @@ SOURCE=.\MorphDlg.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\mrf_1.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MRFOptimDlg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyColorSpace.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyGabor.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyMath.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\MyTexture.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\NP.h
 # End Source File
 # Begin Source File
@@ -265,6 +377,10 @@ SOURCE=.\PreviewDlg.h
 # Begin Source File
 
 SOURCE=.\QT.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\randomc.h
 # End Source File
 # Begin Source File
 
@@ -280,6 +396,10 @@ SOURCE=.\ResultDlg.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\ResultImageDlg.h
+# End Source File
+# Begin Source File
+
 SOURCE=".\segment-graph.h"
 # End Source File
 # Begin Source File
@@ -288,7 +408,15 @@ SOURCE=".\segment-image.h"
 # End Source File
 # Begin Source File
 
+SOURCE=.\SegmenterMS.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\SelPropDlg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\SetPropDlg.h
 # End Source File
 # Begin Source File
 
@@ -301,6 +429,10 @@ SOURCE=.\SUSANDlg.h
 # Begin Source File
 
 SOURCE=.\Thinner.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ThreshDlg.h
 # End Source File
 # Begin Source File
 
@@ -321,6 +453,10 @@ SOURCE=.\res\image.rc2
 # Begin Source File
 
 SOURCE=.\res\imageDoc.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\LENA.BMP
 # End Source File
 # Begin Source File
 

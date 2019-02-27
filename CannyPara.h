@@ -21,7 +21,6 @@ public:
 	enum { IDD = IDD_DIALOG_CANNY };
 	float	m_high;
 	float	m_low;
-	float	m_sigma;
 	//}}AFX_DATA
 
 

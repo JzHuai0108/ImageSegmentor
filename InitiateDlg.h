@@ -29,7 +29,7 @@ public:
 	CString	m_BWArray;
 	//}}AFX_DATA
 
-
+	int iPos;
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CInitiateDlg)
@@ -42,6 +42,8 @@ protected:
 
 	// Generated message map functions
 	//{{AFX_MSG(CInitiateDlg)
+	virtual BOOL OnInitDialog();
+	afx_msg void OnSelendokComboMetric();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

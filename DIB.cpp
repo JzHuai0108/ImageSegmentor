@@ -1,14 +1,21 @@
 #include "stdafx.h"
 #include "DIB.h"
+#include "..\\include\\ogrsf_frmts.h"
+#include "..\\include\\cpl_string.h"
 #include <assert.h>
 
 // 构造函数，初始化CDIB对象的数据
-CDIB::CDIB():m_lpBits(NULL),m_lpPalette(NULL),m_nBitCount(0),sampleperpixel(0)
-,m_nWidth(0),m_nHeight(0)
+CDIB::CDIB():m_lpBits(NULL),m_lpPalette(NULL),m_nBitCount(0),
+m_nWidth(0),m_nHeight(0),m_nColors(0),m_nPlanes(0)
 {
 
 }
+CDIB::CDIB( const char *pszFileName):m_lpBits(NULL),m_lpPalette(NULL),m_nBitCount(0),m_nPlanes(0)
+{
+	m_nWidth = m_nHeight = m_nBitCount = m_nColors = 0;
 
+	LoadFromFile( pszFileName);
+}
 // 析构函数
 CDIB::~CDIB()
 {
@@ -30,8 +37,6 @@ void CDIB::Clear()
 	// 清除位图信息
 	m_nWidth = m_nHeight = 0;
 	m_nBitCount = 0;
-	sampleperpixel=0;
-
 }
 
 // 	将位图数据保存到位图文件（根据文件名）
@@ -197,7 +202,20 @@ BOOL CDIB::LoadDib(BYTE *lpDib)
 	nBitCount = pInfo->biBitCount;
 	// 计算位图每行象素所占的字节数目 
 	nByteWidth = BYTE_PER_LINE(nWidth, nBitCount);
+	m_nPlanes = pInfo->biPlanes;
 
+	m_nColors = 1 << nBitCount;
+
+//	DWORD tmp = pBIH->biClrUsed;
+//
+//    LONG PIX = pBIH->biXPelsPerMeter;
+//	LONG PIY = pBIH->biYPelsPerMeter;
+
+
+	if( m_nPlanes > 1 )
+		m_nColors <<= ( m_nPlanes - 1 );
+	if( nBitCount >= 16 )
+		m_nColors = 0;
 	// 检查位图的颜色数
 	switch (nBitCount)
 	{
@@ -283,7 +301,6 @@ BOOL CDIB::LoadDib(BYTE *lpDib)
 	}*/
 	// 记录位图的宽度
 	m_nBitCount=nBitCount;
-	sampleperpixel=spp;
 	// 记录位图的高度
 	m_nWidth=nWidth;
 	// 记录位图表示颜色所用的位数
@@ -416,7 +433,6 @@ BOOL CDIB::Paste()
 // 根据位图数据画出位图
 int CDIB::Stretch(HDC hDC,
 			int XDest,int YDest,int nDestWidth,int nDestHeight,
-			int XSrc,int YSrc,int nSrcWidth,int nSrcHeight,
 			UINT iUsage,DWORD dwRop)
 {
 	// 位图信息结构，包括位图信息头和调色板信息，
@@ -460,7 +476,7 @@ int CDIB::Stretch(HDC hDC,
 	
 	// 在指定的位置上按照指定的大小画出位图
 	int ret = StretchDIBits(hDC, XDest, YDest, nDestWidth, nDestHeight,
-				XSrc, YSrc, nSrcWidth, nSrcHeight, m_lpBits,
+				0, 0, m_nWidth, m_nHeight, m_lpBits,
 				pbmi, iUsage, dwRop);
 	
 	// 删除所分配的内存空间
@@ -898,12 +914,10 @@ void CDIB::MakeGrayPalette(int BitCount)
 
 
 
-void CDIB::origin()
+void CDIB::Origin()
 {
-	int sernum=0;
 	int nByteWidth = BYTE_PER_LINE(m_nWidth,m_nBitCount);
-	BYTE *rowp=m_lpBits;
-	BYTE *pBits=rowp;
+	memcpy(m_lpBits,bpBits,sizeof(BYTE)*nByteWidth*m_nHeight);
 /*	for (int y = 0; y < m_nHeight; y++) 
 		{
 			for (int x = 0; x < m_nWidth; x++) 
@@ -951,12 +965,13 @@ void CDIB::LookRegions(int *tag,int option)
 					if(label!=tag[temp+1]||label!=tag[temp-width])//one pixel width boundary
 					{
 						int z=0;
-						acronym=x*sampleperpixel;
-						for(z=0;z<(sampleperpixel-1);z++)
+						int spp=(m_nBitCount>>3);
+						acronym=x*spp;
+						for(z=0;z<(spp-1);z++)
 						{
-							*(rowp+acronym+z)=0;
+							*(rowp+x*spp+z)=0;
 						}
-						*(rowp+acronym+z)=255;
+						*(rowp+x*spp+z)=255;
 					}
 				}
 				++sernum;
@@ -973,8 +988,9 @@ void CDIB::LookRegions(int *tag,int option)
 					if(tag[sernum]!=-1)
 					{
 						int z=0;
-						acronym=x*sampleperpixel;					
-						switch(sampleperpixel)
+						int spp=(m_nBitCount>>3);
+						acronym=x*spp;					
+						switch(spp)
 						{
 						case 1:*(rowp+acronym)=255; break;
 						case 3:
@@ -1003,8 +1019,9 @@ void CDIB::LookRegions(int *tag,int option)
 					if(label!=tag[sernum+1]||label!=tag[sernum+width])//one pixel width boundary
 					{
 						int z=0;
-						acronym=x*sampleperpixel;
-						for(z=0;z<(sampleperpixel-1);z++)
+							int spp=(m_nBitCount>>3);
+						acronym=x*spp;
+						for(z=0;z<(spp-1);z++)
 						{
 							*(rowp+acronym+z)=0;
 						}
@@ -1021,19 +1038,19 @@ void CDIB::LookRegions(int *tag,int option)
 
 BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 {
-	
+	int spp;
 	if (m_pDataset)
 	{
 		m_nWidth=m_pDataset->GetRasterXSize(); //影响的高度，宽度
 		m_nHeight=m_pDataset->GetRasterYSize();
-		sampleperpixel=m_pDataset->GetRasterCount();//波段的数目
+		spp=m_pDataset->GetRasterCount();//波段的数目
 	}
 	int m_CurrentBand=1;
-	if (r <= 0 || r>sampleperpixel)
+	if (r <= 0 || r>spp)
 		r = m_CurrentBand;
-	if (g<= 0 || g>sampleperpixel)
+	if (g<= 0 || g>spp)
 		g = m_CurrentBand;
-	if (b<= 0 || b>sampleperpixel)
+	if (b<= 0 || b>spp)
 		b = m_CurrentBand;
 	int height=m_nHeight,width=m_nWidth,nBitCount=24,nByteWidth=0;
 
@@ -1044,9 +1061,9 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 	BYTE *rowp=NULL;
 	BYTE *pBits=NULL;
 	int x,y,temp,i;
-	if(sampleperpixel==1)
+	if(spp==1)
 	{
-		sampleperpixel=1;
+	
 		GDALRasterBand  *m_pBand=NULL;
 		GDALColorTable*m_pCT=NULL;
 		m_pBand = m_pDataset->GetRasterBand(1);
@@ -1074,6 +1091,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 		// 计算位图每行象素所占的字节数目 
 		nByteWidth = BYTE_PER_LINE(width, 8);
 		m_lpBits= new BYTE[nByteWidth*height];
+		bpBits=new BYTE[nByteWidth*height];
 		byte* buf =	new byte[width*height];
 		if (CE_None==m_pBand->RasterIO( GF_Read, 0,0, width, height, buf, width,height, GDT_Byte, 0, 0 ))
 		{
@@ -1094,12 +1112,13 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 			}
 		}
 		delete []buf;
+		memcpy(bpBits,m_lpBits,sizeof(BYTE)*nByteWidth*height);
 		return TRUE;
 		
 	}
 	// 获取位图表示颜色所用的位数
 	nBitCount =24;//add alpha channel
-	sampleperpixel=3;
+
 	// 计算位图每行象素所占的字节数目 
 	nByteWidth = BYTE_PER_LINE(width, nBitCount);
 	
@@ -1107,7 +1126,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 	
 	// 重新为位图象素数据分配内存
 	m_lpBits= new BYTE[nByteWidth*height];
-
+	bpBits=new BYTE[nByteWidth*height];
 	GDALRasterBand  *m_pBand=NULL;
 	m_pBand = m_pDataset->GetRasterBand(r);
 	//	CPLAssert( m_pBand->GetRasterDataType() == GDT_Byte );
@@ -1206,24 +1225,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 		break;
 	default://其他类型的都用float
 		{
-			//if choose max and min delta method to draw screen, no improvement shown so commented
-		/*	double max, min,maxtemp,mintemp;
-			float delta=0;
-			//ofstream out("tech.txt",ios::app);
-			//out<<" the temp min and large value for three bands:\n";
-			m_pBand->GetStatistics( 0,  1,&min, &max,0,0);
-			m_pBand = m_pDataset->GetRasterBand(g);
-			m_pBand->GetStatistics  ( 0,  1,&mintemp, &maxtemp,0,0);
-			
-			max=maxtemp>max?maxtemp:max;
-			min=mintemp<min?mintemp:min;
-			m_pBand = m_pDataset->GetRasterBand(b);
-			m_pBand->GetStatistics  ( 0,  1,&mintemp, &maxtemp,0,0);
-			
-			max=maxtemp>max?maxtemp:max;
-			min=mintemp<min?mintemp:min;
-			delta=max-min;
-			m_pBand = m_pDataset->GetRasterBand(r);*/
+	
 			float*buffFloat = new float[width*height];
 			if (m_pBand)
 			{
@@ -1238,7 +1240,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 						for (x = 0; x < width; ++x) 
 						{
 							*pBits=(BYTE)buffFloat[temp];
-							//*pBits=(BYTE)(buffFloat[temp]-min)/delta*255;						
+									
 							pBits+=3;
 							++temp;
 						}
@@ -1263,7 +1265,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 						for (x = 0; x < width; ++x) 
 						{
 							*pBits=(BYTE)buffFloat[temp];
-							//*pBits=(BYTE)(buffFloat[temp]-min)/delta*255;
+						
 							pBits+=3;
 							++temp;
 						}
@@ -1288,7 +1290,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 						for (x = 0; x < width; ++x) 
 						{
 							*pBits=(BYTE)buffFloat[temp];
-							//*pBits=(BYTE)(buffFloat[temp]-min)/delta*255;						
+								
 							pBits+=3;
 							++temp;
 						}
@@ -1304,6 +1306,7 @@ BOOL CDIB::CreateDIB(int r, int g, int b,GDALDataset* m_pDataset)
 		break;
 	}
 	m_nBitCount=nBitCount;
+	memcpy(bpBits,m_lpBits,sizeof(BYTE)*nByteWidth*height);
 	return TRUE;
 }
 //function: save edge raster file into bmp file 24bit
@@ -1382,17 +1385,15 @@ BOOL CDIB::SaveEdge(LPCTSTR fn,BYTE*EM)
 	pf->Write(pPalette, 256*sizeof(RGBQUAD));*/
 	BYTE*edge=new BYTE[nByteWidth*m_nHeight];
 	BYTE*ep=edge;
-	BYTE *EP=EM;
 	for (y = 0; y < m_nHeight; ++y) 
 	{
 		for (x = 0; x < m_nWidth; ++x) 
 		{			
-			ep[x*3]=EP[x];
-			ep[x*3+1]=EP[x];
-			ep[x*3+2]=EP[x];
+			ep[x*3]=EM[(m_nHeight-1-y)*m_nWidth+x];
+			ep[x*3+1]=ep[x*3];
+			ep[x*3+2]=ep[x*3];
 		}
 		ep+=nByteWidth;
-		EP+=m_nWidth;
 	}
 	// 将位图数据写入文件
 	pf->Write(edge, nByteWidth*m_nHeight);
@@ -1404,7 +1405,7 @@ BOOL CDIB::SaveEdge(LPCTSTR fn,BYTE*EM)
 }
 
 
-//show region with specific property, those regions' index is true in tagBe array
+//show region with specific property
 void CDIB::ShowReg(int *tag,int step)
 {
 	int width = m_nWidth;
@@ -1426,9 +1427,10 @@ void CDIB::ShowReg(int *tag,int step)
 			{
 				
 					int z=0;
-					acronym=x*sampleperpixel;
+					int spp=(m_nBitCount>>3);
+					acronym=x*spp;
 					*(rowp+acronym+z)=255;
-					for(z=1;z<(sampleperpixel);z++)
+					for(z=1;z<spp;z++)
 					{
 						*(rowp+acronym+z)=0;
 					}
@@ -1446,8 +1448,9 @@ void CDIB::ShowReg(int *tag,int step)
 					if(label!=tag[temp+1]||label!=tag[temp+width])//one pixel width boundary
 					{
 						int z=0;
-						acronym=x*sampleperpixel;
-						for(z=0;z<(sampleperpixel-1);z++)
+						int spp=(m_nBitCount>>3);
+						acronym=x*spp;
+						for(z=0;z<(spp-1);z++)
 						{
 							*(rowp+acronym+z)=0;
 						}
@@ -1481,8 +1484,9 @@ int CDIB::lookregion(int label,int*tag, CRect rect,int area)
 			if(tag[pos]==label)
 			{			
 				int z=0;
-				acronym=i*sampleperpixel;
-						for(z=0;z<(sampleperpixel-1);z++)
+					int spp=(m_nBitCount>>3);
+				acronym=i*spp;
+						for(z=0;z<(spp-1);z++)
 						{
 							*(rowp+acronym+z)=0;
 						}
@@ -1497,20 +1501,19 @@ int CDIB::lookregion(int label,int*tag, CRect rect,int area)
 	return 1;
 }
 
-//save the gdaldataset in comagedoc
-BOOL CDIB::SaveToFile(GDALDataset *m_pDataset, CString &PathName)
+//save cdib m_lpbits to file pathname and the spatial info stored in pdataset,
+//when this function put into serialize of CDoc, it does not work out fine.
+bool CDIB::SaveToFile(GDALDataset *pDataset, CString pathName)
 {
-	PathName.MakeUpper();
-	int period = PathName.ReverseFind('.');
-	int temp=0;
+	int period = pathName.ReverseFind('.');
+	int temp;
 	CString suffix;
-  	const char *  pszFormat = m_pDataset->GetDriver()->GetDescription();
-	GDALDriver * driver=NULL;
-		
+	GDALDriver * driver;
+	
 	if(period>0)		
 	{			
-		temp=PathName.GetLength()-1-period;
-		suffix=PathName.Right(temp);
+		temp=pathName.GetLength()-1-period;
+		suffix=pathName.Right(temp);
 		suffix.MakeLower();
 		if (suffix == "bmp")
 			driver = GetGDALDriverManager()->GetDriverByName("BMP");
@@ -1532,42 +1535,83 @@ BOOL CDIB::SaveToFile(GDALDataset *m_pDataset, CString &PathName)
 			driver = GetGDALDriverManager()->GetDriverByName("HDF4");
 		else if (suffix == "hdr")
 			driver = GetGDALDriverManager()->GetDriverByName("EHdr");
-		
+		else
+		{
+			AfxMessageBox("This format is not supported!");
+			return false;	
+		}
 	}
-	//	PathName.Delete(period+1,temp);	
+	//	pathName.Delete(period+1,temp);	
 	else
 	{
 		suffix = "tif";
 		driver = GetGDALDriverManager()->GetDriverByName("GTIFF");
-		PathName=PathName+"."+suffix;
+		pathName=pathName+"."+suffix;
 	}
 	
-	char **papszMetadata;
-	GDALDataset* poDstDS;
-	
-	const char*pszDstFilename=(const char*)PathName;//(const char*)suffix;
 	
 	if( driver == NULL)
+	{		
+		AfxMessageBox("This format's driver is not available!");
 		return false;
-	
-	papszMetadata = driver->GetMetadata();
-	suffix.MakeUpper();
-	pszFormat=(const char*)suffix;
-	//	CString herald;
-	//	if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
-	//	{	herald.Format( "Driver %s supports Create() method.\n", pszFormat );
-	//	AfxMessageBox(herald);}
-	
-	//	if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATECOPY, FALSE ) )
-	//	{	herald.Format( "Driver %s supports CreateCopy() method.\n", pszFormat);
-	//	AfxMessageBox(herald);}
-	if(poDstDS=driver->CreateCopy( pszDstFilename, m_pDataset, FALSE, NULL, NULL, NULL))
-	{
-		GDALClose( (GDALDatasetH) poDstDS);
-		return true;
 	}
-	else 
+	
+	//using create
+	GDALDataset *poDstDS;   
+    GDALRasterBand  *poBand=NULL;
+    char **papszOptions = NULL;
+    OGRSpatialReference oSRS;
+	GDALDataType dataType=GDT_Byte;
+	double adfGeoTransform[6],backup[6] = { 444720, 30, 0, 3751320, 0, -30 };
+	BYTE* buf =new BYTE[m_nWidth*m_nHeight];
+	int spp=m_nBitCount>>3;
+	const char *quark=(const char*)pathName;
+	poDstDS = driver->Create( quark,m_nWidth,m_nHeight,spp,dataType,papszOptions );
+	if(poDstDS==NULL)
+	{	
+		AfxMessageBox("The dataset cannot be created!");	
 		return false;
+	}
+	if(CE_None==pDataset->GetGeoTransform( adfGeoTransform ))	
+		poDstDS->SetGeoTransform( adfGeoTransform );
+	//else
+	//	poDstDS->SetGeoTransform(backup); 
+	/*
+	oSRS.SetUTM( 11, TRUE );
+	oSRS.SetWellKnownGeogCS( "NAD27" );
+	oSRS.exportToWkt( &pszSRS_WKT );
+	poDstDS->SetProjection( pszSRS_WKT );
+	*/
+	int nByteWidth = BYTE_PER_LINE(m_nWidth,m_nBitCount);
+	const char*pszSRS_WKT=pDataset->GetProjectionRef();
+	poDstDS->SetProjection( pszSRS_WKT );
+	int d,x,y,sernum;
+	//note RGB order and row order, all inversed
+	for(d=1;d<=spp;++d)
+	{
+		
+		poBand = poDstDS->GetRasterBand(d);	
+		if (poBand)
+		{	
+			sernum=0;
+			BYTE*pBits=m_lpBits;
+			for(y=0;y<m_nHeight;++y)
+			{
+				for (x = 0; x < m_nWidth; ++x) 
+				{
+					buf[sernum]=pBits[(m_nHeight-y-1)*nByteWidth+x*spp+spp-d];
+					++sernum;
+				}				
+			}
+			if (CE_None!=poBand->RasterIO( GF_Write,0,0, m_nWidth, m_nHeight, buf, m_nWidth,m_nHeight,dataType, 0, 0 ))
+			{
+				AfxMessageBox("error writing pdataset!");
+			}
+		}
+	}
+	delete[]buf; 
+	GDALClose( (GDALDatasetH) poDstDS );
+	return true;
 	
 }
 
@@ -1578,4 +1622,654 @@ CString CDIB::GetDataType(GDALDataset *m_pDataset)
 	
 	CString m_DataType=GDALGetDataTypeName(m_pBand->GetRasterDataType());//数据类型
 	return m_DataType;
+}
+int CDIB::GetWidthInBytes( int nBits, int nWidth )
+{
+	int nWidthBytes;
+	nWidthBytes = nWidth;
+	if( nBits == 1 )
+		nWidthBytes = ( nWidth + 7 ) / 8;
+	else if( nBits == 4 )
+		nWidthBytes = ( nWidth + 1 ) / 2;
+	else if( nBits == 16 )
+		nWidthBytes = nWidth * 2;
+	else if( nBits == 24 )
+		nWidthBytes = nWidth * 3;
+	else if( nBits == 32 )
+		nWidthBytes = nWidth * 4;
+	while( ( nWidthBytes & 3 ) != 0 )
+		nWidthBytes++;
+	return( nWidthBytes );
+}
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：GetPaletteColor
+* 
+*  参数：　　BYTE idx -- 调色板中对应的下标 值
+* 
+*  返回值：  RGBQUAD  -- 点(x,y)处对应的RGBQUAD结构的象素值 
+*
+*  说明：    该函数用于调色板中下标 idx 对应的RGBQUAD,被 GetPixelColor()调用        
+************************************************************************/
+
+RGBQUAD CDIB::GetPaletteColor(BYTE idx)
+{
+	RGBQUAD rgb = {0,0,0,0};
+	
+	if (m_lpPalette)
+	{
+		BYTE* iDst = m_lpPalette;
+		if (idx<m_nColors)
+		{
+			long ldx=idx*sizeof(RGBQUAD);
+			rgb.rgbBlue = iDst[ldx++];
+			rgb.rgbGreen=iDst[ldx++];
+			rgb.rgbRed =iDst[ldx++];
+			rgb.rgbReserved = iDst[ldx];
+		}
+	}
+
+	return rgb;
+}
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：GetPixelIndex
+* 
+*  参数：　　int x    -- 横坐标
+*            int y    -- 纵坐标
+* 
+*  返回值：  BYTE     -- 点(x,y)的象素值在调色板中的下标
+*
+*  说明：    该函数用于获取(x,y)的象素值在调色板中的下标。
+*            被函数 GetPaletteColor()所调用       
+************************************************************************/
+
+BYTE CDIB::GetPixelIndex(int x,int y)
+{
+
+    if ((m_lpBits==NULL)||(m_nColors==0)) return 0;
+	BYTE*pBits=m_lpBits;
+
+	if (m_nBitCount==8)
+	{
+		return (BYTE)*(pBits+y*GetWidthInBytes(m_nBitCount,m_nWidth)+x);
+	}
+	else 
+	{
+		BYTE pos;
+		BYTE iDst= (BYTE)*(pBits+y*GetWidthInBytes(m_nBitCount,m_nWidth)+(x*m_nBitCount >> 3));
+		if (m_nBitCount==4)
+		{
+			pos = (BYTE)(4*(1-x%2));
+			iDst &= (0x0F<<pos);
+			return (BYTE)(iDst >> pos);
+		} 
+		else if (m_nBitCount==1)
+		{
+			pos = (BYTE)(7-x%8);
+			iDst &= (0x01<<pos);
+			
+			return (BYTE)(iDst >> pos);
+		}
+	}
+	   
+	return 0;
+}
+
+
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：GetPixelColor
+* 
+*  参数：　　int x    -- 图象的横坐标   
+*            int y    -- 图象的纵坐标
+* 
+*  返回值：  RGBQUAD  -- 点(x,y)处对应的RGBQUAD结构的象素值 
+*
+*  说明：    该函数用于获取(x,y)处的象素值，
+*            被LoadDIBToBuf()所调用或者单独使用          
+************************************************************************/
+
+RGBQUAD CDIB::GetPixelColor(int x,int y)
+{
+	RGBQUAD rgb;
+	rgb.rgbBlue = rgb.rgbGreen = rgb.rgbRed = rgb.rgbReserved = 0;
+    if(m_lpBits == NULL)
+		return rgb;
+
+    y = m_nHeight -1 - y;  // add by maple,2004.5.14
+	
+
+	if (m_lpPalette)
+	{   
+		BYTE tmp;
+		tmp = GetPixelIndex(x,y);
+	    rgb = GetPaletteColor(tmp);
+	} 
+	else
+	{
+		BYTE* iDst  = m_lpBits + y*GetWidthInBytes(m_nBitCount,m_nWidth) + x*(m_nBitCount>>3);
+		rgb.rgbBlue = *iDst++;
+		rgb.rgbGreen= *iDst++;
+		rgb.rgbRed  = *iDst;
+    	rgb.rgbReserved =(BYTE) 0;
+	}
+
+	return rgb;
+}
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：GetPixelColor2
+* 
+*  参数：　　int x    -- 图象的横坐标   
+*            int y    -- 图象的纵坐标
+* 
+*  返回值：  RGBQUAD  -- 点(x,y)处对应的RGBQUAD结构的象素值 
+*
+*  说明： 此函数专用于256色灰度图象，用于获取(x,y)处的象素值，   
+*         被LoadDIBToBuf()所调用或者单独使用   
+************************************************************************/
+BYTE CDIB::GetPixelColor2(int x,int y)
+{
+    if(m_lpBits == NULL)
+		return (BYTE)0;
+   
+	y = m_nHeight -1 - y;   // add by maple, 2004.5.14
+	
+
+	BYTE tmpColor;
+	    tmpColor = * (m_lpBits + y*GetWidthInBytes(m_nBitCount,m_nWidth) + x);
+	return tmpColor;
+
+}
+
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：SetPixelIndex
+* 
+*  参数：　　int x            -- 横坐标
+*            int y            -- 纵坐标
+*            BYTE index       -- (x,y)中象素值所对应的在调色板中的下标
+* 
+*  返回值：  void     
+*
+*  说明：    该函数用下标index来替换原DIB中的索引
+*            被函数SetPixelColor()所调用
+************************************************************************/
+
+void CDIB::SetPixelIndex(int x,int y,BYTE index)
+{
+
+	if ((m_lpBits==NULL)||(m_nColors==0)||
+		(x<0)||(y<0)||(x>=m_nWidth)||(y>=m_nHeight)) return ;
+
+	BYTE * pBits = m_lpBits;
+	
+	if (m_nBitCount==8)
+	{
+	    *(pBits+y*GetWidthInBytes(m_nBitCount,m_nWidth) + x)=index;
+		return;
+	} 
+	else 
+	{
+		BYTE pos;
+		BYTE* iDst= pBits + y*GetWidthInBytes(m_nBitCount,m_nWidth) + (x*m_nBitCount >> 3);
+		if (m_nBitCount==4)
+		{
+			pos = (BYTE)(4*(1-x%2));
+			*iDst &= ~(0x0F<<pos);
+			*iDst |= ((index & 0x0F)<<pos);
+			return;
+		} 
+		else if (m_nBitCount==1)
+		{
+			pos = (BYTE)(7-x%8);
+			*iDst &= ~(0x01<<pos);
+			*iDst |= ((index & 0x01)<<pos);
+			return;
+		}
+	}	
+}
+
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：GetNearestIndex
+* 
+*  参数：　　RGBQUAD color  -- 调色板的一个单元结构
+*
+*  返回值：  BYTE           -- 输入调色板单元所对应的索引
+*
+*  说明：    该函数用来得到输入调色板单元所对应的索引，
+*            它作为函数 SetPixelIndex()的一个参数被调用。
+************************************************************************/
+
+BYTE CDIB::GetNearestIndex(RGBQUAD color)
+{
+
+	if ((m_lpBits==NULL)||(m_nColors==0)) return 0;
+
+	BYTE* iDst = m_lpBits;
+	long distance=200000;
+	int i,j=0;
+	long k,l;
+
+	for(i=0,l=0;i<m_nColors;i++,l+=sizeof(RGBQUAD))
+	{
+		k = (iDst[l]-color.rgbBlue)*(iDst[l]-color.rgbBlue)+
+			(iDst[l+1]-color.rgbGreen)*(iDst[l+1]-color.rgbGreen)+
+			(iDst[l+2]-color.rgbRed)*(iDst[l+2]-color.rgbRed);
+//		k = abs(iDst[l]-c.rgbBlue)+abs(iDst[l+1]-c.rgbGreen)+abs(iDst[l+2]-c.rgbRed);
+		if (k==0)
+		{
+			j=i;
+			break;
+		}
+		if (k<distance){
+			distance=k;
+			j=i;
+		}
+	} 
+	
+	return (BYTE)j;
+}
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：SetPixelColor
+* 
+*  参数：　　int x            -- 横坐标
+*            int y            -- 纵坐标
+*            RGBQUAD  color   -- RGBQUAD结构的调色板象素值
+* 
+*  返回值：  void     
+*
+*  说明：    该函数用color中对应的象素值代替(x,y)对应的象素值 
+*            被函数UpdateDIB(所调用
+************************************************************************/
+
+void CDIB:: SetPixelColor(int x,int y,RGBQUAD color)
+{
+    if ((m_lpBits==NULL)||(x<0)||(y<0)||
+		  (x>=m_nWidth)||(y>=m_nHeight)) 
+	return;
+
+	y = m_nHeight -1 - y;   // add by maple, 2004.5.14
+	
+	BYTE * pBits = m_lpBits;
+
+	if (m_nColors)
+		SetPixelIndex(x,y,GetNearestIndex(color));
+	else 
+	{
+		BYTE* iDst = pBits + y*GetWidthInBytes(m_nBitCount,m_nWidth) + x*3;
+		*iDst++ = color.rgbBlue;
+		*iDst++ = color.rgbGreen;
+		*iDst   = color.rgbRed;
+	}
+}
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.18
+*
+*  函数名称：SetPixelColor2
+* 
+*  参数：　　int x            -- 横坐标
+*            int y            -- 纵坐标
+*            BYTE  color      -- 指定坐标对应的象素值  
+* 
+*  返回值：  void     
+*
+*  说明：    该函数专用于256色灰度图象， 
+*            用color中对应的象素值代替(x,y)对应的象素值， 
+*            被函数UpdateDIB(所调用或者单独使用。
+************************************************************************/
+
+void CDIB:: SetPixelColor2(int x,int y,BYTE color)
+{
+    if ((m_lpBits==NULL)||(x<0)||(y<0)||
+		  (x>=m_nWidth)||(y>=m_nHeight)) 
+	return;
+    
+    y = m_nHeight -1 - y;   // add by maple, 2004.5.14
+
+	BYTE * pBits = m_lpBits;
+ 
+	*(pBits+y*GetWidthInBytes(m_nBitCount,m_nWidth) + x) = color;		
+}
+
+
+
+/***********************************************************************
+*  Description: this function was added by maple,2004.3.22
+*
+*  函数名称：CreatDIBFromBits
+* 
+*  参数：　　int nWidth    -- 要新建的图象的宽度   
+*            int nHeight   -- 要新建的图象的高度
+*            BYTE * buf    -- 存放象素值的内存区域指针
+* 
+*  返回值：  bool
+*
+*  说明：    该函数利用一块存放象素值的内存区域来创建一个DIB，所
+*            创建的图象是24位位图。            
+************************************************************************/
+
+//load buf (nwidth*nheight) data to dib, if dib has data space, it is assumed dib also has size and nbits
+//otherwise, allocate memory for dib data. 
+bool CDIB::CreateDIBFromBits(int nWidth,int nHeight,BYTE * buf,int nBits)
+{
+    RGBQUAD color;
+
+	if(m_lpBits!=NULL)     
+	{
+		if(nWidth!=m_nWidth||nHeight!=m_nHeight)
+		{
+			AfxMessageBox("Incompatible image size in CreateDIBFromBits!");
+			return false;
+		}
+		BYTE * pBits = m_lpBits;
+
+		memset(pBits,0,GetWidthInBytes(m_nBitCount,nWidth)*nHeight);
+		int tick=nBits>>3;
+		if(m_nBitCount==8)
+		{
+			for( int j=0; j<nHeight; j++)
+			for( int i=0; i<nWidth; i++)
+			{   
+ 				unsigned long temp=(long)j*(long)nWidth*tick+(long)i*tick;					
+				BYTE gray;
+				gray=buf[temp];		
+			
+				SetPixelColor2( i, j, gray ) ;
+			} 		
+		}
+		else if(m_nBitCount>=16)
+		{
+		for( int j=0; j<nHeight; j++)
+			for( int i=0; i<nWidth; i++)
+			{   
+ 				unsigned long temp=(long)j*(long)nWidth*tick+(long)i*tick;				
+				BYTE r,g,b;
+				b=*(buf+temp);
+				g=*(buf+temp+(1>=tick?0:1));
+				r=*(buf+temp+(2>=tick?0:2));
+				
+				color.rgbRed   = r;
+				color.rgbGreen = g;
+				color.rgbBlue  = b;
+				SetPixelColor( i, j, color ) ;
+			} 		
+		}
+		else
+		{
+			AfxMessageBox("Image format not supported in CreateDIBFromBits!");
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		
+		nWidth=nWidth;
+		nHeight=nHeight;
+		m_nBitCount=24;
+		int byteLine=BYTE_PER_LINE(nWidth, 24);
+		m_lpBits=new BYTE[byteLine*nHeight];
+		BYTE * pBits = m_lpBits;
+		int tick=nBits>>3;
+		memset(m_lpBits,0, sizeof(BYTE)*byteLine*nHeight);
+		for( int j=0; j<nHeight; j++)
+			for( int i=0; i<nWidth; i++)
+			{   
+				unsigned long temp=(long)j*(long)nWidth*tick+(long)i*tick;				
+				BYTE r,g,b;
+				b=*(buf+temp);
+				g=*(buf+temp+(1>=tick?0:1));
+				r=*(buf+temp+(2>=tick?0:2));
+				
+				color.rgbRed   = r;
+				color.rgbGreen = g;
+				color.rgbBlue  = b;
+				SetPixelColor( i, j, color ) ;
+			} 		
+		return(true);
+	}
+}
+//load dib to iplimage structure's imageData member
+int CDIB::LoadDIBToIPL(char*imageData,int nBits)
+{	
+	if(m_lpBits == NULL)
+		return 0;
+	int widthStep=BYTE_PER_LINE(m_nWidth, 24);
+	RGBQUAD color ;
+	COLORREF colorref;
+	BYTE* buf;
+	if(m_nBitCount>=16&&nBits>=16)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				color = GetPixelColor( i, j );
+				colorref =RGB(color.rgbRed, color.rgbGreen, color.rgbBlue);
+				
+				buf=(BYTE*)(imageData + widthStep*j+i*3);
+				
+				*(buf)=GetBValue(colorref);
+				*(buf+1)=GetGValue(colorref);
+				*(buf+2)=GetRValue(colorref);
+			}
+	}
+	else if(m_nBitCount==8&&nBits>=16)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				BYTE color = GetPixelColor2( i, j );
+				buf=(BYTE*)(imageData + widthStep*j+i*3);			
+				
+				*(buf)=color;
+				*(buf+1)=color;
+				*(buf+2)=color;
+			}
+	}
+	else if(m_nBitCount>=16&&nBits==8)
+	{
+		widthStep=BYTE_PER_LINE(m_nWidth, 8);
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				color = GetPixelColor( i, j );
+				colorref =RGB(color.rgbRed, color.rgbGreen, color.rgbBlue);
+				
+				buf=(BYTE*)(imageData + widthStep*j+i);
+				
+				*(buf)=GetBValue(colorref);
+			}
+	}
+	else if(m_nBitCount==8&&nBits==8)
+	{
+		widthStep=BYTE_PER_LINE(m_nWidth, 8);
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				BYTE color = GetPixelColor2( i, j );
+				buf=(BYTE*)(imageData + widthStep*j+i);				
+				*(buf)=color;
+			}
+	}
+	else	return 0;
+	return 1;
+	
+}
+//create dib from iplimage's imagedata, nbits is the bit count of image data for each pixel
+int CDIB::CreateDIBFromIPL(int w,int h, char*imageData,int nBits)
+{
+    RGBQUAD color;
+
+	if(m_lpBits!=NULL)     
+	{
+		if(w!=m_nWidth||h!=m_nHeight)
+		{
+			AfxMessageBox("Incompatible image size in CreateDIBFromIPL!");
+			return false;
+		}
+		BYTE * pBits = m_lpBits;
+		int byteLine=BYTE_PER_LINE(w, nBits);
+		memset(pBits,0, GetWidthInBytes(m_nBitCount,w)*h);
+		if(m_nBitCount==8)
+		{
+			int tick=nBits>>3;
+			for( int j=0; j<h; j++)
+			for( int i=0; i<w; i++)
+			{   
+ 				BYTE *temp=((unsigned char*)imageData)+j*byteLine+i*tick;					
+		
+				SetPixelColor2( i, j,*temp) ;
+			} 	
+			
+	
+		}
+		else if(m_nBitCount>=16)
+		{
+		int tick=nBits>>3;
+		for( int j=0; j<h; j++)
+			for( int i=0; i<w; i++)
+			{   
+				BYTE *temp=((unsigned char*)imageData)+j*byteLine+i*tick;	
+ 							
+				BYTE r,g,b;
+				b=*(temp);
+				g=*(temp+(1>=tick?0:1));
+				r=*(temp+(2>=tick?0:2));
+				
+				color.rgbRed   = r;
+				color.rgbGreen = g;
+				color.rgbBlue  = b;
+				SetPixelColor( i, j, color ) ;
+			} 		
+		}
+		else
+		{AfxMessageBox("Unsupported format conversion between CDIB and IplImage!");
+			return false;}
+		return true;
+	}
+	else
+	{		
+		m_nWidth=w;
+		m_nHeight=h;
+		m_nBitCount=24;
+		int byteLine=BYTE_PER_LINE(w, 24);
+		m_lpBits=new BYTE[byteLine*h];
+		BYTE * pBits = m_lpBits;
+		int byteLine2=BYTE_PER_LINE(w, nBits);
+		memset(m_lpBits,0, sizeof(BYTE)*byteLine*h);
+		int tick=nBits>>3;
+		for( int j=0; j<h; j++)
+		{
+			for( int i=0; i<w; i++)
+			{   
+				BYTE *temp=((unsigned char*)imageData)+j*byteLine2+i*tick;	
+				BYTE r,g,b;
+				b=*(temp);
+				g=*(temp+(1>=tick?0:1));
+				r=*(temp+(2>=tick?0:2));
+				
+				color.rgbRed   = r;
+				color.rgbGreen = g;
+				color.rgbBlue  = b;
+				SetPixelColor( i, j, color ) ;
+			} 	
+		}
+		return(true);
+	}	
+}
+
+//load dib data to buf(width*height*3)
+int CDIB::LoadDIBToBuf(BYTE *buf)
+{
+
+	if(m_lpBits == NULL)
+		return 0;
+	RGBQUAD color ;
+	COLORREF colorref;
+	if(m_nBitCount>=16)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				color = GetPixelColor( i, j );
+				colorref =RGB(color.rgbRed, color.rgbGreen, color.rgbBlue);
+				unsigned long temp=(long)j*(long)m_nWidth*3+(long)i*3;
+			  	    *(buf+temp)=GetBValue(colorref);
+			        *(buf+temp+1)=GetGValue(colorref);
+				    *(buf+temp+2)=GetRValue(colorref);
+			}
+	}
+	else if(m_nBitCount==8)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				BYTE color = GetPixelColor2( i, j );
+				unsigned long temp=(long)j*(long)m_nWidth*3+(long)i*3;
+			  	    *(buf+temp)=color;
+			        *(buf+temp+1)=color;
+				    *(buf+temp+2)=color;
+			}
+	}
+	else
+		return 0;
+	
+ 	return 1;
+
+}
+int CDIB::LoadDIBToBuf(float *buf)
+{
+
+	if(m_lpBits == NULL)
+		return 0;
+	RGBQUAD color ;
+	COLORREF colorref;
+	if(m_nBitCount>=16)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				color = GetPixelColor( i, j );
+				colorref =RGB(color.rgbRed, color.rgbGreen, color.rgbBlue);
+				unsigned long temp=(long)j*(long)m_nWidth*3+(long)i*3;
+			  	    *(buf+temp)=GetBValue(colorref);
+			        *(buf+temp+1)=GetGValue(colorref);
+				    *(buf+temp+2)=GetRValue(colorref);
+			}
+	}
+	else if(m_nBitCount==8)
+	{
+		for( int j=0; j<m_nHeight; j++)
+			for(int i=0; i<m_nWidth; i++) 
+			{
+				BYTE color = GetPixelColor2( i, j );
+				unsigned long temp=(long)j*(long)m_nWidth*3+(long)i*3;
+			  	    *(buf+temp)=color;
+			        *(buf+temp+1)=color;
+				    *(buf+temp+2)=color;
+			}
+	}
+	else
+		return 0;
+	
+ 	return 1;
+
 }

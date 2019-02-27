@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsf_frmts.h,v 1.57 2006/01/27 00:09:07 fwarmerdam Exp $
+ * $Id: ogrsf_frmts.h 18449 2010-01-07 09:09:09Z martinl $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to format registration, and file opening.
@@ -25,62 +25,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: ogrsf_frmts.h,v $
- * Revision 1.57  2006/01/27 00:09:07  fwarmerdam
- * added Get{FID,Geometry}Column() support
- *
- * Revision 1.56  2005/11/22 17:01:09  fwarmerdam
- * added SDE support
- *
- * Revision 1.55  2005/11/10 21:37:28  fwarmerdam
- * added DXF/DWG support
- *
- * Revision 1.54  2005/10/25 19:58:53  fwarmerdam
- * added driver tracking on datasource
- *
- * Revision 1.53  2005/09/05 19:31:45  fwarmerdam
- * Added PGeo driver.
- *
- * Revision 1.52  2005/08/05 15:34:34  fwarmerdam
- * added grass
- *
- * Revision 1.51  2005/07/08 22:10:56  pka
- * Initial import of OGR Interlis driver
- *
- * Revision 1.50  2005/02/22 12:40:37  fwarmerdam
- * added base OGRLayer spatial filter support
- *
- * Revision 1.49  2005/02/02 20:00:01  fwarmerdam
- * added SetNextByIndex support
- *
- * Revision 1.48  2005/01/19 20:29:10  fwarmerdam
- * added autoloaddrivers on ogrsfdriverregistrar
- *
- * Revision 1.47  2005/01/03 22:16:44  fwarmerdam
- * added OGRLayer::SetSpatialFilterRect()
- *
- * Revision 1.46  2004/11/21 22:08:49  fwarmerdam
- * added Release() and DestroyDataSource() methods on OGRDataSource
- *
- * Revision 1.45  2004/10/06 19:49:14  fwarmerdam
- * Added Mysql registration function.
- *
- * Revision 1.44  2004/07/20 19:18:44  warmerda
- * added CSV
- *
- * Revision 1.43  2004/07/10 05:03:24  warmerda
- * added SQLite
- *
- * Revision 1.42  2004/02/11 18:03:15  warmerda
- * added RegisterOGRDODS()
- */
+ ****************************************************************************/
 
 #ifndef _OGRSF_FRMTS_H_INCLUDED
 #define _OGRSF_FRMTS_H_INCLUDED
 
 #include "ogr_feature.h"
+#include "ogr_featurestyle.h"
 
 /**
  * \file ogrsf_frmts.h
@@ -104,9 +55,9 @@ class CPL_DLL OGRLayer
 {
   protected:
     int          m_bFilterIsEnvelope;
-    OGRGeometry  *m_poFilterGeom;
+    OGRGeometry *m_poFilterGeom;
     OGREnvelope  m_sFilterEnvelope;
-
+    
     int          FilterGeometry( OGRGeometry * );
     int          InstallFilter( OGRGeometry * );
 
@@ -145,12 +96,20 @@ class CPL_DLL OGRLayer
 
     virtual OGRErr      SyncToDisk();
 
-    OGRStyleTable       *GetStyleTable(){return m_poStyleTable;}
-    void                 SetStyleTable(OGRStyleTable *poStyleTable){m_poStyleTable = poStyleTable;}
+    OGRStyleTable       *GetStyleTable(){ return m_poStyleTable; }
+    void                SetStyleTableDirectly( OGRStyleTable *poStyleTable )
+                            { if ( m_poStyleTable ) delete m_poStyleTable;
+                              m_poStyleTable = poStyleTable; }
+    void                SetStyleTable(OGRStyleTable *poStyleTable)
+                            {
+                                if ( m_poStyleTable ) delete m_poStyleTable;
+                                if ( poStyleTable )
+                                    m_poStyleTable = poStyleTable->Clone();
+                            }
 
-    virtual OGRErr       StartTransaction();
-    virtual OGRErr       CommitTransaction();
-    virtual OGRErr       RollbackTransaction();
+    virtual OGRErr      StartTransaction();
+    virtual OGRErr      CommitTransaction();
+    virtual OGRErr      RollbackTransaction();
 
     virtual const char *GetFIDColumn();
     virtual const char *GetGeometryColumn();
@@ -194,6 +153,8 @@ class CPL_DLL OGRDataSource
 {
     friend class OGRSFDriverRegistrar;
 
+    void        *m_hMutex;
+
   public:
 
     OGRDataSource();
@@ -216,7 +177,17 @@ class CPL_DLL OGRDataSource
     virtual OGRLayer   *CopyLayer( OGRLayer *poSrcLayer, 
                                    const char *pszNewName, 
                                    char **papszOptions = NULL );
-    OGRStyleTable       *GetStyleTable(){return m_poStyleTable;}
+
+    OGRStyleTable       *GetStyleTable(){ return m_poStyleTable; }
+    void                SetStyleTableDirectly( OGRStyleTable *poStyleTable )
+                            { if ( m_poStyleTable ) delete m_poStyleTable;
+                              m_poStyleTable = poStyleTable; }
+    void                SetStyleTable(OGRStyleTable *poStyleTable)
+                            {
+                                if ( m_poStyleTable ) delete m_poStyleTable;
+                                if ( poStyleTable )
+                                    m_poStyleTable = poStyleTable->Clone();
+                            }
 
     virtual OGRLayer *  ExecuteSQL( const char *pszStatement,
                                     OGRGeometry *poSpatialFilter,
@@ -232,6 +203,7 @@ class CPL_DLL OGRDataSource
     OGRErr              Release();
 
     OGRSFDriver        *GetDriver() const;
+    void                SetDriver( OGRSFDriver *poDriver );
 
   protected:
 
@@ -282,8 +254,11 @@ class CPL_DLL OGRSFDriver
 /************************************************************************/
 
 /**
- * Singleton manager for drivers.
- *
+ * Singleton manager for OGRSFDriver instances that will be used to try
+ * and open datasources.  Normally the registrar is populated with 
+ * standard drivers using the OGRRegisterAll() function and does not need
+ * to be directly accessed.  The driver registrar and all registered drivers
+ * may be cleaned up on shutdown using OGRCleanupAll().
  */
 
 class CPL_DLL OGRSFDriverRegistrar
@@ -297,6 +272,7 @@ class CPL_DLL OGRSFDriverRegistrar
     char        **papszOpenDSRawName;
     OGRDataSource **papoOpenDS;
     OGRSFDriver **papoOpenDSDriver;
+    GIntBig     *panOpenDSPID;
 
   public:
 
@@ -343,9 +319,10 @@ void CPL_DLL RegisterOGRMySQL();
 void CPL_DLL RegisterOGROCI();
 void CPL_DLL RegisterOGRDGN();
 void CPL_DLL RegisterOGRGML();
+void CPL_DLL RegisterOGRKML();
+void CPL_DLL RegisterOGRGeoJSON();
 void CPL_DLL RegisterOGRAVCBin();
 void CPL_DLL RegisterOGRAVCE00();
-void CPL_DLL RegisterOGRFME();
 void CPL_DLL RegisterOGRREC();
 void CPL_DLL RegisterOGRMEM();
 void CPL_DLL RegisterOGRVRT();
@@ -357,7 +334,20 @@ void CPL_DLL RegisterOGRILI2();
 void CPL_DLL RegisterOGRGRASS();
 void CPL_DLL RegisterOGRPGeo();
 void CPL_DLL RegisterOGRDXFDWG();
+void CPL_DLL RegisterOGRDXF();
 void CPL_DLL RegisterOGRSDE();
+void CPL_DLL RegisterOGRIDB();
+void CPL_DLL RegisterOGRGMT();
+void CPL_DLL RegisterOGRBNA();
+void CPL_DLL RegisterOGRGPX();
+void CPL_DLL RegisterOGRGeoconcept();
+void CPL_DLL RegisterOGRIngres();
+void CPL_DLL RegisterOGRPCIDSK();
+void CPL_DLL RegisterOGRXPlane();
+void CPL_DLL RegisterOGRNAS();
+void CPL_DLL RegisterOGRGeoRSS();
+void CPL_DLL RegisterOGRGTM();
+void CPL_DLL RegisterOGRVFK();
 
 CPL_C_END
 

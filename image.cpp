@@ -14,7 +14,7 @@
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
 #endif
-char szFilter[] = "Bitmap(*.BMP)|*.BMP|PCX image(*.PCX)|*.PCX|Tagged image (*.TIF)|*.TIF|All Files(*.*)|*.*||";
+char szFilter[] = "Bitmap (*.bmp)|*.bmp|Tagged image (*.tif)|*.tif|JPEG image (*.jpg)|*.jpg|Erdas image (*img)|*.img|All Files(*.*)|*.*||";
 /////////////////////////////////////////////////////////////////////////////
 // CImageApp
 CImageApp* GetApp()
@@ -107,7 +107,7 @@ BOOL CImageApp::InitInstance()
 	// The main window has been initialized, so show and update it.
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
-
+//	InitDoc();
 	return TRUE;
 }
 
@@ -134,7 +134,7 @@ public:
 // Implementation
 protected:
 	//{{AFX_MSG(CAboutDlg)
-		// No message handlers
+	virtual void OnOK();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
@@ -154,7 +154,6 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 	//{{AFX_MSG_MAP(CAboutDlg)
-		// No message handlers
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -180,9 +179,9 @@ void CImageApp::OnFileNew()
 void CImageApp::OnFileOpen() 
 {
 	// TODO: Add your command handler code here
-	static int nIndex = 1;
+	static int nIndex = 2;
  
-	CFileDialog FileDlg( TRUE, "Tagged image(*.TIF)", NULL, OFN_HIDEREADONLY,szFilter);
+	CFileDialog FileDlg( TRUE, NULL, NULL, OFN_HIDEREADONLY,szFilter);
 	FileDlg.m_ofn.nFilterIndex = (DWORD) nIndex;
 
 	if( FileDlg.DoModal() == IDOK)
@@ -192,4 +191,19 @@ void CImageApp::OnFileOpen()
 		OpenDocumentFile(PathName);
 		nIndex= (int) FileDlg.m_ofn.nFilterIndex;
 	}
+}
+
+
+void CImageApp::InitDoc()
+{
+	CString PathName ="E:\\landcruiser\\TIFFIMAGE\\belle.jpg";
+	PathName.MakeUpper();
+	OpenDocumentFile(PathName);
+}
+
+void CAboutDlg::OnOK() 
+{
+	// TODO: Add extra validation here
+	
+	CDialog::OnOK();
 }

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_multiproc.h,v 1.10 2006/01/25 19:52:25 fwarmerdam Exp $
+ * $Id: cpl_multiproc.h 17143 2009-05-28 18:26:05Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL Multi-Threading, and process handling portability functions.
@@ -25,50 +25,19 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- **********************************************************************
- *
- * $Log: cpl_multiproc.h,v $
- * Revision 1.10  2006/01/25 19:52:25  fwarmerdam
- * default to avoiding as much mutex overhead as opposed if MUTEX_NONE defined
- *
- * Revision 1.9  2005/08/24 22:19:27  fwarmerdam
- * added CPLCleanupTLS
- *
- * Revision 1.8  2005/07/08 18:17:52  fwarmerdam
- * complete TLS implementation for win32
- *
- * Revision 1.7  2005/07/08 14:35:26  fwarmerdam
- * preliminary TLS support
- *
- * Revision 1.6  2005/05/23 06:39:49  fwarmerdam
- * added CPLMutexHolder stuff
- *
- * Revision 1.5  2005/05/20 19:19:00  fwarmerdam
- * added CPLCreateOrAcquireMutex()
- *
- * Revision 1.4  2005/04/26 20:52:10  fwarmerdam
- * use a typedef type for thread mains (for Sun port)
- *
- * Revision 1.3  2003/04/23 04:36:55  warmerda
- * pthreads based implementation
- *
- * Revision 1.2  2002/05/24 04:09:24  warmerda
- * fixed CPL_DLL declarations
- *
- * Revision 1.1  2002/05/24 04:01:01  warmerda
- * New
- *
- **********************************************************************/
+ ****************************************************************************/
 
 #ifndef _CPL_MULTIPROC_H_INCLUDED_
 #define _CPL_MULTIPROC_H_INCLUDED_
 
 #include "cpl_port.h"
 
-// There are three primary implementations of the multi-process support
-// controlled by one of CPL_MULTIPROC_WIN32, CPL_MULTIPROC_PTHREAD or
-// CPL_MULTIPROC_STUB being defined.  If none are defined, the stub
-// implementation will be used.
+/*
+** There are three primary implementations of the multi-process support
+** controlled by one of CPL_MULTIPROC_WIN32, CPL_MULTIPROC_PTHREAD or
+** CPL_MULTIPROC_STUB being defined.  If none are defined, the stub
+** implementation will be used.
+*/
 
 #if defined(WIN32) && !defined(CPL_MULTIPROC_STUB)
 #  define CPL_MULTIPROC_WIN32
@@ -92,7 +61,7 @@ int   CPL_DLL CPLAcquireMutex( void *hMutex, double dfWaitInSeconds );
 void  CPL_DLL CPLReleaseMutex( void *hMutex );
 void  CPL_DLL CPLDestroyMutex( void *hMutex );
 
-int   CPL_DLL CPLGetPID();
+GIntBig CPL_DLL CPLGetPID();
 int   CPL_DLL CPLCreateThread( CPLThreadFunc pfnMain, void *pArg );
 void  CPL_DLL CPLSleep( double dfWaitInSeconds );
 
@@ -104,7 +73,7 @@ CPL_C_END
 
 #define CPLMutexHolderD(x)  CPLMutexHolder oHolder(x,1000.0,__FILE__,__LINE__);
 
-class CPLMutexHolder
+class CPL_DLL CPLMutexHolder
 {
   private:
     void       *hMutex;
@@ -132,6 +101,13 @@ class CPLMutexHolder
 #define CTLS_FINDERINFO                 6         /* cpl_finder.cpp */
 #define CTLS_PATHBUF                    7         /* cpl_path.cpp */
 #define CTLS_SPRINTFBUF                 8         /* cpl_string.cpp */
+#define CTLS_SWQ_ERRBUF                 9         /* swq.c */
+#define CTLS_CPLSPRINTF                10         /* cpl_string.h */
+#define CTLS_RESPONSIBLEPID            11         /* gdaldataset.cpp */
+#define CTLS_VERSIONINFO               12         /* gdal_misc.cpp */
+#define CTLS_VERSIONINFO_LICENCE       13         /* gdal_misc.cpp */
+#define CTLS_CONFIGOPTIONS             14         /* cpl_conv.cpp */
+#define CTLS_FINDFILE                  15         /* cpl_findfile.cpp */
 
 #define CTLS_MAX                       32         
 

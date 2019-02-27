@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.h,v 1.4 2006/03/21 20:11:54 fwarmerdam Exp $
+ * $Id: cpl_csv.h 16759 2009-04-09 21:32:43Z rouault $
  *
  * Project:  Common Portability Library
  * Purpose:  Functions for reading and scaning CSV (comma separated,
@@ -26,22 +26,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: cpl_csv.h,v $
- * Revision 1.4  2006/03/21 20:11:54  fwarmerdam
- * fixup headers a bit
- *
- * Revision 1.3  2005/11/08 15:29:11  fwarmerdam
- * DLL export CSVGetField.
- *
- * Revision 1.2  2003/06/27 16:14:22  warmerda
- * export CSV functions with CPL_DLL
- *
- * Revision 1.1  2000/04/05 21:55:59  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
 #ifndef CPL_CSV_H_INCLUDED
 #define CPL_CSV_H_INCLUDED
@@ -60,12 +45,16 @@ typedef enum {
 
 const char CPL_DLL *CSVFilename( const char * );
 
-char CPL_DLL  **CSVReadParseLine( FILE * );
+char CPL_DLL CSVDetectSeperator( const char *pszLine );
+
+char CPL_DLL  **CSVReadParseLine( FILE *fp);
+char CPL_DLL  **CSVReadParseLine2( FILE *fp, char chDelimiter );
 char CPL_DLL **CSVScanLines( FILE *, int, const char *, CSVCompareCriteria );
 char CPL_DLL **CSVScanFile( const char *, int, const char *,
                             CSVCompareCriteria );
 char CPL_DLL **CSVScanFileByName( const char *, const char *, const char *,
                                   CSVCompareCriteria );
+char CPL_DLL **CSVGetNextLine( const char * );
 int CPL_DLL CSVGetFieldId( FILE *, const char * );
 int CPL_DLL CSVGetFileFieldId( const char *, const char * );
 

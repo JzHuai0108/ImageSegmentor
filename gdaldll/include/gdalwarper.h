@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h,v 1.17 2005/04/04 15:24:16 fwarmerdam Exp $
+ * $Id: gdalwarper.h 17659 2009-09-20 19:02:37Z rouault $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -25,61 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: gdalwarper.h,v $
- * Revision 1.17  2005/04/04 15:24:16  fwarmerdam
- * added CPL_STDCALL to some functions
- *
- * Revision 1.16  2004/11/14 04:16:30  fwarmerdam
- * fixup src alpha support
- *
- * Revision 1.15  2004/10/07 15:50:18  fwarmerdam
- * added preliminary alpha band support
- *
- * Revision 1.14  2004/08/11 20:11:47  warmerda
- * added GDALInitializeWarpedVRT
- *
- * Revision 1.13  2004/08/11 19:01:25  warmerda
- * Added prototypes for GDALAutoCreateWarpedVRT and GDALCreateWarpedVRT
- *
- * Revision 1.12  2004/08/09 14:38:27  warmerda
- * added serialize/deserialize support for warpoptions and transformers
- *
- * Revision 1.11  2003/11/22 19:13:31  dron
- * Added C bindings for GDALWarpOperation functions.
- *
- * Revision 1.10  2003/07/04 11:50:57  dron
- * GRA_CubicSpline added to the list of resampling algorithms.
- *
- * Revision 1.9  2003/06/12 11:21:33  dron
- * Few additional comments.
- *
- * Revision 1.8  2003/05/27 20:49:25  warmerda
- * added REPORT_TIMINGS support
- *
- * Revision 1.7  2003/05/07 19:13:06  warmerda
- * added pre and post warp chunk processor
- *
- * Revision 1.6  2003/04/23 05:18:57  warmerda
- * added multithread support
- *
- * Revision 1.5  2003/03/02 05:25:59  warmerda
- * added some source nodata support
- *
- * Revision 1.4  2003/02/22 02:04:11  warmerda
- * added dfMaxError to reproject function
- *
- * Revision 1.3  2003/02/21 15:41:37  warmerda
- * added progressbase/scale for operation
- *
- * Revision 1.2  2003/02/20 21:53:06  warmerda
- * partial implementation
- *
- * Revision 1.1  2003/02/18 17:25:50  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
 #ifndef GDALWARPER_H_INCLUDED
 #define GDALWARPER_H_INCLUDED
@@ -103,6 +49,7 @@ typedef enum {
   /*! Bilinear (2x2 kernel) */                         GRA_Bilinear=1,
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
+  /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4
 } GDALResampleAlg;
 
 typedef int 
@@ -129,6 +76,12 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
                         int nXOff, int nYOff, int nXSize, int nYSize,
                         GByte ** /*ppImageData */,
                         int bMaskIsFloat, void *pValidityMask );
+
+CPLErr CPL_DLL 
+GDALWarpCutlineMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
+                       int nXOff, int nYOff, int nXSize, int nYSize,
+                       GByte ** /* ppImageData */,
+                       int bMaskIsFloat, void *pValidityMask );
 
 /************************************************************************/
 /*                           GDALWarpOptions                            */
@@ -216,9 +169,15 @@ typedef struct {
     CPLErr              (*pfnPostWarpChunkProcessor)( void *pKern, void *pArg);
     void               *pPostWarpProcessorArg;
 
+    /*! Optional OGRPolygonH for a masking cutline. */
+    void               *hCutline;
+
+    /*! Optional blending distance to apply across cutline in pixels, default is zero. */
+    double              dfCutlineBlendDist;
+
 } GDALWarpOptions;
 
-GDALWarpOptions CPL_DLL * CPL_STDCALL GDALCreateWarpOptions();
+GDALWarpOptions CPL_DLL * CPL_STDCALL GDALCreateWarpOptions(void);
 void CPL_DLL CPL_STDCALL GDALDestroyWarpOptions( GDALWarpOptions * );
 GDALWarpOptions CPL_DLL * CPL_STDCALL
 GDALCloneWarpOptions( const GDALWarpOptions * );
@@ -285,9 +244,6 @@ CPL_C_END
 class CPL_DLL GDALWarpKernel
 {
 public:
-                       GDALWarpKernel();
-    virtual           ~GDALWarpKernel();
-
     char              **papszWarpOptions;
 
     GDALResampleAlg	eResample;
@@ -307,6 +263,15 @@ public:
     GByte             **papabyDstImage;
     GUInt32            *panDstValid;
     float              *pafDstDensity;
+
+    double              dfXScale;   // Resampling scale, i.e.
+    double              dfYScale;   // nDstSize/nSrcSize.
+    double              dfXFilter;  // Size of filter kernel.
+    double              dfYFilter;
+    int                 nXRadius;   // Size of window to filter.
+    int                 nYRadius;
+    int                 nFiltInitX; // Filtering offset
+    int                 nFiltInitY;
     
     int                 nSrcXOff;
     int                 nSrcYOff;
@@ -322,6 +287,11 @@ public:
 
     double              dfProgressBase;
     double              dfProgressScale;
+    
+    double              *padfDstNoDataReal;
+
+                       GDALWarpKernel();
+    virtual           ~GDALWarpKernel();
 
     CPLErr              Validate();
     CPLErr              PerformWarp();

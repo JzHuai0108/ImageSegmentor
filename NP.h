@@ -16,8 +16,8 @@ public:
 	virtual ~NP();
 	bool operator ==(const NP &R);
 	bool operator <(const NP &b);
-    int pInd;
-	int rInd;
+    int pInd;//pair index in A
+	int rInd;//region index in line with tag[]
 
 };
 

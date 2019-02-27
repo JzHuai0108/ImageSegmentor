@@ -15,34 +15,7 @@
  * without specific, written prior permission.  3i makes no
  * representations about the suitability of this software for any purpose.
  * It is provided "as is" without express or implied warranty.
- ******************************************************************************
- *
- * $Log: swq.h,v $
- * Revision 1.8  2003/03/05 05:08:28  warmerda
- * added preliminary support for joins
- *
- * Revision 1.7  2002/04/29 19:32:47  warmerda
- * added swq_select_parse, fix problem with where parsing and sorting code
- *
- * Revision 1.6  2002/04/25 19:32:06  warmerda
- * added swq_select_reform_command
- *
- * Revision 1.5  2002/04/25 16:06:57  warmerda
- * added more general distinct support
- *
- * Revision 1.4  2002/04/23 20:05:23  warmerda
- * added SELECT statement parsing
- *
- * Revision 1.3  2002/04/19 20:46:06  warmerda
- * added [NOT] IN, [NOT] LIKE and IS [NOT] NULL support
- *
- * Revision 1.2  2001/07/19 18:25:07  warmerda
- * expanded tabs
- *
- * Revision 1.1  2001/06/19 15:46:30  warmerda
- * New
- *
- */
+ ****************************************************************************/
 
 #ifndef _SWQ_H_INCLUDED_
 #define _SWQ_H_INCLUDED_
@@ -71,6 +44,9 @@ typedef enum {
     SWQ_FLOAT,
     SWQ_STRING, 
     SWQ_BOOLEAN,
+    SWQ_DATE,
+    SWQ_TIME,
+    SWQ_TIMESTAMP,
     SWQ_OTHER
 } swq_field_type;
 
@@ -159,9 +135,13 @@ typedef struct {
     swq_col_func col_func;
     char         *col_func_name;
     char         *field_name;
+	char         *field_alias;
     int          table_index;
     int          field_index;
     swq_field_type field_type;
+    swq_field_type target_type;
+    int          field_length;
+    int          field_precision;
     int          distinct_flag;
 } swq_col_def;
 

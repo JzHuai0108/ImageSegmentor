@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pam.h,v 1.8 2006/02/08 06:03:40 fwarmerdam Exp $
+ * $Id: gdal_pam.h 16731 2009-04-07 02:18:52Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Declaration for Peristable Auxilary Metadata classes.
@@ -25,34 +25,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- ******************************************************************************
- *
- * $Log: gdal_pam.h,v $
- * Revision 1.8  2006/02/08 06:03:40  fwarmerdam
- * expose some PAM histo stuff for VRT, fixed InitFromXML() hist bug
- *
- * Revision 1.7  2005/10/13 01:19:57  fwarmerdam
- * moved GDALMultiDomainMetadata into GDALMajorObject
- *
- * Revision 1.6  2005/09/24 19:02:15  fwarmerdam
- * added RasterAttributeTable support
- *
- * Revision 1.5  2005/09/11 18:03:34  fwarmerdam
- * added Clear() method on multidomainmetadata
- *
- * Revision 1.4  2005/05/22 08:14:06  fwarmerdam
- * added multidomain metadata support
- *
- * Revision 1.3  2005/05/13 18:19:04  fwarmerdam
- * Added SetDefaultHistogram
- *
- * Revision 1.2  2005/05/11 14:04:21  fwarmerdam
- * added getdefaulthistogram
- *
- * Revision 1.1  2005/04/27 16:27:44  fwarmerdam
- * New
- *
- */
+ ****************************************************************************/
 
 #ifndef GDAL_PAM_H_INCLUDED
 #define GDAL_PAM_H_INCLUDED
@@ -77,6 +50,7 @@ class GDALPamRasterBand;
 #define GCIF_COLORINTERP        0x020000
 #define GCIF_BAND_METADATA      0x040000
 #define GCIF_RAT                0x080000
+#define GCIF_MASK               0x100000
 
 #define GCIF_ONLY_IF_MISSING    0x10000000
 #define GCIF_PROCESS_BANDS      0x20000000
@@ -87,7 +61,7 @@ class GDALPamRasterBand;
                                  GCIF_MINMAX | GCIF_SCALEOFFSET |          \
                                  GCIF_UNITTYPE | GCIF_COLORTABLE |         \
                                  GCIF_COLORINTERP | GCIF_BAND_METADATA |   \
-                                 GCIF_RAT |                                \
+                                 GCIF_RAT | GCIF_MASK |                    \
                                  GCIF_ONLY_IF_MISSING | GCIF_PROCESS_BANDS )
 
 /* GDAL PAM Flags */
@@ -95,6 +69,7 @@ class GDALPamRasterBand;
 #define GPF_TRIED_READ_FAILED   0x02  // no need to keep trying to read .pam.
 #define GPF_DISABLED            0x04  // do not try any PAM stuff. 
 #define GPF_AUXMODE             0x08  // store info in .aux (HFA) file.
+#define GPF_NOSAVE              0x10  // do not try to save pam info.
 
 /* ==================================================================== */
 /*      GDALDatasetPamInfo                                              */
@@ -104,8 +79,10 @@ class GDALPamRasterBand;
 /*      the GDALPamDataset.  It is an effort to reduce ABI churn for    */
 /*      driver plugins.                                                 */
 /* ==================================================================== */
-typedef struct {
-    char       *pszPamFilename;
+class GDALDatasetPamInfo
+{
+public:
+    char        *pszPamFilename;
 
     char	*pszProjection;
 
@@ -116,7 +93,9 @@ typedef struct {
     GDAL_GCP   *pasGCPList;
     char       *pszGCPProjection;
 
-} GDALDatasetPamInfo;
+    CPLString   osPhysicalFilename;
+    CPLString   osSubdatasetName;
+};
 
 /* ******************************************************************** */
 /*                           GDALPamDataset                             */
@@ -146,6 +125,11 @@ class CPL_DLL GDALPamDataset : public GDALDataset
     void   PamInitialize();
     void   PamClear();
 
+    void   SetPhysicalFilename( const char * );
+    const char *GetPhysicalFilename();
+    void   SetSubdatasetName( const char *);
+    const char *GetSubdatasetName();
+
   public:
     virtual     ~GDALPamDataset();
 
@@ -168,17 +152,30 @@ class CPL_DLL GDALPamDataset : public GDALDataset
     virtual CPLErr      SetMetadataItem( const char * pszName,
                                          const char * pszValue,
                                          const char * pszDomain = "" );
+    virtual char      **GetMetadata( const char * pszDomain = "" );
+    virtual const char *GetMetadataItem( const char * pszName,
+                                         const char * pszDomain = "" );
+
+    virtual char      **GetFileList(void);
 
     virtual CPLErr CloneInfo( GDALDataset *poSrcDS, int nCloneInfoFlags );
+
+    virtual CPLErr IBuildOverviews( const char *pszResampling, 
+                                    int nOverviews, int *panOverviewList, 
+                                    int nListBands, int *panBandList,
+                                    GDALProgressFunc pfnProgress, 
+                                    void * pProgressData );
 
 
     // "semi private" methods.
     void   MarkPamDirty() { nPamFlags |= GPF_DIRTY; }
     GDALDatasetPamInfo *GetPamInfo() { return psPam; }
+    int    GetPamFlags() { return nPamFlags; }
+    void   SetPamFlags(int nValue ) { nPamFlags = nValue; }
 };
 
 /* ==================================================================== */
-/*      GDALDatasetPamInfo                                              */
+/*      GDALRasterBandPamInfo                                           */
 /*                                                                      */
 /*      We make these things a seperate structure of information        */
 /*      primarily so we can modify it without altering the size of      */
@@ -286,8 +283,6 @@ class CPL_DLL GDALPamRasterBand : public GDALRasterBand
 };
 
 // These are mainly helper functions for internal use.
-int CPL_DLL PamApplyMetadata( CPLXMLNode *psTree, GDALMajorObject *poMO );
-CPLXMLNode CPL_DLL *PamSerializeMetadata( GDALMajorObject *poMO );
 int CPL_DLL PamParseHistogram( CPLXMLNode *psHistItem, 
                                double *pdfMin, double *pdfMax, 
                                int *pnBuckets, int **ppanHistogram, 
@@ -300,5 +295,11 @@ CPLXMLNode CPL_DLL *
 PamHistogramToXMLTree( double dfMin, double dfMax,
                        int nBuckets, int * panHistogram,
                        int bIncludeOutOfRange, int bApprox );
+
+// For managing the proxy file database.
+const char CPL_DLL * PamGetProxy( const char * );
+const char CPL_DLL * PamAllocateProxy( const char * );
+const char CPL_DLL * PamDeallocateProxy( const char * );
+void CPL_DLL PamCleanProxyDB( void );
 
 #endif /* ndef GDAL_PAM_H_INCLUDED */

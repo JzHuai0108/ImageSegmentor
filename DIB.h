@@ -37,34 +37,50 @@
 
 class CDIB
 {
+//	friend class CHC;
 public:	
 	BYTE *m_lpBits;		// 图象数据指针
 	BYTE *bpBits;//back up image data
 	BYTE *m_lpPalette;	// 调色板指针
 	int m_nBitCount;	// 图像中表示每像素所用的位数
-	int sampleperpixel;
 	int m_nWidth;		// 图象的宽度，单位是象素
 	int m_nHeight;		// 图象的高度，单位是象素
+	int m_nColors;//number of colors in palette 
+	int m_nPlanes; //
 public:	
-	CString GetDataType(GDALDataset *m_pDataset);
-	BOOL SaveToFile(GDALDataset*m_pDataset,CString &PathName);
+	void SetPixelColor2(int x,int y,BYTE color);
+	void SetPixelIndex(int x,int y,BYTE index);
+	BYTE GetNearestIndex(RGBQUAD color);
+	void SetPixelColor(int x,int y,RGBQUAD color);
+	bool CreateDIBFromBits(int nWidth,int nHeight,BYTE * buf,int=24);
+	RGBQUAD GetPaletteColor(BYTE idx);
+	BYTE GetPixelIndex(int x,int y);
+	BYTE GetPixelColor2(int x,int y);
+	RGBQUAD GetPixelColor(int x,int y);
+	int CreateDIBFromIPL(int, int ,char*,int bits);
+	int LoadDIBToIPL(char*imageData, int bits);
+	int LoadDIBToBuf(BYTE* buf);
+	int LoadDIBToBuf(float *buf);
+	CString GetDataType(GDALDataset *);
+	bool SaveToFile(GDALDataset*,CString);
 	int lookregion(int label,int*tag, CRect rect,int area);
 	void ShowReg(int*tag=0,int step=32);
 	// 将Dib位图数据填充到到CDib类的数据结构
-	BOOL CreateDIB(int r, int g, int b,GDALDataset* m_pDataset=NULL);
+	BOOL CreateDIB(int r, int g, int b,GDALDataset* =NULL);
 	BOOL LoadDib(BYTE* lpDib);
 	// 将CDib类的数据结构中的数据转换为Dib位图格式数据
 	BOOL SaveToDib(BYTE *lpDib);
 	//void PlotRegions();
 	BOOL SaveEdge(LPCTSTR fn,BYTE*EM);
 	void LookRegions(int*tag,int option=0);
-	void origin();
+	void Origin();
 
 //	void MapSegImage();
 	void MakeGrayPalette(int BitCount);
 	void histovector(float*hive);
 	BOOL InteEqualize();
 	CDIB();		// CDib类的构造函数
+	CDIB( const char *pszFileName);
 	~CDIB();	// CDib类的析构函数
 
 	// 清除CDib类中有关位图的数据
@@ -77,11 +93,14 @@ public:
 	int GetLength()	{return m_nHeight*m_nWidth;}
 	// 获取图像中表示每像素所用的位数
 	int GetBitCount()	{return m_nBitCount;}
+	int GetWidthInBytes( int nBits, int nWidth );
+
 	// 根据位图数据画出位图
-	int Stretch(HDC,int,int,int,int,int,int,int,int,UINT,DWORD);
+	int Stretch(HDC,int,int,int,int,UINT,DWORD);
 	// 从位图文件中读取位图数据（根据打开的文件指针）
 	BOOL LoadFromFile(CFile *pf);
 	// 从位图文件中读取位图数据（根据文件名）
+
 	BOOL LoadFromFile(LPCTSTR filename);
 	// 将位图数据保存到位图文件（根据打开的文件指针）
 	BOOL SaveToFile(CFile *pf);
