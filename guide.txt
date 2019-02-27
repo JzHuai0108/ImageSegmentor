@@ -1,0 +1,1 @@
+这个是我的全部代码，可以对bmp和简单的tiff图像，进行处理，其中，设定参数在preprocess->initiatevalues，其中的k相当于一个起始区域的大小的参数; seg->graphbasedseg是第一步骤,可以seg->delineation显示分割结果，第二步，要进行一下转化，perprocess->graph2tree4/8,转化为区域信息；然后preprocess-〉treesegsub就是类似于ecognition的区域生长过程。结果很失望，因为没有掌握区域增长的规律。debug太大，删了，编译我尝试了，没问题。

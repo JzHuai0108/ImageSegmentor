@@ -1,0 +1,84 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: image - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\tym\LOCALS~1\Temp\RSP57.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../HCE/gdaldll/include/" /I "C:/Program Files/OpenCV/cxcore/include" /I "C:/Program Files/OpenCV/cv/include" /I "C:/Program Files/OpenCV/cvaux/include" /I "C:/Program Files/OpenCV/ml/include" /I "C:/Program Files/OpenCV/otherlibs/highgui" /I "C:/Program Files/OpenCV/otherlibs/cvcam/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /FR"Debug/" /Fp"Debug/image.pch" /Yc"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"F:\landcruiser\HCE\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\tym\LOCALS~1\Temp\RSP57.tmp" 
+<h3>Output Window</h3>
+Compiling...
+Skipping... (no relevant changes detected)
+StdAfx.cpp
+Creating temporary file "C:\DOCUME~1\tym\LOCALS~1\Temp\RSP58.tmp" with contents
+[
+gdal_i.lib cxcore.lib cv.lib ml.lib cvaux.lib highgui.lib cvcam.lib /nologo /subsystem:windows /incremental:yes /pdb:"Debug/image.pdb" /debug /machine:I386 /out:"Debug/image.exe" /pdbtype:sept /libpath:"../HCE/gdaldll/lib" /libpath:"C:/Program Files/OpenCV/lib" 
+.\Debug\_MC.obj
+.\Debug\BandSelDlg.obj
+.\Debug\CannyPara.obj
+.\Debug\ChildFrm.obj
+.\Debug\DIB.obj
+.\Debug\HC.obj
+.\Debug\image.obj
+.\Debug\imageDoc.obj
+.\Debug\imageView.obj
+.\Debug\InitiateDlg.obj
+.\Debug\MainFrm.obj
+.\Debug\MorphDlg.obj
+.\Debug\NP.obj
+.\Debug\PreviewDlg.obj
+.\Debug\QT.obj
+.\Debug\Region.obj
+.\Debug\ResultDlg.obj
+.\Debug\SegApi.obj
+.\Debug\SelPropDlg.obj
+.\Debug\StdAfx.obj
+.\Debug\SUSANDlg.obj
+.\Debug\Thinner.obj
+.\Debug\image.res
+]
+Creating command line "link.exe @C:\DOCUME~1\tym\LOCALS~1\Temp\RSP58.tmp"
+<h3>Output Window</h3>
+Linking...
+Creating temporary file "C:\DOCUME~1\tym\LOCALS~1\Temp\RSP59.tmp" with contents
+[
+/nologo /o"Debug/image.bsc" 
+.\Debug\StdAfx.sbr
+.\Debug\_MC.sbr
+.\Debug\BandSelDlg.sbr
+.\Debug\CannyPara.sbr
+.\Debug\ChildFrm.sbr
+.\Debug\DIB.sbr
+.\Debug\HC.sbr
+.\Debug\image.sbr
+.\Debug\imageDoc.sbr
+.\Debug\imageView.sbr
+.\Debug\InitiateDlg.sbr
+.\Debug\MainFrm.sbr
+.\Debug\MorphDlg.sbr
+.\Debug\NP.sbr
+.\Debug\PreviewDlg.sbr
+.\Debug\QT.sbr
+.\Debug\Region.sbr
+.\Debug\ResultDlg.sbr
+.\Debug\SegApi.sbr
+.\Debug\SelPropDlg.sbr
+.\Debug\SUSANDlg.sbr
+.\Debug\Thinner.sbr]
+Creating command line "bscmake.exe @C:\DOCUME~1\tym\LOCALS~1\Temp\RSP59.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+image.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
