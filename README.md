@@ -1,4 +1,5 @@
 # ImageSegmentor
+# WARN: This package is OBSOLETE and no longer maintained.
 
 segment remotely sensed images into meaningful regions.
 
